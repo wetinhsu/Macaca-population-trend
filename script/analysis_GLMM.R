@@ -28,5 +28,18 @@ Anova(m1)
 summary(glht(m1, linfct = mcp(TypeName = "Tukey")))
 summary(glht(m1, linfct = mcp(Year = "Tukey")))
 
-describeBy(M.data$Macaca_sur, 
-           group = M.data[,c("TypeName", "Year")])
+### Summary
+M.data[, .(M = sum(Macaca_sur)), by = list(Year, Survey, TypeName)] %>% 
+  dcast(Year + Survey ~ TypeName, value.var = "M")
+
+M.data[, .(Mean = round(mean(Macaca_sur), 3),
+           SD = round(sd(Macaca_sur), 3)),
+       by = list(Year, TypeName)] %>% 
+  dcast(Year ~ TypeName, value.var = c("Mean", "SD"))
+
+M.data[, .(Mean = mean(Macaca_sur),
+           SD = sd(Macaca_sur)/sqrt(length(Macaca_sur))), 
+       by = Year]
+
+# describeBy(M.data$Macaca_sur, 
+#            group = M.data[,c("TypeName", "Year")])
