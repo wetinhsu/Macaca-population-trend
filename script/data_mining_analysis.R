@@ -71,3 +71,13 @@ all.info <-
 
 write_xlsx(all.info,
            "data/clean/data_for_analysis.xlsx")
+
+#### for summary table - survey point info
+point.count <- 
+  read_xlsx("data/clean/point_Forest_1518.xlsx") %>% 
+  setDT %>% 
+  melt(id = 1:6, measure = 7:14, 
+       value.name = "Do.survey",
+       na.rm = TRUE) %>% 
+  separate("variable", c("Year", "Survey"), "_") %>% 
+  .[, .N, by = list(Year, Survey)]
