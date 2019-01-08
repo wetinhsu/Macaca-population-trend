@@ -84,18 +84,24 @@ S18.survey.condition <-
 
 S18 %<>% S18.survey.condition[., on = "Site_N"]  
 
+#---- Deal with coordinate and forest type
 # left_join S17, S18 with S1516
 site_info <- 
   reduce(list(S15, S16, S17, S18), 
          full_join, 
          by = c("Site_N", "Point")) %>% 
   setDT
+## coordinate
+  ## 2015(_new.x), 2016(_new.y), 2017(_2017), 2018(_2018)
+## forest type
+  ## 2015(TypeName_O.x), 2016(TypeName_O.y)
 
-# Deal with coordinate
 site_info.F <- 
   site_info %>%  
+  # fill na 2015 forest type
   .[is.na(TypeName_O.x), TypeName_O.x := TypeName_O.y] %>% 
-  .[, TypeName_O.y := NULL] %>% 
+  .[, TypeName_O.y := NULL] %>%
+  # fill na coordinates (2016, 2017, 2018)
   .[is.na(X_new.x), X_new.x := X_new.y] %>% 
   .[is.na(Y_new.x), Y_new.x := Y_new.y] %>% 
   .[, c("X_new.y", "Y_new.y") := NULL] %>% 
@@ -106,16 +112,18 @@ site_info.F <-
   .[is.na(Y_new.x), Y_new.x := Y_2018] %>%
   .[, c("X_2018", "Y_2018") := NULL]
 
-# Environment factor
-##read shapefile for value
+#---- Fill na forest type
 library(rgdal)
 library(rgeos)
+
+# extract point without forest type and turn to SP
 no.Fo <- 
   site_info.F[is.na(TypeName_O.x)]
 coordinates(no.Fo) <- ~X_new.x + Y_new.x
 proj4string(no.Fo) <- CRS("+init=epsg:4326")
 no.Fo %<>% spTransform(CRS("+init=epsg:3826"))
 
+# import 4th forest survey (shp)
 forest4th <- 
   readOGR("data/layer", "Forest_4th", 
           use_iconv = TRUE, encoding = "UTF-8") %>% 
@@ -142,6 +150,7 @@ forest4th <-
 
 
 #### test 2018.11.26 ####
+# use gDistance to find nearest forest type and distance
 library(parallel)
 
 cl <- makeCluster(6)
@@ -167,7 +176,7 @@ no.Fo.dat <-
 
 stopCluster(cl)
 
-
+# merge new forest type data with site_info.F 
 site_info.final <- 
   left_join(site_info.F, no.Fo.dat, by = c("Site_N", "Point")) %>% 
   setDT %>% 
@@ -177,5 +186,6 @@ site_info.final <-
   .[Site_N == "A29-27" & Point == "7", TypeName_O.x := "竹闊混淆林"] %>% 
   unique
 
+# export as xlsx
 write_xlsx(site_info.final, 
            "data/clean/point_Forest_1518.xlsx")
