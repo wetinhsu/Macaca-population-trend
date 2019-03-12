@@ -125,7 +125,8 @@ no.Fo %<>% spTransform(CRS("+init=epsg:3826"))
 
 # import 4th forest survey (shp)
 forest4th <- 
-  readOGR("data/layer", "Forest_4th", 
+  readOGR("D:/Project/Raw_data/GIS/第四次森林資源調查土地覆蓋型圖資",
+          "全島森林林型分布圖", 
           use_iconv = TRUE, encoding = "UTF-8") %>% 
   spTransform(CRS("+init=epsg:3826"))
 
