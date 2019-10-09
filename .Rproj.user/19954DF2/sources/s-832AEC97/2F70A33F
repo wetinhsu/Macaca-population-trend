@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1570603270766.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "2F70A33F",
+    "lastKnownWriteTime" : 1546909919,
+    "last_content_update" : 1546909919,
+    "path" : "E:/Project/已完成專案/2019/Macaca-population-trend/script/data_mining_analysis.R",
+    "project_path" : "script/data_mining_analysis.R",
+    "properties" : {
+        "cursorPosition" : "52,42",
+        "scrollLine" : "40"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
