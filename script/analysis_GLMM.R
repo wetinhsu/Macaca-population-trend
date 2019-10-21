@@ -28,20 +28,22 @@ M.data <-
                      "高雄縣","高雄市",
                      "屏東縣"), Region := "South"]%>%
   .[County %in% list("宜蘭縣","花蓮縣",
-                     "台東縣","臺東縣"), Region := "East"]
+                     "台東縣","臺東縣"), Region := "East"] %>%
+  .[ high %in% c("B", "C"),  high.1 := "B" ] %>%
+  .[ high %in% c("A"),  high.1 := "A" ] 
 
 # M.data$Year %<>% as.numeric
 # M.data$Survey %<>% as.factor
 # m0 <- glmer(Macaca_sur ~ TypeName * Year + (1|Site_N), 
 #             family = binomial, data = M.data)
 
-m1 <- glmer(Macaca_sur ~ Year.re  + Region +(1|Site_N), 
+m1 <- glmer(Macaca_sur ~ Year.re  + Region  + TypeName + (1|Site_N), 
             family = binomial, data = M.data)
 
 Anova(m1)
 summary(glht(m1, linfct = mcp(TypeName = "Tukey")))
 summary(glht(m1, linfct = mcp(Region = "Tukey")))
-summary(glht(m1, linfct = mcp(Year = "Tukey")))
+summary(glht(m1, linfct = mcp(Year.re = "Tukey")))
 
 ### Summary
 M.data[, .(M = sum(Macaca_sur)), by = list(Year, Survey, TypeName)] %>% 
