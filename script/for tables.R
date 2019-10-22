@@ -97,6 +97,39 @@ sum.table.Single <-
         County ~ Year, 
         value.var = c("dataN", "SiteN", "PointN"))
 
+
+
+#=======================================================================
+
+M.data <- 
+  read_xlsx("data/clean/data_for_analysis.xlsx") %>% 
+  setDT %>% 
+  .[, Year := as.numeric(Year)] %>% 
+  .[, Year.re := Year - min(Year) + 1] %>%
+  .[, high := substr(Site_N, 1, 1)] 
+  
+
+
+
+sum.TypeName.high.table<- M.data %>% setDT %>% 
+  .[ Macaca_sur %in% c(1,0), list( Year,Survey,TypeName,  Macaca_sur,high)] %>%
+  dcast(., Year + Survey + high ~ TypeName, fun = length)
+group.TypeName.high.table<- M.data %>% setDT %>% 
+  .[ Macaca_sur %in% c(1), list( Year,Survey,TypeName,  Macaca_sur,high)] %>%
+  dcast(., Year + Survey + high ~ TypeName, fun = length)
+
+sum.TypeName.table<- M.data %>% setDT %>% 
+  .[ Macaca_sur %in% c(1,0), list( Year,Survey,TypeName,  Macaca_sur)] %>%
+  dcast(., Year + Survey ~ TypeName, fun = length)
+group.TypeName.table<- M.data %>% setDT %>% 
+  .[ Macaca_sur %in% c(1), list( Year,Survey,TypeName,  Macaca_sur)] %>%
+  dcast(., Year + Survey  ~ TypeName, fun = length)
+
+
 write_xlsx(list("Group" = sum.table.Group,
-                "Single" = sum.table.Single),
+                "Single" = sum.table.Single,
+                "TypeName.high" = sum.TypeName.high.table,
+                "group.TypeName.high" = group.TypeName.high.table,
+                "TypeName" = sum.TypeName.table,
+                "group.TypeName" = group.TypeName.table),
            "Results/sum_table.xlsx")

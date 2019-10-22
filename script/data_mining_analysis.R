@@ -4,21 +4,9 @@ library(readxl)
 library(data.table)
 library(magrittr)
 library(tidyr)
+library(dplyr)
 library(writexl)
 
-# 2015-2016
-S15.16 <- 
-  read_xlsx("data/raw/Macaca_2015_2017_analysis.xlsx",
-            sheet = 2) %>% 
-  setDT %>% 
-  .[Year %in% 2015:2016, 
-    list(Site_N,
-         Point,
-         Year,
-         Survey,
-         Macaca_sur
-    )]%>%
-  .[ !duplicated(.),] 
 
 # 2015
 S15 <- 
@@ -94,6 +82,15 @@ S.all <-
   .[!( Macaca_dist %in% c(NA, "X","")),] %>% 
   .[, Point := as.numeric(Point)] 
 
+remove.data <- 
+  rbind(S15, S16, S17, S18, S19) %>% 
+  .[, Year := as.character(Year)] %>% 
+  .[, Survey := as.character(Survey)] %>%
+  .[, Time := as.character(Time)] %>% 
+  
+  .[( Time %in% c(NA, "X","")) |( Macaca_dist %in% c(NA, "X","")),] 
+
+
 ## merge with site_info_F
 site.info.F <- 
   read_xlsx("data/clean/point_Forest_1519.xlsx") %>% 
@@ -117,7 +114,12 @@ all.info <-
   .[TypeName_O == "竹林", TypeName := "竹林"] %>% 
   .[TypeName_O == "針葉樹林型", TypeName := "純針葉林"] %>% 
   .[TypeName_O %like% "混", TypeName := "混淆林"] %>% 
-  .[!is.na(TypeName)]
+  .[!is.na(TypeName)] %>%
+  .[, Site_N := as.character(Site_N)]
+
+remove.data.2 <- all.info %>% setDF%>%
+  anti_join(S.all, ., by = c("Site_N", "Point", "Year", "Survey")) %>%
+  left_join(all.info) 
 
 S15.survey.condition <- 
   read.csv("data/raw/2015樣區內獼猴調查含樣點數(20161109).csv")  %>% 
@@ -155,13 +157,13 @@ S19.survey.condition <-
 
 
 County <- rbind(S15.survey.condition,
-      S16.survey.condition,
-      S17.survey.condition,
-      S18.survey.condition,
-      S19.survey.condition) %>%
+                S16.survey.condition,
+                S17.survey.condition,
+                S18.survey.condition,
+                S19.survey.condition) %>%
   .[ !duplicated(.),] %>% 
   .[, Site_N := as.character(Site_N)]
-  
+
 
 all.info %<>%   left_join(County)
 
@@ -171,5 +173,7 @@ write_xlsx(all.info,
 #### for summary table - survey point info
 
 all.info %>% setDT %>% 
-  .[Macaca_sur %in% c(0,1), list(Survey, TypeName, Year)] %>% table
+  .[Macaca_sur %in% c(1), list(Survey, TypeName, Year)] %>% table
+
+
 

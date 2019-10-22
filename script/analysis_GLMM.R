@@ -8,6 +8,7 @@ library(multcomp)
 library(ggplot2)
 library(psych)
 library(readxl)
+library(asbio)
 
 M.data <- 
   read_xlsx("data/clean/data_for_analysis.xlsx") %>% 
@@ -15,7 +16,7 @@ M.data <-
   .[, Year := as.numeric(Year)] %>% 
   .[, Year.re := Year - min(Year) + 1] %>%
   .[, high := substr(Site_N, 1, 1)] %>%
-  .[County %in% list("基隆市","台北市","臺北市",
+  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
                      "新北市","台北縣","臺北縣",
                      "桃園縣","桃園市","新竹市",
                      "新竹縣","苗栗縣"), Region := "North"] %>%
@@ -27,7 +28,7 @@ M.data <-
                      "台南縣","臺南縣",
                      "高雄縣","高雄市",
                      "屏東縣"), Region := "South"]%>%
-  .[County %in% list("宜蘭縣","花蓮縣",
+  .[County %in% list("花蓮縣",
                      "台東縣","臺東縣"), Region := "East"] %>%
   .[ high %in% c("B", "C"),  high.1 := "B" ] %>%
   .[ high %in% c("A"),  high.1 := "A" ] 
@@ -37,13 +38,44 @@ M.data <-
 # m0 <- glmer(Macaca_sur ~ TypeName * Year + (1|Site_N), 
 #             family = binomial, data = M.data)
 
-m1 <- glmer(Macaca_sur ~ Year.re  + Region  + TypeName + (1|Site_N), 
-            family = binomial, data = M.data)
+#m1 <- glmer(Macaca_sur ~ Year.re  + Region  + TypeName  + factor(Survey) + (1|Site_N), 
+#            family = binomial, data = M.data)
 
-Anova(m1)
-summary(glht(m1, linfct = mcp(TypeName = "Tukey")))
-summary(glht(m1, linfct = mcp(Region = "Tukey")))
-summary(glht(m1, linfct = mcp(Year.re = "Tukey")))
+#Anova(m1)
+#summary(glht(m1, linfct = mcp(TypeName = "Tukey")))
+#summary(glht(m1, linfct = mcp(Region = "Tukey")))
+#summary(glht(m1, linfct = mcp(Year.re = "Tukey")))
+
+
+m2 <- glm(Macaca_sur ~ Year  + Region  + TypeName + factor(Survey) + high , 
+            family = binomial, data = M.data) #full model
+Anova(m2)
+
+
+m2.0 <- glm(Macaca_sur ~ Region + TypeName + Year + factor(Survey), 
+            family = binomial, data = M.data )  #forward
+
+
+Anova(m2.0)
+
+M.data %>% setDT %>% 
+  .[,list(Macaca_sur, Year,
+          Survey ,
+          TypeName,
+          Region ,
+          high)] %>%  
+  setDT %>%
+  .[,.(Mean = round( mean(Macaca_sur), 3),
+       SE = round( sd(Macaca_sur)/sqrt(length(Macaca_sur)),3)),
+    by = list(Year, Region)] %>%
+  ggplot(aes(Year, Mean, group = Region, colour = Region)) + geom_line() 
+
+pairw.anova(M.data$Macaca_sur, as.factor(M.data$Year),method="scheffe") %>% plot
+pairw.anova(M.data$Macaca_sur, as.factor(M.data$Region),method="scheffe") %>% plot
+pairw.anova(M.data$Macaca_sur, as.factor(M.data$Survey),method="scheffe") %>% plot
+pairw.anova(M.data$Macaca_sur, as.factor(M.data$TypeName),method="scheffe")  %>% plot
+
+
 
 ### Summary
 M.data[, .(M = sum(Macaca_sur)), by = list(Year, Survey, TypeName)] %>% 
