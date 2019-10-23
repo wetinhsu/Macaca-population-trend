@@ -10,7 +10,8 @@ library(writexl)
 
 # 2015
 S15 <- 
-  read_xlsx("data/raw/2015調查時段樣區內獼猴紀錄.xlsx") %>% 
+  read_xlsx("data/raw/2015調查時段樣區內獼猴紀錄.xlsx",
+            sheet = 3) %>% 
   setDT %>% 
   .[, list(Site_N = `樣區編號`,
            Point = `樣點編號`,
@@ -18,7 +19,7 @@ S15 <-
            Survey = `調查旅次\r\n編號`,
            Macaca_sur = ifelse(`結群` == "Y", 1, 0),
            Macaca_dist = `距離`,
-           Time = `時段`)]
+           Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
 
 
 # 2016
@@ -32,7 +33,7 @@ S16 <-
            Survey = `調查旅次.編號`,
            Macaca_sur = ifelse(`結群` == "Y", 1, 0),
            Macaca_dist = `距離`,
-           Time = `時段`)] 
+           Time = `時段`)] %>% setDT %>% .[!duplicated(.)]
   
 
 
@@ -46,7 +47,7 @@ S17 <-
            Survey = `調查旅次\r\n編號`,
            Macaca_sur = ifelse(`結群\r\n(修正)` == "Y", 1, 0),
            Macaca_dist = `距離`,
-           Time = `時段`)]
+           Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
 
 # 2018
 S18 <- 
@@ -58,7 +59,7 @@ S18 <-
            Survey = `調查旅次\r\n編號`,
            Macaca_sur = ifelse(`結群` == "Y", 1, 0),
            Macaca_dist = `距離`,
-           Time = `時段`)]
+           Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
 
 # 2019
 S19 <- 
@@ -70,7 +71,7 @@ S19 <-
            Survey = `調查旅次\r\n編號`,
            Macaca_sur = ifelse(`結群` == "Y", 1, 0),
            Macaca_dist = `距離`,
-           Time = `時段`)]
+           Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
 
 S.all <- 
   rbind(S15, S16, S17, S18, S19) %>% 
@@ -115,65 +116,33 @@ all.info <-
   .[TypeName_O == "針葉樹林型", TypeName := "純針葉林"] %>% 
   .[TypeName_O %like% "混", TypeName := "混淆林"] %>% 
   .[!is.na(TypeName)] %>%
-  .[, Site_N := as.character(Site_N)]
+  .[, Site_N := as.character(Site_N)] %>% setDT
 
 remove.data.2 <- all.info %>% setDF%>%
   anti_join(S.all, ., by = c("Site_N", "Point", "Year", "Survey")) %>%
   left_join(all.info) 
 
-S15.survey.condition <- 
-  read.csv("data/raw/2015樣區內獼猴調查含樣點數(20161109).csv")  %>% 
-  setDT %>% 
-  .[, list(`樣點編號`, 縣市)] %>% 
-  setnames(c("Site_N" ,"County"))
 
-S16.survey.condition <- 
-  read_xlsx("data/raw/2016獼猴調查(樣區整理)_分析用.xlsx",
+County <-
+  read_xlsx("data/raw/all point_20191023.xlsx",
             sheet = 1)  %>% 
   setDT %>% 
-  .[, list(`樣區\r\n編號`, 縣市)] %>% 
-  setnames(c("Site_N" ,"County"))
-
-S17.survey.condition <- 
-  read_xlsx("data/raw/2017獼猴調查(樣區整理)_分析用.xlsx",
-            sheet = 1)  %>% 
-  setDT %>% 
-  .[, list(`樣區\r\n編號`, 縣市)] %>% 
-  setnames(c("Site_N" ,"County"))
-
-S18.survey.condition <- 
-  read_xlsx("data/raw/2018獼猴調查(樣區整理)_分析用.xlsx",
-            sheet = 1)  %>% 
-  setDT %>% 
-  .[, list(`樣區\r\n編號`, 縣市)] %>% 
-  setnames(c("Site_N" ,"County")) 
-
-S19.survey.condition <- 
-  read_xlsx("data/raw/2019獼猴調查(樣區整理)_分析用.xlsx",
-            sheet = 1)  %>% 
-  setDT %>% 
-  .[, list(`樣區\r\n編號`, 縣市)] %>% 
-  setnames(c("Site_N" ,"County"))  
+  .[, list(`樣區編號`, 縣市)] %>% 
+  setnames(c("Site_N" ,"County")) %>%
+  .[!duplicated(.)]  %>% 
+  setDT 
 
 
-County <- rbind(S15.survey.condition,
-                S16.survey.condition,
-                S17.survey.condition,
-                S18.survey.condition,
-                S19.survey.condition) %>%
-  .[ !duplicated(.),] %>% 
-  .[, Site_N := as.character(Site_N)]
+all.info.1 <- all.info %>%   left_join(County, by = "Site_N") %>% setDT 
 
-
-all.info %<>%   left_join(County)
-
-write_xlsx(all.info,
+write_xlsx(all.info.1,
            "data/clean/data_for_analysis.xlsx")
 
 #### for summary table - survey point info
 
-all.info %>% setDT %>% 
-  .[Macaca_sur %in% c(1), list(Survey, TypeName, Year)] %>% table
+all.info.1 %>% setDT %>% 
+  .[, list(Survey, TypeName, high, Year)] %>% table
+
 
 
 

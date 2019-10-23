@@ -112,19 +112,26 @@ M.data <-
 
 
 sum.TypeName.high.table<- M.data %>% setDT %>% 
-  .[ Macaca_sur %in% c(1,0), list( Year,Survey,TypeName,  Macaca_sur,high)] %>%
+  .[ Do.survey >0, list( Year,Survey,TypeName,  Macaca_sur,high)] %>%
   dcast(., Year + Survey + high ~ TypeName, fun = length)
 group.TypeName.high.table<- M.data %>% setDT %>% 
   .[ Macaca_sur %in% c(1), list( Year,Survey,TypeName,  Macaca_sur,high)] %>%
   dcast(., Year + Survey + high ~ TypeName, fun = length)
 
 sum.TypeName.table<- M.data %>% setDT %>% 
-  .[ Macaca_sur %in% c(1,0), list( Year,Survey,TypeName,  Macaca_sur)] %>%
+  .[ Do.survey >0, list( Year,Survey,TypeName,  Macaca_sur)] %>%
   dcast(., Year + Survey ~ TypeName, fun = length)
 group.TypeName.table<- M.data %>% setDT %>% 
   .[ Macaca_sur %in% c(1), list( Year,Survey,TypeName,  Macaca_sur)] %>%
   dcast(., Year + Survey  ~ TypeName, fun = length)
 
+
+sum.table<- M.data %>% setDT %>% 
+  .[ Do.survey >0, list( Year,Survey,TypeName,  Macaca_sur)] %>%
+  dcast(., Year ~ Survey , fun = length)
+group.table<- M.data %>% setDT %>% 
+  .[ Macaca_sur %in% c(1), list( Year,Survey,TypeName,  Macaca_sur)] %>%
+  dcast(., Year ~ Survey , fun = length)
 
 write_xlsx(list("Group" = sum.table.Group,
                 "Single" = sum.table.Single,
