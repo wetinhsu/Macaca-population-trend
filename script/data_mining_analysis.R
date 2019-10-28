@@ -79,9 +79,11 @@ S.all <-
   .[, Survey := as.character(Survey)] %>%
   .[, Time := as.character(Time)] %>% 
   
-  .[!( Time %in% c(NA, "X","")),] %>%
-  .[!( Macaca_dist %in% c(NA, "X","")),] %>% 
-  .[, Point := as.numeric(Point)] 
+  .[ Time %in% c("A","B"),] %>%
+  .[( Macaca_dist %in% c("A","B","C")),] %>% 
+  .[, Point := as.numeric(Point)] %>% 
+  .[, Site_N := as.character(Site_N)] 
+
 
 remove.data <- 
   rbind(S15, S16, S17, S18, S19) %>% 
@@ -89,7 +91,59 @@ remove.data <-
   .[, Survey := as.character(Survey)] %>%
   .[, Time := as.character(Time)] %>% 
   
-  .[( Time %in% c(NA, "X","")) |( Macaca_dist %in% c(NA, "X","")),] 
+  .[!( Time %in% c("A","B")) |!( Macaca_dist %in%c("A","B","C")),] %>% 
+  .[, Site_N := as.character(Site_N)] %>%
+  .[order(Year, Site_N, Point, Survey),]
+
+remove.data %>% setDT %>% 
+  .[, list(Survey, Year)] %>% table
+
+S.all %>% rbind(.,remove.data) %>% setDT %>% 
+  .[, list(Survey, Year)] %>% table 
+
+remove.data %>% setDT %>% 
+  .[Macaca_sur %in% 1, list(Survey, Year)] %>% table 
+
+
+S.all %>% setDT %>% 
+  .[Macaca_sur %in% 1, list(Survey, Year)] %>% table
+
+
+S.all %>% setDT %>%  .[!(Macaca_dist %in% "C"),] %>%
+  .[Macaca_sur %in% 1, list(Survey, Year)] %>% table
+
+County <-
+  read_xlsx("data/raw/all point_20191023.xlsx",
+            sheet = 1)  %>% 
+  setDT %>% 
+  .[, list(`樣區編號`, 縣市)] %>% 
+  setnames(c("Site_N" ,"County")) %>%
+  .[, Site_N := as.character(Site_N)] %>%
+  .[!duplicated(.)]  %>% 
+  setDT 
+
+
+sum.tab.group<- S.all  %>%   left_join(County, by = "Site_N") %>% setDT %>% 
+  .[, .( N = .N,
+         Site = length(unique(Site_N)),
+         point = length(unique(paste0(Site_N,"-0",Point)))),
+   by = list( Macaca_sur, Year, County)] %>% setDT %>%
+  .[order(Macaca_sur,Year, County),] %>%
+  .[Macaca_sur %in% 1,] %>%
+  dcast(., County ~ Year, value.var = c("N", "Site", "point"))
+
+sum.tab.single<- S.all  %>%   left_join(County, by = "Site_N") %>% setDT %>% 
+  .[., .( N = .N,
+         Site = length(unique(Site_N)),
+         point = length(unique(paste0(Site_N,"-0",Point)))),
+    by = list( Macaca_sur, Year, County)] %>% setDT %>%
+  .[order(Macaca_sur,Year, County),] %>%
+  .[Macaca_sur %in% 0,] %>%
+  dcast(., County ~ Year, value.var = c("N", "Site", "point")) 
+
+write_xlsx(list("Group" = sum.tab.group,
+                "Single" = sum.tab.single),
+                "Results/sum_table_1028.xlsx")
 
 
 ## merge with site_info_F
@@ -141,7 +195,7 @@ write_xlsx(all.info.1,
 #### for summary table - survey point info
 
 all.info.1 %>% setDT %>% 
-  .[, list(Survey, TypeName, high, Year)] %>% table
+  .[, list(Survey, TypeName,Year)] %>% table
 
 
 

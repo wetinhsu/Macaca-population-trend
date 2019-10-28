@@ -8,7 +8,7 @@ library(tidyr)
 library(purrr)
 library(dplyr)
 library(writexl)
-
+library(rgdal)
 
 point.list <- read_xlsx("data/raw/all point_20191023.xlsx",
           sheet = 1)  %>% 
@@ -18,6 +18,43 @@ point.list <- read_xlsx("data/raw/all point_20191023.xlsx",
   setnames(., c("Site_N", "Point", "County", "Name", "Pointid",
                 "X.67", "Y.67", "X.97", "Y.97", "X.dms", "Y.dms", "X.84", "Y.84",
                 "Note1", "Note2"))
+
+
+twd97to84 <- function(X, Y) {
+  data <- data.frame(x = X, y = Y)
+  aa<- 
+    cbind(as.numeric(data$x),as.numeric(data$y))%>%
+    SpatialPointsDataFrame(coords=., data=data, proj4string=CRS("+init=epsg:3826")) %>%
+    spTransform(.,  CRS("+init=epsg:4326")) %>% coordinates  
+
+}
+twd67to84 <- function(X, Y) {
+  data <- data.frame(x = X, y = Y)
+  aa<- 
+    cbind(as.numeric(data$x),as.numeric(data$y))%>%
+    SpatialPointsDataFrame(coords=., data=data, proj4string=CRS("+init=epsg:3828")) %>%
+    spTransform(.,  CRS("+init=epsg:4326")) %>% coordinates  
+  
+}
+
+twd67to84(data.frame(X=268230, Y=2666489)) %>% print
+  
+
+S16[cood %in% "TWD67/TM2", list(X,Y)]  %>% 
+split(.,  seq(nrow(.))) %>%
+lapply(.,twd67to84) %>%
+  do.call(., rbind)
+
+
+twd67to84(data.frame(X=194639, Y=2533215)) %>% print
+
+twd67to84 <- function(XY) {
+  aa<- 
+    cbind(as.numeric(XY$X),as.numeric(XY$Y))%>%
+    SpatialPointsDataFrame(coords=., data=XY, proj4string=CRS("+init=epsg:3828")) %>%
+    spTransform(.,  CRS("+init=epsg:4326")) %>% coordinates  
+}
+
 
 #============================
 
@@ -36,6 +73,11 @@ S16 <-
 
 S16[S16=="NA"] <- NA
 S16[S16==""] <- NA
+
+
+
+S16 %>% setDT %>%
+  .[cood %in% "TWD97/TM2", ]
 
 
 

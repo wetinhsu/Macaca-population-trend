@@ -67,13 +67,13 @@ M.data %>% setDT %>%
   setDT %>%
   .[,.(Mean = round( mean(Macaca_sur), 3),
        SE = round( sd(Macaca_sur)/sqrt(length(Macaca_sur)),3)),
-    by = list(Year, Region)] %>%
-  ggplot(aes(Year, Mean, group = Region, colour = Region)) + geom_line() 
+    by = list(Year, TypeName)] %>%
+  ggplot(aes(Year, Mean, group = TypeName, colour = TypeName)) + geom_line() 
 
-pairw.anova(M.data$Macaca_sur, as.factor(M.data$Year),method="scheffe") %>% plot
-pairw.anova(M.data$Macaca_sur, as.factor(M.data$Region),method="scheffe") %>% plot
-pairw.anova(M.data$Macaca_sur, as.factor(M.data$Survey),method="scheffe") %>% plot
-pairw.anova(M.data$Macaca_sur, as.factor(M.data$TypeName),method="scheffe")  %>% plot
+pairw.anova(M.data$Macaca_sur, as.factor(M.data$Year),method="tukey") %>% plot  #scheffe, tukey, lsd
+pairw.anova(M.data$Macaca_sur, as.factor(M.data$Region),method="tukey") %>% plot
+pairw.anova(M.data$Macaca_sur, as.factor(M.data$Survey),method="tukey") %>% plot
+pairw.anova(M.data$Macaca_sur, as.factor(M.data$TypeName),method="tukey")  %>% plot
 
 
 

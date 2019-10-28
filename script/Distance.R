@@ -30,16 +30,17 @@ M.data <-
 
 
 ttt<- M.data %>% setDT %>%  
-  .[!(Macaca_dist %in% "C"),] %>%
+  #.[!(Macaca_dist %in% "C"),] %>%
   .[Macaca_sur == 1,] %>% 
   .[Macaca_dist  %in% "A", distance := 25] %>%
-  .[Macaca_dist  %in% "B", distance := 100] %>% setDF  
+  .[Macaca_dist  %in% "B", distance := 100] %>%
+  .[Macaca_dist  %in% "C", distance := 300] %>% setDF  
   
 ds.ttt <- ds(ttt, region.table= , transect = "point", formula = ~ 1 ,
              dht.group =1, adjustment = NULL)
 
-plot(ds.ttt,  breaks =c(0,25,100), pl.col =2)
+plot(ds.ttt,  breaks =c(0,25,100,300), pl.col =2)
 summary(ds.ttt ) 
 
-hist(ttt$distance,  breaks =c(0,25,100), probability  = T)
+hist(ttt$distance,  breaks =c(0,25,100,300), probability  = T)
 table(ttt$distance)
