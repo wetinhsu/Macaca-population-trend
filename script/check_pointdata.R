@@ -17,36 +17,9 @@ point.list <- read_xlsx("data/raw/all point_20191023.xlsx",
   setDT %>%
   setnames(., c("Site_N", "Point", "County", "Name", "Pointid",
                 "X.67", "Y.67", "X.97", "Y.97", "X.dms", "Y.dms", "X.84", "Y.84",
-                "Note1", "Note2"))
-
-
-twd97to84 <- function(X, Y) {
-  data <- data.frame(x = X, y = Y)
-  aa<- 
-    cbind(as.numeric(data$x),as.numeric(data$y))%>%
-    SpatialPointsDataFrame(coords=., data=data, proj4string=CRS("+init=epsg:3826")) %>%
-    spTransform(.,  CRS("+init=epsg:4326")) %>% coordinates  
-
-}
-twd67to84 <- function(X, Y) {
-  data <- data.frame(x = X, y = Y)
-  aa<- 
-    cbind(as.numeric(data$x),as.numeric(data$y))%>%
-    SpatialPointsDataFrame(coords=., data=data, proj4string=CRS("+init=epsg:3828")) %>%
-    spTransform(.,  CRS("+init=epsg:4326")) %>% coordinates  
-  
-}
-
-twd67to84(data.frame(X=268230, Y=2666489)) %>% print
-  
-
-S16[cood %in% "TWD67/TM2", list(X,Y)]  %>% 
-split(.,  seq(nrow(.))) %>%
-lapply(.,twd67to84) %>%
-  do.call(., rbind)
-
-
-twd67to84(data.frame(X=194639, Y=2533215)) %>% print
+                "Note1", "Note2"))%>%
+  .[, Site_N := as.character(Site_N)] %>%
+  .[, Point := as.numeric(Point)]
 
 twd67to84 <- function(XY) {
   aa<- 
@@ -55,30 +28,135 @@ twd67to84 <- function(XY) {
     spTransform(.,  CRS("+init=epsg:4326")) %>% coordinates  
 }
 
+twd97to84 <- function(XY) {
+  aa<- 
+    cbind(as.numeric(XY$X),as.numeric(XY$Y))%>%
+    SpatialPointsDataFrame(coords=., data=XY, proj4string=CRS("+init=epsg:3826")) %>%
+    spTransform(.,  CRS("+init=epsg:4326")) %>% coordinates  
+}
+
 
 #============================
 
-S16 <- 
-  lapply(paste0("./data/raw/BBSdata/", 2016), function(x){
+S1517 <- 
+  lapply(paste0("./data/raw/BBSdata/", 2015:2017), function(x){
     list.files(x, pattern = "BBSdata_", full.names = T) %>%  
       read_xlsx(., sheet = "birddata", cell_cols("D:AF")) %>% 
       setDT %>%
-      .[!(時段 %in% c("NA", "Supplementary", "")),] %>%
+      .[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
+      .[調查旅次編號 %in% c(1,2)] %>%
       .[ 分析 %in% "Y", list(年, 樣區編號, 樣點編號, 座標系統, X座標, Y座標, 調查旅次編號)] %>%
       setnames(., c("Year", "Site_N", "Point", "cood", "X", "Y", "Survey")) %>%
       .[!duplicated(.)]  
   } ) %>% 
   do.call(rbind, .) %>% 
-  data.table
-
-S16[S16=="NA"] <- NA
-S16[S16==""] <- NA
-
+  data.table%>%
+  .[, Site_N := as.character(Site_N)] %>%
+  .[, Point := as.numeric(Point)]
 
 
-S16 %>% setDT %>%
-  .[cood %in% "TWD97/TM2", ]
+S1517[S1517=="NA"] <- NA
+S1517[S1517==""] <- NA
 
+
+
+aa<- S1517 %>% .[,.N, by =list(Site_N, Point, Year, Survey)] %>%
+  dcast(., Site_N + Point~ Year+ Survey, value.var="N")%>% 
+  setDT %>%
+  .[, Site_N := as.character(Site_N)] %>%
+  .[, Point := as.numeric(Point)]
+
+
+
+point_Forest <- read_excel("data/clean/point_Forest_1519.xlsx") %>% 
+  setDT %>%
+  .[, Site_N := as.character(Site_N)] %>%
+  .[, Point := as.numeric(Point)]
+
+
+ff<- point_Forest %>% full_join(aa, by = c("Site_N", "Point"))
+
+ff.1 <- ff %>%setDT %>% .[  is.na(`2015_1.x`)&
+                              is.na(`2015_2.x`) &
+                              is.na(`2016_1.x`) & 
+                              is.na(`2016_2.x`) & 
+                              is.na(`2017_1.x`) & 
+                              is.na(`2017_2.x`) & 
+                              is.na(`2018_1`) & 
+                              is.na(`2018_2`) & 
+                              is.na(`2019_1`) & 
+                              is.na(`2019_2`),] %>%
+  left_join(point.list, by = c("Site_N", "Point")) %>%
+  setDT %>%
+  .[!is.na(Pointid),] #用樣點表的座標
+
+
+ff.2 <- point_Forest %>% anti_join(aa, ., by = c("Site_N", "Point"))%>%
+  anti_join(., point.list, by = c("Site_N", "Point"))%>%
+  setDT %>%
+  .[(is.na(`2017_1`) & is.na(`2017_2`)),]  %>%
+  left_join(S1517[, list(Site_N, Point,cood, X ,Y)],  by = c("Site_N", "Point"))%>% setDT %>% 
+  .[!duplicated(.)]   #需要抓BBS bird的座標
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+S16.1<- S16[cood %in% "TWD67/TM2", list(X,Y)]  %>% 
+  split(.,  seq(nrow(.))) %>%
+  lapply(.,twd67to84) %>% 
+  do.call( rbind, .) %>% 
+  as.data.table(.) %>%
+  setnames(., c("X_new","Y_new"))  %>%
+  cbind(S16[cood %in% "TWD67/TM2",], .)
+
+S16.2<- S16[cood %in% "TWD97/TM2", list(X,Y)]  %>% 
+  split(.,  seq(nrow(.))) %>%
+  lapply(.,twd97to84) %>% 
+  do.call( rbind, .) %>% 
+  as.data.table(.) %>%
+  setnames(., c("X_new","Y_new"))  %>%
+  cbind(S16[cood %in% "TWD97/TM2",], .)
+
+S16.3<- S16[cood %like% "分",  ] 
+
+X_new <- S16[cood %like% "分",  X]%>% 
+  as.character(.) %>%
+  char2dms(., chd = "°", chm = "'", chs = "\"") %>%
+  as.numeric(.)  
+
+Y_new <- S16[cood %like% "分",  Y] %>% 
+  as.character(.) %>% 
+  char2dms(., chd = "°", chm = "'", chs = "\"") %>%
+  as.numeric(.)     
+    
+    
+
+S16[cood %like% "分",  Y] %>%strsplit(.,"\"")
+  
+  
+  
 
 
 tt<- S16 %>%
