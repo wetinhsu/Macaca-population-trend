@@ -38,8 +38,8 @@ twd97to84 <- function(XY) {
 
 #============================
 
-S1517 <- 
-  lapply(paste0("./data/raw/BBSdata/", 2015:2017), function(x){
+S15 <- 
+  lapply(paste0("./data/raw/BBSdata/", 2015), function(x){
     list.files(x, pattern = "BBSdata_", full.names = T) %>%  
       read_xlsx(., sheet = "birddata", cell_cols("D:AF")) %>% 
       setDT %>%
@@ -51,20 +51,88 @@ S1517 <-
   } ) %>% 
   do.call(rbind, .) %>% 
   data.table%>%
+  .[ !(Site_N %in% "A09-31" & X %like% "63"),] %>%
   .[, Site_N := as.character(Site_N)] %>%
   .[, Point := as.numeric(Point)]
 
 
-S1517[S1517=="NA"] <- NA
-S1517[S1517==""] <- NA
+S15[S15=="NA"] <- NA
+S15[S15==""] <- NA
+
+S15 %<>% 
+  .[cood %like% "分", 
+           X_new := as.numeric(char2dms(X, chd = "°", chm = "'", chs = "\""))]
+S15 %<>% 
+  .[cood %like% "分",
+    Y_new := as.numeric(char2dms(Y, chd = "°", chm = "'", chs = "\""))]
 
 
+  S15 %<>% .[cood %in% "WGS84/經緯度(度)",
+            X_new := as.numeric(X)]
+  S15 %<>% .[cood %in% "WGS84/經緯度(度)",
+            Y_new := as.numeric(Y)]
+  
+  S15 %>% setDT %>%
+    .[duplicated(., by = c("Site_N", "Point", "Survey"))]
+  
+  aa<- S15 %>% .[,.N, by =list(Site_N, Point, Year, Survey)] %>%
+    dcast(., Site_N + Point~ Year+ Survey, value.var="N")%>% 
+    setDT %>%
+    .[, Site_N := as.character(Site_N)] %>%
+    .[, Point := as.numeric(Point)]
 
-aa<- S1517 %>% .[,.N, by =list(Site_N, Point, Year, Survey)] %>%
-  dcast(., Site_N + Point~ Year+ Survey, value.var="N")%>% 
-  setDT %>%
-  .[, Site_N := as.character(Site_N)] %>%
-  .[, Point := as.numeric(Point)]
+#============  
+  
+  S16 <- 
+    lapply(paste0("./data/raw/BBSdata/", 2016), function(x){
+      list.files(x, pattern = "BBSdata_", full.names = T) %>%  
+        read_xlsx(., sheet = "birddata", cell_cols("D:AF")) %>% 
+        setDT %>%
+        .[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
+        .[調查旅次編號 %in% c(1,2)] %>%
+        .[ 分析 %in% "Y", list(年, 樣區編號, 樣點編號, 座標系統, X座標, Y座標, 調查旅次編號)] %>%
+        setnames(., c("Year", "Site_N", "Point", "cood", "X", "Y", "Survey")) %>%
+        .[!duplicated(.)]  
+    } ) %>% 
+    do.call(rbind, .) %>% 
+    data.table%>%
+    .[  Y %like% "25'1'", Y:=as.character("25°1'64.77\"")] %>%
+    .[, Site_N := as.character(Site_N)] %>%
+    .[, Point := as.numeric(Point)]
+  
+  
+  S16[S16=="NA"] <- NA
+  S16[S16==""] <- NA
+  
+  S16 %<>% 
+    .[cood %like% "分", 
+      X_new := as.numeric(char2dms(X, chd = "°", chm = "'", chs = "\""))] %>% 
+  
+    .[cood %like% "分",
+      Y_new := as.numeric(char2dms(Y, chd = "°", chm = "'", chs = "\""))] %>% 
+  
+  
+  .[cood %in% "WGS84/經緯度(度)",
+             X_new := as.numeric(X)] %>% 
+  .[cood %in% "WGS84/經緯度(度)",
+               Y_new := as.numeric(Y)]
+  
+  
+  S16 %>% setDT %>%
+    .[duplicated(., by = c("Site_N", "Point", "Survey"))]
+  
+  bb<- S16 %>% .[,.N, by =list(Site_N, Point, Year, Survey)] %>%
+    dcast(., Site_N + Point~ Year+ Survey, value.var="N")%>% 
+    setDT %>%
+    .[, Site_N := as.character(Site_N)] %>%
+    .[, Point := as.numeric(Point)]  
+  
+  
+  
+  
+  
+  
+
 
 
 
@@ -76,22 +144,18 @@ point_Forest <- read_excel("data/clean/point_Forest_1519.xlsx") %>%
 
 ff<- point_Forest %>% full_join(aa, by = c("Site_N", "Point"))
 
-ff.1 <- ff %>%setDT %>% .[  is.na(`2015_1.x`)&
-                              is.na(`2015_2.x`) &
-                              is.na(`2016_1.x`) & 
-                              is.na(`2016_2.x`) & 
-                              is.na(`2017_1.x`) & 
-                              is.na(`2017_2.x`) & 
-                              is.na(`2018_1`) & 
-                              is.na(`2018_2`) & 
-                              is.na(`2019_1`) & 
-                              is.na(`2019_2`),] %>%
+ff.0<- point_Forest %>% anti_join(aa,., by = c("Site_N", "Point"))
+
+
+
+
+ff.1 <- ff.0  %>%
   left_join(point.list, by = c("Site_N", "Point")) %>%
   setDT %>%
   .[!is.na(Pointid),] #用樣點表的座標
 
 
-ff.2 <- point_Forest %>% anti_join(aa, ., by = c("Site_N", "Point"))%>%
+ff.2 <- ff.0%>%
   anti_join(., point.list, by = c("Site_N", "Point"))%>%
   setDT %>%
   .[(is.na(`2017_1`) & is.na(`2017_2`)),]  %>%
@@ -99,93 +163,142 @@ ff.2 <- point_Forest %>% anti_join(aa, ., by = c("Site_N", "Point"))%>%
   .[!duplicated(.)]   #需要抓BBS bird的座標
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-S16.1<- S16[cood %in% "TWD67/TM2", list(X,Y)]  %>% 
-  split(.,  seq(nrow(.))) %>%
-  lapply(.,twd67to84) %>% 
-  do.call( rbind, .) %>% 
-  as.data.table(.) %>%
-  setnames(., c("X_new","Y_new"))  %>%
-  cbind(S16[cood %in% "TWD67/TM2",], .)
-
-S16.2<- S16[cood %in% "TWD97/TM2", list(X,Y)]  %>% 
-  split(.,  seq(nrow(.))) %>%
-  lapply(.,twd97to84) %>% 
-  do.call( rbind, .) %>% 
-  as.data.table(.) %>%
-  setnames(., c("X_new","Y_new"))  %>%
-  cbind(S16[cood %in% "TWD97/TM2",], .)
-
-S16.3<- S16[cood %like% "分",  ] 
-
-X_new <- S16[cood %like% "分",  X]%>% 
-  as.character(.) %>%
+ff.2$Y.84<- ff.2 %>% setDT %>% .[cood %like% "分",Y] %>%
   char2dms(., chd = "°", chm = "'", chs = "\"") %>%
-  as.numeric(.)  
+  as.numeric(.)
 
-Y_new <- S16[cood %like% "分",  Y] %>% 
-  as.character(.) %>% 
+ff.2$X.84<- ff.2 %>% setDT %>% .[cood %like% "分",X] %>%
   char2dms(., chd = "°", chm = "'", chs = "\"") %>%
-  as.numeric(.)     
-    
-    
-
-S16[cood %like% "分",  Y] %>%strsplit(.,"\"")
-  
-  
-  
+  as.numeric(.)
 
 
-tt<- S16 %>%
-  .[Survey %in% 1, `2016_1` := 1] %>%
-  .[Survey %in% 2, `2016_2` := 1] %>%
-  
-  .[cood %in% "TWD67/TM2", X.67 := X] %>%
-  .[cood %in% "TWD67/TM2", Y.67 := Y] %>%
-  .[cood %in% "TWD97/TM2", X.97 := X] %>%
-  .[cood %in% "TWD97/TM2", Y.97 := Y] %>%
-  .[cood %in% "WGS84/經緯度(度分秒)", X.dms := X] %>%
-  .[cood %in% "WGS84/經緯度(度分秒)", Y.dms := Y] %>%
-  .[cood %in% "WGS84/經緯度(度分)", X.84 := as.numeric(substr(X,1,3)) + (1/60)*as.numeric(substr(X,5,nchar(X)-4))] %>%
-  .[cood %in% "WGS84/經緯度(度分)", Y.84:= as.numeric(substr(Y,1,2)) + (1/60)*as.numeric(substr(Y,4,nchar(X)-3))] %>%
-  .[cood %in% "WGS84/經緯度(度)", X.84 := as.numeric(X)] %>%
-  .[cood %in% "WGS84/經緯度(度)", Y.84 := as.numeric(Y)] %>%
-  .[, c("Survey", "cood", "X", "Y") := NULL] %>%
-  
-  
-  #.[, list(Site_N, Point)] %>%  
-  #.[!duplicated(.)]  %>%
-  left_join(point.list, by = c("Site_N", "Point")) %>%
-  setDT
+#---- Fill na forest type
+library(rgdal)
+library(rgeos)
+library(magrittr)
+library(data.table)
 
-tt %>%
-  .[X.84 %in% NA,] %>%
-  .[, list(Site_N, Point)] %>%  
-  S16[., on = c("Site_N", "Point")]
+setwd("C:/Users/wetin/Desktop/R/第四次森林資源調查全島森林林型分布圖")
+
+Sys.time()
+forest4th <- 
+  readOGR(".",
+          "全島森林林型分布圖", 
+          use_iconv = TRUE, encoding = "UTF-8") %>% 
+  spTransform(CRS("+init=epsg:3826"))
+
+Sys.time()
+
+#===========
+setwd("C:/Users/wetin/Desktop/R/Macaca-population-trend")
+
+ff.1.Fo <- 
+  ff.1 %>% setDT %>% .[,list(Site_N,Point, 
+                             x=as.numeric(X.84),y=as.numeric(Y.84))] 
+coordinates(ff.1.Fo) <- ~x + y
 
 
+proj4string(ff.1.Fo) <- CRS("+init=epsg:4326")
+ff.1.Fo %<>% spTransform(CRS("+init=epsg:3826"))
+
+
+
+## Set up container for results
+n <- length(ff.1.Fo)
+nearest.Type <- character(n)
+nearest.dist <- numeric(n)
+
+## For each point, find name of nearest polygon (in this case, Belgian cantons)
+
+Sys.time()
+
+for (i in seq_along(nearest.Type)) {
+  print(i)
+  Distance <-gDistance(ff.1.Fo[i,], forest4th, byid=TRUE)
+  nearest.Type[i] <- forest4th@data$TypeName[which.min(Distance)] %>% as.character
+  nearest.dist[i] <- min(Distance)
+  
+}
+
+Sys.time()
+
+
+
+ff.1.Fo.dat <- 
+  data.frame(Site_N = ff.1.Fo@data$Site_N,
+             Point = ff.1.Fo@data$Point,
+             TypeName = nearest.Type,
+             Distance = nearest.dist)
+
+
+
+ff.1 %<>% left_join(ff.1.Fo.dat, by = c("Site_N", "Point"))
+
+#=========
+
+ff.2.Fo <- 
+  ff.2 %>% setDT %>% .[,list(Site_N,Point, 
+                             x=as.numeric(X.84),y=as.numeric(Y.84))] 
+coordinates(ff.2.Fo) <- ~x + y
+
+
+proj4string(ff.2.Fo) <- CRS("+init=epsg:4326")
+ff.2.Fo %<>% spTransform(CRS("+init=epsg:3826"))
+
+
+
+## Set up container for results
+n <- length(ff.2.Fo)
+nearest.Type <- character(n)
+nearest.dist <- numeric(n)
+
+## For each point, find name of nearest polygon (in this case, Belgian cantons)
+
+Sys.time()
+
+for (i in seq_along(nearest.Type)) {
+  print(i)
+  Distance <-gDistance(ff.2.Fo[i,], forest4th, byid=TRUE)
+  nearest.Type[i] <- forest4th@data$TypeName[which.min(Distance)] %>% as.character
+  nearest.dist[i] <- min(Distance)
+  
+}
+
+Sys.time()
+
+
+
+ff.2.Fo.dat <- 
+  data.frame(Site_N = ff.2.Fo@data$Site_N,
+             Point = ff.2.Fo@data$Point,
+             TypeName = nearest.Type,
+             Distance = nearest.dist)
+
+
+
+ff.2 %<>% left_join(ff.2.Fo.dat, by = c("Site_N", "Point"))
+
+
+
+#=================
+
+
+
+all <- point_Forest %>% setDT %>%
+  .[!duplicated(., by = c("Site_N", "Point"))] %>% 
+  .[,list(Site_N, 
+          Point, 
+          TypeName = TypeName_O,
+          Distance = Distance_O)] %>%
+  left_join( aa, .,by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
+  left_join(.,ff.1.Fo.dat, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+  left_join(ff.2.Fo.dat, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+  
+  setDT %>%
+  
+  .[is.na(TypeName), TypeName:= TypeName.y] %>%
+  .[is.na(Distance), Distance:= Distance.y] %>%
+  .[is.na(TypeName), TypeName:= TypeName.y.y] %>%
+  .[is.na(Distance), Distance:= Distance.y.y] 
 
 
