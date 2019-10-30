@@ -29,6 +29,7 @@ forest4th <-
 Sys.time()
 
 #==============================
+setwd("C:/Users/wetin/Desktop/R/Macaca-population-trend")
 
 point.list <- read_xlsx("data/raw/all point_20191023.xlsx",
           sheet = 1)  %>% 
@@ -97,7 +98,7 @@ S15 %<>%
     .[duplicated(., by = c("Site_N", "Point", "Survey"))]
   
   aa<- S15 %>% .[,.N, by =list(Site_N, Point, Year, Survey)] %>%
-    dcast(., Site_N + Point~ Year+ Survey, value.var="N")%>% 
+    dcast(., Site_N + Point~ Year+ Survey, value.var="N", fill ="0")%>% 
     setDT %>%
     .[, Site_N := as.character(Site_N)] %>%
     .[, Point := as.numeric(Point)]
@@ -146,7 +147,7 @@ S15 %<>%
   
   bb<- S16 %>% .[!duplicated(., by = c("Site_N", "Point", "Survey"))] %>%
     .[,.N, by =list(Site_N, Point, Year, Survey)] %>% 
-    dcast(., Site_N + Point~ Year+ Survey, value.var="N")%>% 
+    dcast(., Site_N + Point~ Year+ Survey, value.var="N", fill ="0")%>% 
     setDT %>%
     .[, Site_N := as.character(Site_N)] %>%
     .[, Point := as.numeric(Point)]  
@@ -196,7 +197,7 @@ S15 %<>%
   
   cc<- S17 %>% .[!duplicated(., by = c("Site_N", "Point", "Survey"))] %>%
     .[,.N, by =list(Site_N, Point, Year, Survey)] %>% 
-    dcast(., Site_N + Point~ Year+ Survey, value.var="N")%>% 
+    dcast(., Site_N + Point~ Year+ Survey, value.var="N", fill ="0")%>% 
     setDT %>%
     .[, Site_N := as.character(Site_N)] %>%
     .[, Point := as.numeric(Point)]  
@@ -358,24 +359,35 @@ dd.0.Fo.dat <-
              TypeName = nearest.Type,
              Distance = nearest.dist)
 
+point_Forest.1 %<>% setDT %>% .[,list(Site_N,
+                                      Point, 
+                                      TypeName = TypeName_O, 
+                                      Distance = Distance_O)] %>% 
+  .[!duplicated(.)]
 
-rbind(dd.0.Fo.dat, dd.1.Fo.dat, dd.2.Fo.dat) %>% setDT %>%
-  .[,list(Site_N, Point)] %>%.[duplicated(.)] 
-
-
-setDT(point_Forest.1)
-
-fin <- dd %>% setDT %>% 
-  .[,list(Site_N, Point, TypeName_O, Distance_O,
-           `2015_1.x`,`2015_2.x`,
-           `2015_1.x`,`2016_2.x`,
-           `2017_1.x`,`2017_2.x`)]%>%
-
-  left_join(rbind(dd.0.Fo.dat, dd.1.Fo.dat, dd.2.Fo.dat), by = c("Site_N", "Point")) %>% 
-  left_join(point_Forest.1[ ],
-            by = c("Site_N", "Point")) %>%
+final <- aa %>% full_join(bb, by = c("Site_N", "Point") ) %>%
+  full_join(cc, by = c("Site_N", "Point") )  %>%
+  left_join(point_Forest.1 , by = c("Site_N", "Point"))%>%
+  left_join(point.list , by = c("Site_N", "Point")) %>%
+  left_join(dd.0.Fo.dat , by = c("Site_N", "Point")) %>%
+  left_join(unique(dd.1.Fo.dat) , by = c("Site_N", "Point")) %>%
+  left_join(dd.2.Fo.dat , by = c("Site_N", "Point")) %>%
   setDT %>%
-  .[is.na(TypeName), TypeName:= TypeName_O] %>%
-  .[is.na(Distance), Distance:= Distance_O] 
+  .[is.na(TypeName.x), TypeName.x := TypeName.y] %>%
+  .[is.na(Distance.x), Distance.x := Distance.y] %>%
+  .[is.na(TypeName.x), TypeName.x := TypeName.x.x] %>%
+  .[is.na(Distance.x), Distance.x := Distance.x.x] %>%
+  .[is.na(TypeName.x), TypeName.x := TypeName.y.y]%>%
+  .[is.na(Distance.x), Distance.x := Distance.y.y] %>%
+  setDT %>%
+  .[, list (Site_N,
+            Point,
+            TypeName = TypeName.x,
+            Distance = Distance.x,
+            `2015_1`,`2015_2`,
+            `2016_1`,`2016_2`,
+            `2017_1`,`2017_2`)]
 
+  
+write_xlsx(final,"data/clean/point_Forest_1517.xlsx")
 
