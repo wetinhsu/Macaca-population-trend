@@ -44,3 +44,4 @@ summary(ds.ttt )
 
 hist(ttt$distance,  breaks =c(0,25,100,300), probability  = T)
 table(ttt$distance)
+gof_ds(ds.ttt)
