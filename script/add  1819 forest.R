@@ -11,7 +11,7 @@ library(writexl)
 
 S1517 <- read_excel("data/clean/point_Forest_1517.xlsx") %>% setDT%>% 
   .[, Point := as.numeric(Point)]%>% 
-  .[, Site_N := as.character(Site_N)]
+  .[, Site_N := as.character(Site_N)] %>%
 
 
 
@@ -109,7 +109,7 @@ full<- S1517 %>% full_join(S18, by = c("Site_N", "Point")) %>%
   .[,c("X_2018","Y_2018", "X_2019","Y_2019","TypeName.y","Distance.y") := NULL]
 
 full %>% setDT %>% .[duplicated(., by =  c("Site_N", "Point"))] 
-
+#2017_1 A20-02的point6、7、8 手動改成7、9、10
 
 write_xlsx(full,"data/clean/point_Forest_1519(20191031).xlsx")
 

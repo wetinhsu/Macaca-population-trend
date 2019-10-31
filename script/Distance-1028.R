@@ -85,7 +85,7 @@ S.all <-
 
 
 
-ttt<- S.all %>% setDT %>%  
+ttt<- M.data %>% setDT %>%  
   .[Macaca_dist %in% c("A","B"),] %>%
   .[Time %in% c("A","B"),] %>%
   .[Macaca_sur == 1,] %>% 
@@ -102,3 +102,7 @@ print(ds.ttt)
 
 hist(ttt$distance,  breaks =c(0,25,100), probability  = T, plot=F)
 table(ttt$distance)
+
+
+
+data(amakihi)
