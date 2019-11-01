@@ -43,21 +43,35 @@ ds.ttt <- ds(ttt, transect = "point",
 
 plot(ds.ttt,  breaks =c(0,25,100), pl.col =2)
 summary(ds.ttt ) 
-print(ds.ttt)
+
 gof_ds(ds.ttt)
 
 hist(ttt$distance,  breaks =c(0,25,100), probability  = T, plot=T)
 table(ttt$distance)
+gof_ds(ds.ttt)
 
 
+#==========================
 
-data(amakihi)
+ttt2<- M.data %>% setDT %>%  
+  .[Macaca_dist %in% c("A","B", "C"),] %>%
+  .[Time %in% c("A","B"),] %>%
+  .[Macaca_sur == 1,] %>% 
+  .[Macaca_dist  %in% "A", distance := 25] %>%
+  .[Macaca_dist  %in% "B", distance := 100] %>%
+  .[Macaca_dist  %in% "C", distance := 200] %>% 
+  .[, Pointid := paste0(Site_N,"-",Point)] %>% setDF  
 
-ds.ttt <- ds(ttt, transect = "point",
-             formula = ~ TypeName ,key = "hn",
+ds.ttt2 <- ds(ttt2, transect = "point",
+             formula = ~ 1 ,key = "hn",
              adjustment = NULL)
 
-plot(ds.ttt,  breaks =c(0,25,100), pl.col =2)
-summary(ds.ttt ) 
-print(ds.ttt)
-gof_ds(ds.ttt)
+plot(ds.ttt2,  breaks =c(0,25,100,200), pl.col =2)
+summary(ds.ttt2 )
+gof_ds(ds.ttt2)
+
+hist(ttt2$distance,  breaks =c(0,25,100,200), probability  = T, plot=T)#
+table(ttt2$distance)
+
+
+
