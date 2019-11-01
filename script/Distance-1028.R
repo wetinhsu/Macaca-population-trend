@@ -7,81 +7,26 @@ library(readxl)
 setwd("D:/R/test/Macaca-population-trend")
 
 
-# 2015
-S15 <- 
-  read_xlsx("data/raw/2015調查時段樣區內獼猴紀錄.xlsx",
-            sheet = 3) %>% 
+M.data <- 
+  read_xlsx("data/clean/data_for_analysis_1519.xlsx") %>% 
   setDT %>% 
-  .[, list(Site_N = `樣區編號`,
-           Point = `樣點編號`,
-           Year = 2015,
-           Survey = `調查旅次\r\n編號`,
-           Macaca_sur = ifelse(`結群` == "Y", 1, 0),
-           Macaca_dist = `距離`,
-           Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
-
-
-# 2016
-S16 <- 
-  read.csv("data/raw/2016樣區內獼猴調查(20161108).csv") %>% 
-  setDT %>% 
-  .[地點 %in% "三峽竹崙", `樣區編號` := "A05-20"] %>%
-  .[, list(Site_N = `樣區編號`,
-           Point = `樣點編號`,
-           Year = 2016,
-           Survey = `調查旅次.編號`,
-           Macaca_sur = ifelse(`結群` == "Y", 1, 0),
-           Macaca_dist = `距離`,
-           Time = `時段`)] %>% setDT %>% .[!duplicated(.)]
-
-
-
-# 2017
-S17 <- 
-  read_xlsx("data/raw/2017樣區內獼猴調查.xlsx") %>% 
-  setDT %>% 
-  .[, list(Site_N = `樣區編號`,
-           Point = `樣點編號`,
-           Year = 2017,
-           Survey = `調查旅次\r\n編號`,
-           Macaca_sur = ifelse(`結群\r\n(修正)` == "Y", 1, 0),
-           Macaca_dist = `距離`,
-           Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
-
-# 2018
-S18 <- 
-  read_xlsx("data/raw/2018樣區內獼猴調查.xlsx") %>% 
-  setDT %>% 
-  .[, list(Site_N = `樣區編號`,
-           Point = `樣點編號`,
-           Year = 2018,
-           Survey = `調查旅次\r\n編號`,
-           Macaca_sur = ifelse(`結群` == "Y", 1, 0),
-           Macaca_dist = `距離`,
-           Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
-
-# 2019
-S19 <- 
-  read_xlsx("data/raw/2019樣區內獼猴調查.xlsx") %>% 
-  setDT %>% 
-  .[, list(Site_N = `樣區編號`,
-           Point = `樣點編號`,
-           Year = 2019,
-           Survey = `調查旅次\r\n編號`,
-           Macaca_sur = ifelse(`結群` == "Y", 1, 0),
-           Macaca_dist = `距離`,
-           Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
-
-S.all <- 
-  rbind(S15, S16, S17, S18, S19) %>% 
-  .[, Year := as.character(Year)] %>% 
-  .[, Survey := as.character(Survey)] %>%
-  .[, Time := as.character(Time)] %>% 
-  
-  .[ Time %in% c("A","B"),] %>%
-  .[( Macaca_dist %in% c("A","B","C")),] %>% 
-  .[, Point := as.numeric(Point)] %>% 
-  .[, Site_N := as.character(Site_N)] 
+  .[ Distance <20 , ] %>%
+  .[, Year := as.numeric(Year)] %>% 
+  .[, Year.re := Year - min(Year) + 1] %>%
+  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
+                     "新北市","台北縣","臺北縣",
+                     "桃園縣","桃園市","新竹市",
+                     "新竹縣","苗栗縣"), Region := "North"] %>%
+  .[County %in% list("台中市","臺中市",
+                     "台中縣","臺中縣",
+                     "彰化縣","南投縣","南投市",
+                     "雲林縣","嘉義縣","嘉義市"), Region := "Center"] %>%
+  .[County %in% list("台南市","臺南市",
+                     "台南縣","臺南縣",
+                     "高雄縣","高雄市",
+                     "屏東縣"), Region := "South"]%>%
+  .[County %in% list("花蓮縣",
+                     "台東縣","臺東縣"), Region := "East"] 
 
 
 
@@ -92,17 +37,27 @@ ttt<- M.data %>% setDT %>%
   .[Macaca_dist  %in% "A", distance := 25] %>%
   .[Macaca_dist  %in% "B", distance := 100] %>% setDF  
   
-ds.ttt <- ds(ttt, region.table= , transect = "point", formula = ~ 1 ,
-             dht.group =1, adjustment = NULL)
+ds.ttt <- ds(ttt, transect = "point",
+             formula = ~ 1 ,
+             adjustment = NULL)
 
 plot(ds.ttt,  breaks =c(0,25,100), pl.col =2)
 summary(ds.ttt ) 
 print(ds.ttt)
+gof_ds(ds.ttt)
 
-
-hist(ttt$distance,  breaks =c(0,25,100), probability  = T, plot=F)
+hist(ttt$distance,  breaks =c(0,25,100), probability  = T, plot=T)
 table(ttt$distance)
 
 
 
 data(amakihi)
+
+ds.ttt <- ds(ttt, transect = "point",
+             formula = ~ TypeName ,key = "hn",
+             adjustment = NULL)
+
+plot(ds.ttt,  breaks =c(0,25,100), pl.col =2)
+summary(ds.ttt ) 
+print(ds.ttt)
+gof_ds(ds.ttt)
