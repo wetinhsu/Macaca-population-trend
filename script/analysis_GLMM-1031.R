@@ -29,35 +29,27 @@ M.data <-
                      "高雄縣","高雄市",
                      "屏東縣"), Region := "South"]%>%
   .[County %in% list("花蓮縣",
-                     "台東縣","臺東縣"), Region := "East"] 
+                     "台東縣","臺東縣"), Region := "East"] %>%
+  .[ Region %in% "East", Region.2 := "East"] %>%
+  .[!( Region %in% "East"), Region.2 := "Wast"] %>%
+  .[Year <2019, ]
 
 
 #========================================================
  M.data$Year %<>% as.numeric
  M.data$Survey %<>% as.factor
  
+ 
  summary(M.data)
  
 
-m1 <- glmer(Macaca_sur ~ Year.re  + TypeName.1  + factor(Survey) + Altitude + (1|Site_N), 
+m1 <- glmer(Macaca_sur ~ Year.re  + TypeName.1  + Survey  + Altitude + Region.2 +(1|Site_N), 
             family = binomial, data = M.data)
 Anova(m1)
 
 
-#full model Region +
-#Macaca_sur ~ Year.re  + TypeName.1  + factor(Survey) + Altitude + Region + (1|Site_N)
+summary(glht(m1, linfct = mcp(TypeName.1 = "Tukey")))
+summary(glht(m1, linfct = mcp(Survey = "Tukey")))
+summary(glht(m1, linfct = mcp(Altitude = "Tukey")))
 
 
-
-m0 <- glm(Macaca_sur ~ Year.re  + TypeName.1  + factor(Survey) + Altitude + Region + Region, 
-      family = binomial, data = M.data)
-
-
-m01.1 <- update(m0, ~ .+ factor(Survey)) ; anova(m01.1)
-m01.1 <- update(m0, ~ .+ Altitude) ; anova(m01.1)
-m01.1 <- update(m0, ~ .) ; anova(m01.1)
-
-
-mm<- stepAIC(m0,trac=F)
-summary(mm)
-Anova(mm)

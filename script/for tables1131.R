@@ -100,7 +100,7 @@ point.list <- read_xlsx("data/raw/all point_20191023.xlsx",
                 "Note1", "Note2"))%>%
   .[, Site_N := as.character(Site_N)] %>%
   .[, Point := as.numeric(Point)] %>%
-  .[, list(Site_N, Point, County)]
+  .[, list(Site_N,  County)] %>%.[!duplicated(.)]
 
 
 S.all <- 
