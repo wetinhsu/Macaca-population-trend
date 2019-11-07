@@ -60,6 +60,9 @@ summary(glht(m1, linfct = mcp(Survey = "Tukey")))
 summary(glht(m1, linfct = mcp(Altitude = "Tukey")))
 summary(glht(m1, linfct = mcp(Region.2 = "Tukey")))
 
+summary(glht(m1, linfct = mcp(TypeName.1 = "Dunnett")))
+
+
 #=====================
 
 ### Summary
@@ -78,6 +81,17 @@ M.data %>% setDT %>% .[is.na(Macaca_sur),Macaca_sur:=0 ] %>%
   .[!is.na(TypeName.1), .(Mean = mean(Macaca_sur, na.rm=T),
            SD = sd(Macaca_sur, na.rm=T)/sqrt(length(Macaca_sur))), 
        by = Year]
+
+
+bb<- M.data %>% setDT %>% .[is.na(Macaca_sur),Macaca_sur:=0 ] %>%
+  .[!is.na(TypeName.1), .(Mean = mean(Macaca_sur, na.rm=T),
+                          SD = sd(Macaca_sur, na.rm=T)/sqrt(length(Macaca_sur))), 
+    by = TypeName.1]
+
+
+
+
+
 
 #=====================
 tt<- M.data %>% setDT %>% .[is.na(Macaca_sur),Macaca_sur:=0 ] %>%

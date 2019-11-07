@@ -88,7 +88,6 @@ S15 %<>%
   .[cood %like% "分",
     Y_new := as.numeric(char2dms(Y, chd = "°", chm = "'", chs = "\""))]
 
-
   S15 %<>% .[cood %in% "WGS84/經緯度(度)",
             X_new := as.numeric(X)]
   S15 %<>% .[cood %in% "WGS84/經緯度(度)",
@@ -391,3 +390,12 @@ final <- aa %>% full_join(bb, by = c("Site_N", "Point") ) %>%
   
 write_xlsx(final,"data/clean/point_Forest_1517.xlsx")
 
+#=================================================
+temp.1 <- dd %>% setDT %>% .[!is.na(TypeName_O), list(Site_N, Point, x = X_new, y = Y_new)] %>% .[, x := as.numeric(x)] %>% .[, y := as.numeric(y)]
+temp.0 <- dd.0 %>% setDT %>% .[!is.na(Pointid), list(Site_N, Point, x = X.84, y = Y.84)]%>% .[, x := as.numeric(x)] %>% .[, y := as.numeric(y)]
+temp.2 <- dd.1 %>% setDT %>% .[!is.na(cood), list(Site_N, Point, x = X_new.y, y = Y_new.y)] %>% unique(.)%>% .[, x := as.numeric(x)] %>% .[, y := as.numeric(y)]
+temp.3 <- dd.2 %>% setDT %>% .[, list(Site_N, Point, x = X_new, y = Y_new)]%>% .[, x := as.numeric(x)] %>% .[, y := as.numeric(y)]
+
+point.xy<- rbind(temp.1, temp.0, temp.2,temp.3) %>% setDT 
+
+write_xlsx(point.xy, "data/clean/point_xy.xlsx")
