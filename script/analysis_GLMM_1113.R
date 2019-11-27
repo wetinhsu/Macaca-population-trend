@@ -51,7 +51,7 @@ M.data$Region.2 %<>% as.factor
 M.data$Region.3 %<>% as.factor
 
 
-M.data %>% .[, list(TypeName.1, Macaca_sur, Survey, Year, County, Region.2, Altitude)]  %>% plot
+M.data %>% .[, list(Macaca_sur, TypeName.1, Survey, Year, County, Region, Altitude)]  %>% plot
 #========================================================
 str(M.data)
 
@@ -236,10 +236,7 @@ AICtab(m0, m1, m2, m3, m4, m5,
        weights=TRUE, base = T,logLik=TRUE) 
 
 
-AICtab(m0, m1, m2, m3, m4, m5,
+anova(m0, m1, m2, m3, m4, m5,
        m1.2, m1.3, m1.4, m1.5, m2.3, m2.4, m2.5, m3.4, m3.5, m4.5,
-       m1.2.3, m1.2.4, m1.2.5, m1.3.5, m1.4.5, m2.3.4, m2.3.5, m2.4.5, m3.4.5,
-       m1.2.4.5, m2.3.4.5, 
-       weights=TRUE, base = T,logLik=TRUE) %>%
-  print(.,min.weight=0.01)
+       m1.2.3, m1.2.4, m2.3.4, m2.3.5, m2.4.5, m3.4.5)
 
