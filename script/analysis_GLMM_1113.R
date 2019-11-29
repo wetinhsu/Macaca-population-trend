@@ -8,7 +8,7 @@ library(multcomp)
 library(ggplot2)
 library(psych)
 library(readxl)
-library(bbmle)
+library(MuMIn)
 
 M.data <- 
   read_xlsx("data/clean/data_for_analysis_1519.xlsx") %>% 
@@ -41,7 +41,7 @@ M.data <-
   .[is.na(Macaca_sur), Macaca_sur := 0]
 
 
-M.data$TypeName.1 %<>% factor(., labels = 1:4) # 竹林 = 1  針葉林= 2 混淆林=3 闊葉林=4
+M.data$TypeName.1 %<>% as.factor    # factor(., labels = 1:4) # 竹林 = 1  針葉林= 2 混淆林=3 闊葉林=4
 M.data$TypeName.1 %<>% as.factor
 M.data$Altitude %<>% as.factor
 M.data$Year %<>% as.numeric
@@ -68,13 +68,13 @@ M.data %>%na.exclude %>%
 
 
 
-m1 <- glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + (1|Site_N), 
-            family = binomial, data = M.data)
+m1 <- glmer(Macaca_sur ~ TypeName.1  + Year.re +  Survey + (1|Site_N), 
+            family = binomial, data = df)
 Anova(m1)
 print(summary(m1),correlation=FALSE)
 anova(m1)
 
-  +  Survey +  Region.2
+ +  Region.2
 
 
 summary(glht(m1, linfct = mcp(TypeName.1 = "Tukey")))
@@ -239,4 +239,38 @@ AICtab(m0, m1, m2, m3, m4, m5,
 anova(m0, m1, m2, m3, m4, m5,
        m1.2, m1.3, m1.4, m1.5, m2.3, m2.4, m2.5, m3.4, m3.5, m4.5,
        m1.2.3, m1.2.4, m2.3.4, m2.3.5, m2.4.5, m3.4.5)
+
+
+(msAICc <- model.sel(m0, m1, m2, m3, m4, m5,
+                     m1.2, m1.3, m1.4, m1.5, m2.3, m2.4, m2.5, m3.4, m3.5, m4.5,
+                     m1.2.3, m1.2.4, m2.3.4, m2.3.5, m2.4.5, m3.4.5))
+summary(model.avg(msAICc, subset = delta < 2))
+
+get.models(msAICc, subset = delta < 2)
+$coefficients
+
+importance(msAICc)
+#==============================================
+df <- 
+  M.data %>% 
+  .[!is.na(TypeName.1), ] 
+
+
+m1 <- glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + Survey+  Region + (1|Site_N), 
+            family = binomial, data = df)
+
+options(na.action = "na.fail")
+d1<- dredge(
+  glmer(Macaca_sur ~ Region + Survey+ Altitude + Year.re + TypeName.1  +   (1|Site_N), 
+        family = binomial, data = df), 
+  subset = ((TypeName.1  && Year.re) | !Region) &&
+    ((TypeName.1  && Altitude) | !Survey) ,
+  trace = T, 
+  extra = list(
+    "R^2", "*" = function(x) {
+      s <- summary(x)
+      c(Rsq = s$r.squared, adjRsq = s$adj.r.squared,
+        F = s$fstatistic[[1]])}))
+
+summary(model.avg(d1, subset = delta < 2))
 
