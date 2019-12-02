@@ -109,16 +109,6 @@ M.data %>% setDT %>% .[is.na(Macaca_sur),Macaca_sur:=0 ] %>%
     by = Year]
 
 
-bb<- M.data %>% setDT %>% .[is.na(Macaca_sur),Macaca_sur:=0 ] %>%
-  .[!is.na(TypeName.1), .(Mean = mean(Macaca_sur, na.rm=T),
-                          SD = sd(Macaca_sur, na.rm=T)/sqrt(length(Macaca_sur)),
-                          n = .N), 
-    by = list(TypeName.1,Survey, Altitude, Region.2)] %>%
-  .[, N:= sum(n)]
-
-
-sum(bb$N*(bb$N-bb$n)*(bb$SD)^2/bb$n)/(unique(bb$N)^2)
-mean(bb$Mean)
 
 
 
@@ -292,5 +282,5 @@ bb<- df %>% setDT %>% .[is.na(Macaca_sur),Macaca_sur:=0 ] %>%
 
 
 
-sum(bb$N*(bb$N-bb$n)*(bb$SD)^2/bb$n)/(unique(bb$N)^2)
+sum(bb$N*(bb$N-bb$n)*(bb$SD)^2/bb$n, na.rm=T)/(unique(bb$N)^2)
 mean(bb$Mean)
