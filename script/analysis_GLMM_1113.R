@@ -81,7 +81,7 @@ summary(glht(m1, linfct = mcp(TypeName.1 = "Tukey")))
 summary(glht(m1, linfct = mcp(Year.re = "Tukey")))
 summary(glht(m1, linfct = mcp(Survey = "Tukey")))
 summary(glht(m1, linfct = mcp(Altitude = "Tukey")))
-summary(glht(m1, linfct = mcp(Region.2 = "Tukey")))
+summary(glht(m1, linfct = mcp(Region = "Tukey")))
 
 
 
@@ -255,15 +255,18 @@ df <-
   M.data %>% 
   .[!is.na(TypeName.1), ] 
 
+df$TypeName.1<- relevel(df$TypeName.1, ref = "4")
+df$Region <- relevel(df$Region, ref = "East")
 
 
-allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + Survey+  Region + (1|Site_N), 
-             family = binomial, data = df))
+allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + Survey +  Region + (1|Site_N), 
+             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
 
-m1 <- glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + Survey+  Region + (1|Site_N), 
+m1 <- glmer(Macaca_sur ~ Year.re + TypeName.1 + Altitude + Survey+  Region + (1|Site_N), 
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 
+summary(m1)
 
 options(na.action = "na.fail")
 d1<- dredge(
@@ -275,4 +278,19 @@ d1<- dredge(
 summary(model.avg(d1, subset = delta < 2))
 
 importance(d1)
-Anova(m1)
+
+
+
+
+bb<- df %>% setDT %>% .[is.na(Macaca_sur),Macaca_sur:=0 ] %>%
+  .[!is.na(TypeName.1), .(Mean = mean(Macaca_sur, na.rm=T),
+                          SD = sd(Macaca_sur, na.rm=T)/sqrt(length(Macaca_sur)),
+                          n = .N), 
+    by = list(TypeName.1,Survey, Altitude, Region)] %>%
+  .[, N:= sum(n)]
+
+
+
+
+sum(bb$N*(bb$N-bb$n)*(bb$SD)^2/bb$n)/(unique(bb$N)^2)
+mean(bb$Mean)
