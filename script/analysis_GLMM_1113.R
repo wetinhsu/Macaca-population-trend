@@ -41,7 +41,7 @@ M.data <-
   .[is.na(Macaca_sur), Macaca_sur := 0]
 
 
-M.data$TypeName.1 %<>% as.factor    # factor(., labels = 1:4) # 竹林 = 1  針葉林= 2 混淆林=3 闊葉林=4
+M.data$TypeName.1 %<>% factor(., labels = 1:4) # 竹林 = 1  針葉林= 2 混淆林=3 闊葉林=4
 M.data$TypeName.1 %<>% as.factor
 M.data$Altitude %<>% as.factor
 M.data$Year %<>% as.numeric
@@ -247,7 +247,7 @@ anova(m0, m1, m2, m3, m4, m5,
 summary(model.avg(msAICc, subset = delta < 2))
 
 get.models(msAICc, subset = delta < 2)
-$coefficients
+
 
 importance(msAICc)
 #==============================================
@@ -256,21 +256,23 @@ df <-
   .[!is.na(TypeName.1), ] 
 
 
+
+allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + Survey+  Region + (1|Site_N), 
+             family = binomial, data = df))
+
 m1 <- glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + Survey+  Region + (1|Site_N), 
-            family = binomial, data = df)
+            family = binomial, data = df,
+            control = glmerControl(optimizer = "bobyqa"))
+
 
 options(na.action = "na.fail")
 d1<- dredge(
-  glmer(Macaca_sur ~ Region + Survey+ Altitude + Year.re + TypeName.1  +   (1|Site_N), 
-        family = binomial, data = df), 
-  subset = ((TypeName.1  && Year.re) | !Region) &&
-    ((TypeName.1  && Altitude) | !Survey) ,
-  trace = T, 
-  extra = list(
-    "R^2", "*" = function(x) {
-      s <- summary(x)
-      c(Rsq = s$r.squared, adjRsq = s$adj.r.squared,
-        F = s$fstatistic[[1]])}))
+  glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + Survey+  Region + (1|Site_N), 
+        family = binomial, data = df,
+        control = glmerControl(optimizer = "bobyqa")), 
+  trace = T)
 
 summary(model.avg(d1, subset = delta < 2))
 
+importance(d1)
+Anova(m1)
