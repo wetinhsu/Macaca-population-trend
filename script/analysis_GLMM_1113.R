@@ -112,134 +112,7 @@ M.data %>% setDT %>% .[is.na(Macaca_sur),Macaca_sur:=0 ] %>%
 
 
 
-#===================================================================
 
-#
-M.data %<>% .[!is.na( TypeName.1),]
-m0 <-  glmer(Macaca_sur ~ (1|Site_N), 
-            family = binomial, data = M.data)
-
-print(summary(m0),correlation=FALSE)
-
-m1 <- update(m0, ~ .+ TypeName.1)
-m2 <- update(m0, ~ .+ Year.re)
-m3 <- update(m0, ~ .+ Altitude)
-m4 <- update(m0, ~ .+ Survey)
-m5 <- update(m0, ~ .+ Region.2 )
-
-m1.2 <- update(m1, ~ . + Year.re)
-m1.3 <- update(m1, ~ . + Altitude)
-m1.4 <- update(m1, ~ . + Survey)
-m1.5 <- update(m1, ~ . + Region.2)
-m2.3 <- update(m2, ~ . + Altitude)
-m2.4 <- update(m2, ~ . + Survey)
-m2.5 <- update(m2, ~ . + Region.2)
-m3.4 <- update(m3, ~ . + Survey)
-m3.5 <- update(m3, ~ . + Region.2)
-m4.5 <- update(m4, ~ . + Region.2)
-
-m1.2.3 <- update(m1.2, ~ . + Altitude)
-m1.2.4 <- update(m1.2, ~ . + Survey)
-m1.2.5 <- update(m1.2, ~ . + Region.2)
-m1.3.4 <- update(m1.3, ~ . + Survey)  #failed to converge
-m1.3.5 <- update(m1.3, ~ . + Region.2)
-m1.4.5 <- update(m1.4, ~ . + Region.2)
-m2.3.4 <- update(m2.3, ~ . + Survey)
-m2.3.5 <- update(m2.3, ~ . + Region.2)
-m2.4.5 <- update(m2.4, ~ . + Region.2)
-m3.4.5 <- update(m3.4, ~ . + Region.2)
-
-m1.2.3.4 <- update(m1.2.3, ~ . + Survey) #failed to converge
-m1.2.3.5 <- update(m1.2.3, ~ . + Region.2) #failed to converge
-m1.2.4.5 <- update(m1.2.4, ~ . + Region.2)
-m1.3.4.5 <- update(m1.3.4, ~ . + Region.2) #failed to converge
-m2.3.4.5 <- update(m2.3.4, ~ . + Region.2)
-
-m1.2.3.4.5 <- update(m1.2.3.4, ~ . + Region.2) #failed to converge
-
-AICtab(m0, m1, m2, m3, m4, m5,
-       m1.2, m1.3, m1.4, m1.5, m2.3, m2.4, m2.5, m3.4, m3.5, m4.5,
-       m1.2.3, m1.2.4, m1.2.5, m1.3.5, m1.4.5, m2.3.4, m2.3.5, m2.4.5, m3.4.5,
-       m1.2.4.5, m2.3.4.5, 
-       weights=TRUE, base = T,logLik=TRUE) 
-
-
-AICtab(m0, m1, m2, m3, m4, m5,
-       m1.2, m1.3, m1.4, m1.5, m2.3, m2.4, m2.5, m3.4, m3.5, m4.5,
-       m1.2.3, m1.2.4, m1.2.5, m1.3.5, m1.4.5, m2.3.4, m2.3.5, m2.4.5, m3.4.5,
-       m1.2.4.5, m2.3.4.5, 
-       weights=TRUE, base = T,logLik=TRUE) %>%
-print(.,min.weight=0.01)
-
-
-
-
-
-#===================================================================
-
-#
-M.data %<>% .[!is.na( TypeName.1),]
-m0 <-  glmer(Macaca_sur ~ (1|Site_N), 
-             family = binomial, data = M.data)
-
-print(summary(m0),correlation=FALSE)
-
-m1 <- update(m0, ~ .+ TypeName.1)
-m2 <- update(m0, ~ .+ Year.re)
-m3 <- update(m0, ~ .+ Altitude)
-m4 <- update(m0, ~ .+ Survey)
-m5 <- update(m0, ~ .+ Region )
-
-m1.2 <- update(m1, ~ . + Year.re)
-m1.3 <- update(m1, ~ . + Altitude)
-m1.4 <- update(m1, ~ . + Survey)
-m1.5 <- update(m1, ~ . + Region)
-m2.3 <- update(m2, ~ . + Altitude)
-m2.4 <- update(m2, ~ . + Survey)
-m2.5 <- update(m2, ~ . + Region)
-m3.4 <- update(m3, ~ . + Survey)
-m3.5 <- update(m3, ~ . + Region)
-m4.5 <- update(m4, ~ . + Region)
-
-m1.2.3 <- update(m1.2, ~ . + Altitude)
-m1.2.4 <- update(m1.2, ~ . + Survey)
-m1.2.5 <- update(m1.2, ~ . + Region)  #failed to converge
-m1.3.4 <- update(m1.3, ~ . + Survey)  #failed to converge
-m1.3.5 <- update(m1.3, ~ . + Region)  #failed to converge
-m1.4.5 <- update(m1.4, ~ . + Region)  #failed to converge
-m2.3.4 <- update(m2.3, ~ . + Survey)
-m2.3.5 <- update(m2.3, ~ . + Region)
-m2.4.5 <- update(m2.4, ~ . + Region)
-m3.4.5 <- update(m3.4, ~ . + Region)
-
-m1.2.3.4 <- update(m1.2.3, ~ . + Survey) #failed to converge
-m1.2.3.5 <- update(m1.2.3, ~ . + Region) #failed to converge
-m1.2.4.5 <- update(m1.2.4, ~ . + Region) #failed to converge
-m1.3.4.5 <- update(m1.3.4, ~ . + Region) #failed to converge
-m2.3.4.5 <- update(m2.3.4, ~ . + Region) #failed to converge
-
-m1.2.3.4.5 <- update(m1.2.3.4, ~ . + Region) #failed to converge
-
-AICtab(m0, m1, m2, m3, m4, m5,
-       m1.2, m1.3, m1.4, m1.5, m2.3, m2.4, m2.5, m3.4, m3.5, m4.5,
-       m1.2.3, m1.2.4, m2.3.4, m2.3.5, m2.4.5, m3.4.5,
-       weights=TRUE, base = T,logLik=TRUE) 
-
-
-anova(m0, m1, m2, m3, m4, m5,
-       m1.2, m1.3, m1.4, m1.5, m2.3, m2.4, m2.5, m3.4, m3.5, m4.5,
-       m1.2.3, m1.2.4, m2.3.4, m2.3.5, m2.4.5, m3.4.5)
-
-
-(msAICc <- model.sel(m0, m1, m2, m3, m4, m5,
-                     m1.2, m1.3, m1.4, m1.5, m2.3, m2.4, m2.5, m3.4, m3.5, m4.5,
-                     m1.2.3, m1.2.4, m2.3.4, m2.3.5, m2.4.5, m3.4.5))
-summary(model.avg(msAICc, subset = delta < 2))
-
-get.models(msAICc, subset = delta < 2)
-
-
-importance(msAICc)
 #==============================================
 df <- 
   M.data %>% 
@@ -257,6 +130,7 @@ m1 <- glmer(Macaca_sur ~ Year.re + TypeName.1 + Altitude + Survey+  Region + (1|
             control = glmerControl(optimizer = "bobyqa"))
 
 summary(m1)
+Anova(m1)
 
 options(na.action = "na.fail")
 d1<- dredge(
@@ -265,11 +139,12 @@ d1<- dredge(
         control = glmerControl(optimizer = "bobyqa")), 
   trace = T)
 
+summary(model.avg(d1))
 summary(model.avg(d1, subset = delta < 2))
 
 importance(d1)
 
-
+sw(model.avg(d1, subset = delta < 2))
 
 
 bb<- df %>% setDT %>% .[is.na(Macaca_sur),Macaca_sur:=0 ] %>%
