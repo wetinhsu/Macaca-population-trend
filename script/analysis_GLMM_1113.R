@@ -157,9 +157,12 @@ sw(model.avg(d1, subset = delta < 2))
 
 
 #Estimate==============================================
-bb<- df %>% setDT %>% .[is.na(Macaca_sur),Macaca_sur:=0 ] %>%
-  .[!is.na(TypeName.1), .(Mean = mean(Macaca_sur, na.rm=T),
-                          SD = sd(Macaca_sur, na.rm=T)/sqrt(length(Macaca_sur)),
+bb<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]  %>% 
+
+  .[, .(Mean = mean(AB, na.rm=T),
+                          SD = sd(AB, na.rm=T)/sqrt(length(AB)),
                           n = .N), 
     by = list(TypeName.1,Survey, Altitude, Region)] %>%
   .[, N:= sum(n)]
@@ -167,3 +170,48 @@ bb<- df %>% setDT %>% .[is.na(Macaca_sur),Macaca_sur:=0 ] %>%
 
 sum(bb$N*(bb$N-bb$n)*(bb$SD)^2/bb$n, na.rm=T)/(unique(bb$N)^2)
 mean(bb$Mean)
+
+
+aa<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]  %>% 
+  
+  .[, .(Mean = mean(A, na.rm=T),
+        SD = sd(A, na.rm=T)/sqrt(length(A)),
+        n = .N), 
+    by = list(TypeName.1,Survey, Altitude, Region)] %>%
+  .[, N:= sum(n)]
+
+
+sum(aa$N*(aa$N-aa$n)*(aa$SD)^2/aa$n, na.rm=T)/(unique(aa$N)^2)
+mean(aa$Mean)
+
+#Estimate2==============================================
+bb<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]  %>% 
+  
+  .[, .(Mean = mean(AB, na.rm=T),
+        SD = sd(AB, na.rm=T)/sqrt(length(AB)),
+        n = .N), 
+    by = list(TypeName.1,Survey,  Region)] %>%
+  .[, N:= sum(n)]
+
+
+sum(bb$N*(bb$N-bb$n)*(bb$SD)^2/bb$n, na.rm=T)/(unique(bb$N)^2)
+mean(bb$Mean)
+
+
+aa<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]  %>% 
+  
+  .[, .(Mean = mean(A, na.rm=T),
+        SD = sd(A, na.rm=T)/sqrt(length(A)),
+        n = .N), 
+    by = list(TypeName.1,Survey, Region)] %>%
+  .[, N:= sum(n)]
+
+
+sum(aa$N*(aa$N-aa$n)*(aa$SD)^2/aa$n, na.rm=T)/(unique(aa$N)^2)
+mean(aa$Mean)
