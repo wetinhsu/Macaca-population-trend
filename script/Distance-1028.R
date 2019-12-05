@@ -30,7 +30,7 @@ M.data <-
 
 
 
-ttt<- M.data %>% setDT %>%  
+ttt<- df %>% setDT %>%  
   .[Macaca_dist %in% c("A","B"),] %>%
   .[Time %in% c("A","B"),] %>%
   .[Macaca_sur == 1,] %>% 

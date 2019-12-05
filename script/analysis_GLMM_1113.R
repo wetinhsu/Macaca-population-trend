@@ -64,13 +64,33 @@ M.data %>% .[, list(Macaca_sur, TypeName.1, Survey, Year, County, Region, Altitu
 #========================================================
 
 M.data %>% 
-  
-  dcast(.,Year + Survey ~ TypeName.1, value.var = "Macaca_sur", fun = c(length,sum))
+  .[Macaca_sur %in%1,] %>% 
+  .[,.(ll=length(Macaca_sur),
+       mm=length(unique(Site_N)),
+       kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
+  dcast(.,County ~ Year , value.var = c( "ll","mm","kk"))
+
+
+
+M.data %>% 
+  .[Macaca_sur %in% 0 & !is.na(Macaca_dist),] %>% 
+  .[,.(ll=length(Macaca_sur),
+       mm=length(unique(Site_N)),
+       kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
+  dcast(.,County ~ Year , value.var = c( "ll","mm","kk"))
+
+
+
+
+
+M.data %>% 
+  .[,.(ll=length(Macaca_sur), M = sum(Macaca_sur)), by = list(Year, Survey, TypeName.1)]%>%
+  dcast(.,Year + Survey ~ TypeName.1, value.var = c("ll", "M"))
   
 
 M.data %>% 
-  
-  dcast(.,Year + Survey ~ TypeName.1 + Altitude, value.var = "Macaca_sur", fun = c(sum))
+  .[,.( M = sum(Macaca_sur)), by = list(Year, Survey, TypeName.1, Altitude)]%>%
+  dcast(.,Year + Survey ~ Altitude+TypeName.1  , value.var = c( "M"))
 
 
 
@@ -78,9 +98,18 @@ M.data %>%
   
   dcast(., TypeName.1 ~ Altitude, value.var = "Macaca_sur", fun = c(sum))
 
+
+
 M.data %>% 
   .[Macaca_sur %in% 1,] %>%
-  dcast(.,Year  ~ Macaca_dist, value.var = "Macaca_sur", fun =sum)
+  .[,.( M = sum(Macaca_sur)), by = list(Year, Macaca_dist)]%>%
+  dcast(.,Year  ~ Macaca_dist, value.var = "M")
+
+
+M.data %>% 
+  .[Macaca_sur %in% 1,] %>%
+  .[,.( M = sum(Macaca_sur)), by = list(Year,  TypeName.1, Macaca_dist)]%>%
+  dcast(.,Year  ~ TypeName.1 +  Macaca_dist, value.var = c( "M"))
 
 #=====================
 
