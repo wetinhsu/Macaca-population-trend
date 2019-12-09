@@ -67,8 +67,8 @@ S15 <-
       #.[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
       .[!(時段 %in% "Supplementary"),] %>%
       .[調查旅次編號 %in% c(1,2)] %>%
-      .[ 分析 %in% "Y", list(年, 樣區編號, 樣點編號, 座標系統, X座標, Y座標, 調查旅次編號)] %>%
-      setnames(., c("Year", "Site_N", "Point", "cood", "X", "Y", "Survey")) %>%
+      .[ 分析 %in% "Y", list(年, 樣區編號, 樣點編號, 座標系統, X座標, Y座標, 調查旅次編號, 月, 日, `開始時間（時）`,`開始時間（分）`)] %>%
+      setnames(., c("Year", "Site_N", "Point", "cood", "X", "Y", "Survey", "Month", "Day","Hour", "Minute")) %>%
       .[!duplicated(.)]  
   } ) %>% 
   do.call(rbind, .) %>% 
@@ -113,8 +113,8 @@ S15 %<>%
         #.[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
         .[!(時段 %in% "Supplementary"),] %>%
         .[調查旅次編號 %in% c(1,2)] %>%
-        .[ 分析 %in% "Y", list(年, 樣區編號, 樣點編號, 座標系統, X座標, Y座標, 調查旅次編號)] %>%
-        setnames(., c("Year", "Site_N", "Point", "cood", "X", "Y", "Survey")) %>%
+        .[ 分析 %in% "Y", list(年, 樣區編號, 樣點編號, 座標系統, X座標, Y座標, 調查旅次編號, 月, 日, `開始時間（時）`,`開始時間（分）`)] %>%
+        setnames(., c("Year", "Site_N", "Point", "cood", "X", "Y", "Survey", "Month", "Day","Hour", "Minute")) %>%
         .[!duplicated(.)]  
     } ) %>% 
     do.call(rbind, .) %>% 
@@ -164,8 +164,8 @@ S15 %<>%
         #.[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
         .[!(時段 %in% "Supplementary"),] %>%
         .[調查旅次編號 %in% c(1,2)] %>%
-        .[ 分析 %in% "Y", list(年, 樣區編號, 樣點編號, 座標系統, X座標, Y座標, 調查旅次編號)] %>%
-        setnames(., c("Year", "Site_N", "Point", "cood", "X", "Y", "Survey")) %>%
+        .[ 分析 %in% "Y", list(年, 樣區編號, 樣點編號, 座標系統, X座標, Y座標, 調查旅次編號, 月, 日, `開始時間（時）`,`開始時間（分）`)] %>%
+        setnames(., c("Year", "Site_N", "Point", "cood", "X", "Y", "Survey", "Month", "Day","Hour", "Minute")) %>%
         .[!duplicated(.)]  
     } ) %>% 
     do.call(rbind, .) %>% 
@@ -263,6 +263,7 @@ for (i in seq_along(nearest.Type)) {
 }
 
 Sys.time()
+
 
 
 
