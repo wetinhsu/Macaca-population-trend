@@ -33,7 +33,11 @@ S16 <-
            Survey = `調查旅次.編號`,
            Macaca_sur = ifelse(`結群` == "Y", 1, 0),
            Macaca_dist = `距離`,
-           Time = `時段`)] %>% setDT %>% .[!duplicated(.)]
+           Time = `時段`)] %>% setDT %>% .[!duplicated(.)]%>%
+  .[  !(Year %in% 2016 & Site_N %in% "A19-01" & Point %in% 2 & Survey %in% 1 &　Macaca_sur %in% 0), ] %>%
+  .[  !(Year %in% 2016 & Site_N %in% "A19-01" & Point %in% 5 & Survey %in% 2 &　Macaca_sur %in% 0), ] %>%
+  .[  !(Year %in% 2016 & Site_N %in% "A19-01" & Point %in% 5 & Survey %in% 2 &　Macaca_sur %in% 1 & Macaca_dist %in% "B"), ] 
+
   
 
 
@@ -59,7 +63,8 @@ S18 <-
            Survey = `調查旅次\r\n編號`,
            Macaca_sur = ifelse(`結群` == "Y", 1, 0),
            Macaca_dist = `距離`,
-           Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
+           Time = `時段`)]%>% setDT %>% .[!duplicated(.)] %>% 
+.[  !(Year %in% 2018 & Site_N %in% "A05-21" & Point %in% 2 & Survey %in% 2 &　Macaca_dist %in% "B"), ]
 
 # 2019
 S19 <- 
@@ -83,6 +88,73 @@ S.all <-
   .[( Macaca_dist %in% c("A","B","C")),] %>% 
   .[, Point := as.numeric(Point)] %>% 
   .[, Site_N := as.character(Site_N)] 
+
+
+forest.1519<- read_excel("data/clean/point_Forest_1519(20191031).xlsx") %>%
+  setDT %>%
+  .[Site_N %in%  "C14-01", `2016_1` := 1] %>%
+  .[Site_N %in%  "C14-01", `2016_2` := 1] %>%
+  .[Site_N %in%  "C14-02", `2016_1` := 1] %>%
+  .[Site_N %in%  "C14-02", `2016_2` := 1] %>%
+  .[Site_N %in%  "A16-01", `2016_1` := 1] %>%
+  .[Site_N %in%  "A16-01", `2016_2` := 1] %>%
+  .[Site_N %in%  "A17-01", `2016_2` := 1] %>%
+  .[Site_N %in%  "A09-20", `2016_2` := 1] %>%
+  melt(., id =  1:4) %>%
+  .[, Year := substr(variable,1,4)] %>% setDT %>%
+  .[, Survey := as.character(substr(variable,6,6))] %>%
+  .[, Do.survey := value] %>%
+  .[, c("variable","value"):= NULL] %>%
+  .[ !is.na(Do.survey),]%>% 
+  .[!duplicated(., by = c("Site_N", "Point", "Year", "Survey"))]
+
+
+
+point.list <- read_xlsx("data/raw/all point_20191023.xlsx",
+                        sheet = 1)  %>% 
+  setDT %>% 
+  .[!duplicated(.)]  %>% 
+  setDT %>%
+  setnames(., c("Site_N", "Point", "County", "Name", "Pointid",
+                "X.67", "Y.67", "X.97", "Y.97", "X.dms", "Y.dms", "X.84", "Y.84",
+                "Note1", "Note2"))%>%
+  .[, Site_N := as.character(Site_N)] %>%
+  .[, Point := as.numeric(Point)] %>%
+  .[, list(Site_N,  County)] %>%.[!duplicated(.)]
+
+
+
+S.all <- 
+  rbind(S15, S16, S17, S18, S19) %>% 
+  .[, Year := as.character(Year)] %>% 
+  .[, Survey := as.character(Survey)] %>%
+  .[, Time := as.character(Time)] %>% 
+  
+  .[ Time %in% c("A","B"),] %>%
+  .[( Macaca_dist %in% c("A","B","C")),] %>% 
+  .[, Point := as.numeric(Point)] %>% 
+  .[, Site_N := as.character(Site_N)]  %>%
+  
+  full_join(forest.1519) %>%
+  setDT %>%
+  .[!(Do.survey %in% 0),] %>% #有做調查的所有樣點 
+  setDT %>%
+  .[TypeName %like% "混", TypeName.1 := "混淆林"] %>%
+  .[TypeName %like% "針葉樹", TypeName.1 := "針葉林"] %>%
+  .[TypeName %like% "闊葉樹", TypeName.1 := "闊葉林"] %>%
+  .[TypeName %like% "竹林", TypeName.1 := "竹林"] %>%
+  .[, Altitude := as.character(substr(Site_N,1,1))] %>%
+  left_join(point.list) %>% setDT
+
+
+
+
+
+write_xlsx(S.all ,"data/clean/data_for_analysis_1519.xlsx")
+
+
+
+
 
 
 remove.data <- 
@@ -133,7 +205,7 @@ sum.tab.group<- S.all  %>%   left_join(County, by = "Site_N") %>% setDT %>%
   dcast(., County ~ Year, value.var = c("N", "Site", "point"))
 
 sum.tab.single<- S.all  %>%   left_join(County, by = "Site_N") %>% setDT %>% 
-  .[., .( N = .N,
+  .[, .( N = .N,
          Site = length(unique(Site_N)),
          point = length(unique(paste0(Site_N,"-0",Point)))),
     by = list( Macaca_sur, Year, County)] %>% setDT %>%
@@ -143,54 +215,8 @@ sum.tab.single<- S.all  %>%   left_join(County, by = "Site_N") %>% setDT %>%
 
 write_xlsx(list("Group" = sum.tab.group,
                 "Single" = sum.tab.single),
-                "Results/sum_table_1028.xlsx")
+                "Results/sum_table_1211.xlsx")
 
-
-## merge with site_info_F
-site.info.F <- 
-  read_xlsx("data/clean/point_Forest_1519.xlsx") %>% 
-  setDT %>% 
-  # 樣點向外延伸20公尺
-  .[Distance_O <= 20] %>% 
-  .[TypeName_O %in% c("闊葉樹林型", "竹林", "針葉樹林型", 
-                        "竹闊混淆林", "針闊葉樹混淆", 
-                        "竹針混淆林", "針闊葉樹混")] %>% 
-  melt(id = 1:6, measure = 7:16, 
-       value.name = "Do.survey",
-       na.rm = TRUE) %>% 
-  separate("variable", c("Year", "Survey"), "_")
-
-all.info <- 
-  S.all[site.info.F, 
-        on = c("Site_N", "Point", "Year", "Survey")] %>% 
-  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
-  .[Do.survey > 0] %>% 
-  .[TypeName_O == "闊葉樹林型", TypeName := "純闊葉林"] %>% 
-  .[TypeName_O == "竹林", TypeName := "竹林"] %>% 
-  .[TypeName_O == "針葉樹林型", TypeName := "純針葉林"] %>% 
-  .[TypeName_O %like% "混", TypeName := "混淆林"] %>% 
-  .[!is.na(TypeName)] %>%
-  .[, Site_N := as.character(Site_N)] %>% setDT
-
-remove.data.2 <- all.info %>% setDF%>%
-  anti_join(S.all, ., by = c("Site_N", "Point", "Year", "Survey")) %>%
-  left_join(all.info) 
-
-
-County <-
-  read_xlsx("data/raw/all point_20191023.xlsx",
-            sheet = 1)  %>% 
-  setDT %>% 
-  .[, list(`樣區編號`, 縣市)] %>% 
-  setnames(c("Site_N" ,"County")) %>%
-  .[!duplicated(.)]  %>% 
-  setDT 
-
-
-all.info.1 <- all.info %>%   left_join(County, by = "Site_N") %>% setDT 
-
-write_xlsx(all.info.1,
-           "data/clean/data_for_analysis.xlsx")
 
 #### for summary table - survey point info
 
