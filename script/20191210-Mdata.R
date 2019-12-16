@@ -24,13 +24,14 @@ S15 <-
 
 # 2016
 S16 <- 
-  read.csv("data/raw/2016樣區內獼猴調查(20161108).csv") %>% 
+  read_xlsx("data/raw/2016樣區內獼猴調查.xlsx",
+            sheet = 2) %>% 
   setDT %>% 
   .[地點 %in% "三峽竹崙", `樣區編號` := "A05-20"] %>%
   .[, list(Site_N = `樣區編號`,
            Point = `樣點編號`,
            Year = 2016,
-           Survey = `調查旅次.編號`,
+           Survey = `調查旅次\r\n編號`,
            Macaca_sur = ifelse(`結群` == "Y", 1, 0),
            Macaca_dist = `距離`,
            Time = `時段`)] %>% setDT %>% .[!duplicated(.)]
@@ -82,9 +83,7 @@ S.all <-
   .[ Time %in% c("A","B"),] %>%
   .[( Macaca_dist %in% c("A","B","C")),] %>% 
   .[, Point := as.numeric(Point)] %>% 
-  .[, Site_N := as.character(Site_N)] %>%
-  .[  !(Year %in% 2016 & Site_N %in% "A19-01" & Point %in% 5 & Survey %in% 2 &　Macaca_sur %in% 0), ] %>%
-  .[  !(Year %in% 2016 & Site_N %in% "A19-01" & Point %in% 5 & Survey %in% 2 &　Macaca_sur %in% 1 & Macaca_dist %in% "B"), ] 
+  .[, Site_N := as.character(Site_N)]
 
 S.all  %>% setDT %>%.[, length(Survey), by =  c("Year", "Site_N", "Point")] %>% View
 
