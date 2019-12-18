@@ -84,11 +84,12 @@ proj4string(M.1) <- CRS("+init=epsg:4326")
 M.1 %<>% spTransform(CRS("+init=epsg:3826"))
 
 #---------------------------------------
-M.0 %>% .[, Y_S := paste0(Year, "_", Survey)] %>% 
+M.0 %>% 
+  .[, Y_S := paste0(Year, "_", Survey)] %>% 
   split(., .$Y_S) %>% 
   lapply(., function(x){
     coordinates(x) <- ~X + Y
     proj4string(x) <- CRS("+init=epsg:4326")
     x %<>% spTransform(CRS("+init=epsg:3826"))
-    gDistance(x, x,byid=TRUE) %>% apply(.,2,function(k) sort(k)[2])
+    gDistance(x, x,byid=TRUE) %>% apply(.,2,function(k) min(k[k>0]))
   })
