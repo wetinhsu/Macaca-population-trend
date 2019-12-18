@@ -11,28 +11,58 @@ library(writexl)
 library(rgdal)
 
 #------------------------
-xy.19<- read_excel("./data/raw/BBSpointXY/all point_20191023.xlsx",
+col_names<- read_excel("./data/raw/BBSpointXY/all_20191211 .xlsx",
+                   sheet=1) %>% colnames
+
+xy.19<- read_excel("./data/raw/BBSpointXY/all_20191211 .xlsx",
            sheet=1) %>% setDT %>% 
   .[, list(樣區編號, 樣點代號, 縣市, X_經度, Y_緯度)] %>% 
   setnames(., c("Site_N", "Point", "County", "X", "Y")) %>% 
   .[, Site_N := as.character(Site_N)] %>% 
-  .[, Point := as.numeric(Point)]
+  .[, Point := as.numeric(Point)] %>% 
+  .[, X :=as.numeric(X)] %>% 
+  .[, Y :=as.numeric(Y)] %>% 
+  .[, X := round(X, 5)] %>% 
+  .[, Y := round(Y, 5)] 
 
-xy.17<- read_excel("./data/raw/BBSpointXY/BBSpoint2017_管理者端.xlsx",
-                   sheet="BBS樣點表(完整版)_管理者端",
-                   col_names = T,
-                   cell_cols ("A:C")) %>% setDT %>% 
-  .[, list(樣區編號, 樣點代號, 縣市, X_經度, Y_緯度)]
-  #.[, list(樣區編號, 樣點代號, 縣市, X_經度, Y_緯度)] %>% 
-  setnames(., c("Sit_N", "Point", "County", "X", "Y"))
-
-xy.19<- read_excel("./data/raw/BBSpointXY/all point_20191023.xlsx",
+xy.del<- read_excel("./data/raw/BBSpointXY/已被刪除的樣點表.xlsx",
                    sheet=1) %>% setDT %>% 
   .[, list(樣區編號, 樣點代號, 縣市, X_經度, Y_緯度)] %>% 
   setnames(., c("Site_N", "Point", "County", "X", "Y")) %>% 
   .[, Site_N := as.character(Site_N)] %>% 
-  .[, Point := as.numeric(Point)]
+  .[, Point := as.numeric(Point)] %>% 
+  .[, X :=as.numeric(X)] %>% 
+  .[, Y :=as.numeric(Y)] %>% 
+  .[, X := round(X, 5)] %>% 
+  .[, Y := round(Y, 5)] 
 
+xy.17<- read_excel("./data/raw/BBSpointXY/BBSpoint2017_管理者端.xlsx",
+                   sheet="BBS樣點表(完整版)_管理者端",
+                   col_names = F,
+                   range="A5:O4780") %>% setDT %>% 
+  setnames(., col_names) %>% 
+  .[, list(樣區編號, 樣點代號, 縣市, X_經度, Y_緯度)] %>% 
+  setnames(., c("Site_N", "Point", "County", "X", "Y"))%>% 
+  .[, Site_N := as.character(Site_N)] %>% 
+  .[, Point := as.numeric(Point)]  %>% 
+  .[, X :=as.numeric(X)] %>% 
+  .[, Y :=as.numeric(Y)] %>% 
+  .[, X := round(X, 5)] %>% 
+  .[, Y := round(Y, 5)] 
+
+xy.14<- read_excel("./data/raw/BBSpointXY/2014樣點表.xls",
+                   sheet= "BBS樣點表(完整版)",
+                   col_names = F,
+                   range="A4:O4337") %>% setDT %>% 
+  setnames(., col_names) %>% 
+  .[, list(樣區編號, 樣點代號, 縣市, X_經度, Y_緯度)] %>% 
+  setnames(., c("Site_N", "Point", "County", "X", "Y"))%>% 
+  .[, Site_N := as.character(Site_N)] %>% 
+  .[, Point := as.numeric(Point)]  %>% 
+  .[, X :=as.numeric(X)] %>% 
+  .[, Y :=as.numeric(Y)] %>% 
+  .[, X := round(X, 5)] %>% 
+  .[, Y := round(Y, 5)] 
 #------------------------
 #2015
 
@@ -67,8 +97,27 @@ S15 <-
   
  S15 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% View #check N<=2
  
- S15 %>% 
-   left_join(xy.19, by = c("Site_N", "Point")) %>% View
+ S15 %<>% 
+   left_join(xy.19, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
+   left_join(xy.17, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
+   left_join(xy.14, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+   left_join(xy.del, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+   setDT %>% 
+   .[is.na(X), X := X.y] %>%
+   .[is.na(Y), Y := Y.y] %>%
+   .[is.na(County), County := County.y] %>% 
+   .[is.na(X), X := X.y.y] %>%
+   .[is.na(Y), Y := Y.y.y] %>%
+   .[is.na(County), County := County.y.y] %>% 
+   .[is.na(X), X := X.y.y] %>%
+   .[is.na(Y), Y := Y.y.y] %>%
+   .[is.na(County), County := County.y.y] %>% 
+   .[is.na(X), X := X.y.y.y] %>%
+   .[is.na(Y), Y := Y.y.y.y] %>%
+   .[is.na(County), County := County.y.y.y] %>% 
+   .[, c("X.y", "Y.y", "County.y",
+         "X.y.y", "Y.y.y", "County.y.y",
+         "X.y.y.y", "Y.y.y.y", "County.y.y.y") := NULL] 
 
  write_xlsx(S15, "data/clean/Site/Site_2015_v1.xlsx")
 
@@ -152,8 +201,29 @@ S15 <-
  
  rbind(S16,S16.2) %>% setDT %>%.[, length(Survey), by =  c("Year", "Site_N", "Point")] %>% View
  
+ S16 <- rbind(S16,S16.2)%>% 
+   left_join(xy.19, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
+   left_join(xy.17, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
+   left_join(xy.14, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+   left_join(xy.del, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+   setDT  %>% 
+   .[is.na(X), X := X.y] %>%
+   .[is.na(Y), Y := Y.y] %>%
+   .[is.na(County), County := County.y] %>% 
+   .[is.na(X), X := X.y.y] %>%
+   .[is.na(Y), Y := Y.y.y] %>%
+   .[is.na(County), County := County.y.y] %>% 
+   .[is.na(X), X := X.y.y] %>%
+   .[is.na(Y), Y := Y.y.y] %>%
+   .[is.na(County), County := County.y.y] %>% 
+   .[is.na(X), X := X.y.y.y] %>%
+   .[is.na(Y), Y := Y.y.y.y] %>%
+   .[is.na(County), County := County.y.y.y]  %>% 
+   .[, c("X.y", "Y.y", "County.y",
+         "X.y.y", "Y.y.y", "County.y.y",
+         "X.y.y.y", "Y.y.y.y", "County.y.y.y") := NULL]
  
- write_xlsx(rbind(S16,S16.2), "data/clean/Site/Site_2016_v1.xlsx")
+ write_xlsx(S16, "data/clean/Site/Site_2016_v1.xlsx")
  
  
  
@@ -197,6 +267,28 @@ S15 <-
 
   S17 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% View  #check N<=2 
 
+  S17 %<>% 
+    left_join(xy.19, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
+    left_join(xy.17, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
+    left_join(xy.14, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+    left_join(xy.del, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+    setDT  %>% 
+    .[is.na(X), X := X.y] %>%
+    .[is.na(Y), Y := Y.y] %>%
+    .[is.na(County), County := County.y] %>% 
+    .[is.na(X), X := X.y.y] %>%
+    .[is.na(Y), Y := Y.y.y] %>%
+    .[is.na(County), County := County.y.y] %>% 
+    .[is.na(X), X := X.y.y] %>%
+    .[is.na(Y), Y := Y.y.y] %>%
+    .[is.na(County), County := County.y.y] %>% 
+    .[is.na(X), X := X.y.y.y] %>%
+    .[is.na(Y), Y := Y.y.y.y] %>%
+    .[is.na(County), County := County.y.y.y] %>% 
+    .[, c("X.y", "Y.y", "County.y",
+          "X.y.y", "Y.y.y", "County.y.y",
+          "X.y.y.y", "Y.y.y.y", "County.y.y.y") := NULL]
+  
   write_xlsx(S17, "data/clean/Site/Site_2017_v1.xlsx")
  
   
@@ -207,7 +299,7 @@ S15 <-
       list.files(x, pattern = "BBSdata_2018", full.names = T) %>%  
         read_xlsx(., sheet = "birddata", cell_cols("D:AF")) %>% 
         setDT %>%
-        .[時段 %in% c("A", "B"),] %>%
+        .[時段 %in% c("A", "B","a","b"),] %>%
         #.[!(時段 %in% "Supplementary"),] %>%
         .[調查旅次編號 %in% c(1,2)] %>%
         #.[ 分析 %in% "Y",] %>%
@@ -223,6 +315,7 @@ S15 <-
     #debug~
     .[ Site_N %in% "B10-03" & Point  %in% c(1:8),  Point := (Point + 10)] %>%  
     .[ Site_N %in% "B10-13" & Point  %in% c(1:8),  Point := (Point + 10)] %>% 
+    .[ Site_N %in% "B10-14" & Point  %in% c(1:12),  Point := (Point + 10)] %>% 
     #~debug
     
     .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
@@ -239,6 +332,29 @@ S15 <-
   
   S18 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% View  #check N<=2 
 
+  
+  S18 %<>% 
+    left_join(xy.19, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
+    left_join(xy.17, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
+    left_join(xy.14, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+    left_join(xy.del, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+    setDT %>% 
+    .[is.na(X), X := X.y] %>%
+    .[is.na(Y), Y := Y.y] %>%
+    .[is.na(County), County := County.y] %>% 
+    .[is.na(X), X := X.y.y] %>%
+    .[is.na(Y), Y := Y.y.y] %>%
+    .[is.na(County), County := County.y.y] %>% 
+    .[is.na(X), X := X.y.y] %>%
+    .[is.na(Y), Y := Y.y.y] %>%
+    .[is.na(County), County := County.y.y] %>% 
+    .[is.na(X), X := X.y.y.y] %>%
+    .[is.na(Y), Y := Y.y.y.y] %>%
+    .[is.na(County), County := County.y.y.y]  %>% 
+    .[, c("X.y", "Y.y", "County.y",
+          "X.y.y", "Y.y.y", "County.y.y",
+          "X.y.y.y", "Y.y.y.y", "County.y.y.y") := NULL] 
+  
   write_xlsx(S18, "data/clean/Site/Site_2018_v1.xlsx")
   
   #2019
@@ -274,6 +390,28 @@ S15 <-
     .[ ,c("Month", "Day", "Hour", "Minute") := NA]
   
   S19 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% View  #check N<=2 
+  
+  S19 %<>% 
+    left_join(xy.19, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
+    left_join(xy.17, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
+    left_join(xy.14, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+    left_join(xy.del, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+    setDT  %>% 
+    .[is.na(X), X := X.y] %>%
+    .[is.na(Y), Y := Y.y] %>%
+    .[is.na(County), County := County.y] %>% 
+    .[is.na(X), X := X.y.y] %>%
+    .[is.na(Y), Y := Y.y.y] %>%
+    .[is.na(County), County := County.y.y] %>% 
+    .[is.na(X), X := X.y.y] %>%
+    .[is.na(Y), Y := Y.y.y] %>%
+    .[is.na(County), County := County.y.y] %>% 
+    .[is.na(X), X := X.y.y.y] %>%
+    .[is.na(Y), Y := Y.y.y.y] %>%
+    .[is.na(County), County := County.y.y.y]  %>% 
+    .[, c("X.y", "Y.y", "County.y",
+          "X.y.y", "Y.y.y", "County.y.y",
+          "X.y.y.y", "Y.y.y.y", "County.y.y.y") := NULL]
   
   write_xlsx(S19, "data/clean/Site/Site_2019_v0.xlsx")
   

@@ -9,7 +9,7 @@ library(writexl)
 
 
 # 2015
-S15 <- 
+M15 <- 
   read_xlsx("data/raw/2015調查時段樣區內獼猴紀錄.xlsx",
             sheet = 3) %>% 
   setDT %>% 
@@ -23,7 +23,7 @@ S15 <-
 
 
 # 2016
-S16 <- 
+M16 <- 
   read_xlsx("data/raw/2016樣區內獼猴調查.xlsx",
             sheet = 2) %>% 
   setDT %>% 
@@ -39,7 +39,7 @@ S16 <-
 
 
 # 2017
-S17 <- 
+M17 <- 
   read_xlsx("data/raw/2017樣區內獼猴調查.xlsx") %>% 
   setDT %>% 
   .[, list(Site_N = `樣區編號`,
@@ -51,7 +51,7 @@ S17 <-
            Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
 
 # 2018
-S18 <- 
+M18 <- 
   read_xlsx("data/raw/2018樣區內獼猴調查.xlsx") %>% 
   setDT %>% 
   .[, list(Site_N = `樣區編號`,
@@ -63,7 +63,7 @@ S18 <-
            Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
 
 # 2019
-S19 <- 
+M19 <- 
   read_xlsx("data/raw/2019樣區內獼猴調查.xlsx") %>% 
   setDT %>% 
   .[, list(Site_N = `樣區編號`,
@@ -74,8 +74,8 @@ S19 <-
            Macaca_dist = `距離`,
            Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
 
-S.all <- 
-  rbind(S15, S16, S17, S18, S19) %>% 
+M.all <- 
+  rbind(M15, M16, M17, M18, M19) %>% 
   .[, Year := as.character(Year)] %>% 
   .[, Survey := as.character(Survey)] %>%
   .[, Time := as.character(Time)] %>% 
@@ -85,5 +85,6 @@ S.all <-
   .[, Point := as.numeric(Point)] %>% 
   .[, Site_N := as.character(Site_N)]
 
-S.all  %>% setDT %>%.[, length(Survey), by =  c("Year", "Site_N", "Point")] %>% View
+M.all  %>% setDT %>%.[, .N, by =  c("Year", "Site_N", "Point", "Survey")] %>% View
 
+write_xlsx(M.all, "data/clean/MAcaca/Macaca_1519_v1.xlsx")
