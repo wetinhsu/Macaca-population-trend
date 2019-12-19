@@ -32,11 +32,37 @@ M.data<- M.all %>%
   .[, Y := as.numeric(Y)]
 
 
+#------------
+
+Forest<- read.csv("./data/clean/gis/S_all_TypeName.csv") %>% 
+  setDT %>% 
+  .[, c("NO", "join_Function", "join_FunctionTy", "join_Area_ha")  := NULL] %>% 
+  setnames(.,c("X", "Y", "TypeName", "Distance"))
+
+Altitude<- read.csv("./data/clean/gis/S_all_Altitude.csv") %>% 
+  setDT %>% 
+  setnames(.,c("Altitude", "X", "Y"))
+
+M.data %<>%
+  left_join(Forest, by = c("X", "Y")) %>% 
+  left_join(Altitude, by = c("X", "Y")) %>% 
+  setDT %>% 
+  .[!(Site_N %like% "K"),] %>%   #exculde kiman
+  .[!(Site_N %in% c("A08-01", "A08-02", "A08-03", "A08-04",
+                    "A08-05", "A08-06", "A08-07", "A08-08", "A08-09")),]  #exclude蘭嶼
+
+write_xlsx(M.data, "./data/clean/for analysis.xlsx")
+
+
+
+
+
+
 #---- Fill na forest type
-library(rgdal)
 library(rgeos)
 library(magrittr)
 library(data.table)
+
 
 setwd("C:/Users/wetin/Desktop/R/第四次森林資源調查全島森林林型分布圖")
 
@@ -67,7 +93,7 @@ f.1 <- forest4th@data %>% .[, .I[ TypeName == "闊葉樹林型" |
                                TypeName == "針闊葉樹混"|
                                TypeName == "針闊葉樹混淆"|
                              # TypeName == "陰影"|
-                            #  TypeName == "裸露地"|
+                             # TypeName == "裸露地"|
                                TypeName == "針葉樹林型"|
                                TypeName == "竹林"]] %>% forest4th[.,]
 
@@ -78,18 +104,7 @@ col = apply(m, 2, function(x) which(x==min(x)))
 
 #----------------------------------------
 M.1<- M.data %>% .[!is.na(Macaca_sur),]
-M.0<- M.data %>% .[!is.na(Macaca_sur),]
+
 coordinates(M.1) <- ~X + Y
 proj4string(M.1) <- CRS("+init=epsg:4326")
 M.1 %<>% spTransform(CRS("+init=epsg:3826"))
-
-#---------------------------------------
-M.0 %>% 
-  .[, Y_S := paste0(Year, "_", Survey)] %>% 
-  split(., .$Y_S) %>% 
-  lapply(., function(x){
-    coordinates(x) <- ~X + Y
-    proj4string(x) <- CRS("+init=epsg:4326")
-    x %<>% spTransform(CRS("+init=epsg:3826"))
-    gDistance(x, x,byid=TRUE) %>% apply(.,2,function(k) min(k[k>0]))
-  })
