@@ -32,6 +32,7 @@ M.data<- M.all %>%
   .[, Y := as.numeric(Y)]
 
 
+<<<<<<< HEAD
 #------------
 
 Forest<- read.csv("./data/clean/gis/S_all_TypeName.csv") %>% 
@@ -58,11 +59,13 @@ write_xlsx(M.data, "./data/clean/for analysis.xlsx")
 
 
 
+=======
+>>>>>>> parent of c258162... 5.4.12
 #---- Fill na forest type
+library(rgdal)
 library(rgeos)
 library(magrittr)
 library(data.table)
-
 
 setwd("C:/Users/wetin/Desktop/R/第四次森林資源調查全島森林林型分布圖")
 
@@ -93,7 +96,7 @@ f.1 <- forest4th@data %>% .[, .I[ TypeName == "闊葉樹林型" |
                                TypeName == "針闊葉樹混"|
                                TypeName == "針闊葉樹混淆"|
                              # TypeName == "陰影"|
-                             # TypeName == "裸露地"|
+                            #  TypeName == "裸露地"|
                                TypeName == "針葉樹林型"|
                                TypeName == "竹林"]] %>% forest4th[.,]
 
@@ -104,7 +107,18 @@ col = apply(m, 2, function(x) which(x==min(x)))
 
 #----------------------------------------
 M.1<- M.data %>% .[!is.na(Macaca_sur),]
-
+M.0<- M.data %>% .[!is.na(Macaca_sur),]
 coordinates(M.1) <- ~X + Y
 proj4string(M.1) <- CRS("+init=epsg:4326")
 M.1 %<>% spTransform(CRS("+init=epsg:3826"))
+
+#---------------------------------------
+M.0 %>% 
+  .[, Y_S := paste0(Year, "_", Survey)] %>% 
+  split(., .$Y_S) %>% 
+  lapply(., function(x){
+    coordinates(x) <- ~X + Y
+    proj4string(x) <- CRS("+init=epsg:4326")
+    x %<>% spTransform(CRS("+init=epsg:3826"))
+    gDistance(x, x,byid=TRUE) %>% apply(.,2,function(k) min(k[k>0]))
+  })
