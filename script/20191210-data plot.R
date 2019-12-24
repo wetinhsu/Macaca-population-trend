@@ -94,6 +94,6 @@ M.data %>%
   .[Macaca_sur %in% 1,] %>% 
   .$Distance %>% hist(.,  plot=T,xlab = "Distance",
                       ylim = c(0,250),
-                      main = "Group", col=gray(0.3))
+                      main = "Group", col=gray(0.8))
 
 

@@ -32,7 +32,7 @@ M.data<- M.all %>%
   .[, Y := as.numeric(Y)]
 
 
-<<<<<<< HEAD
+
 #------------
 
 Forest<- read.csv("./data/clean/gis/S_all_TypeName.csv") %>% 
@@ -45,7 +45,7 @@ Altitude<- read.csv("./data/clean/gis/S_all_Altitude.csv") %>%
   setnames(.,c("Altitude", "X", "Y"))
 
 M.data %<>%
-  #left_join(Forest, by = c("X", "Y")) %>% 
+  left_join(Forest, by = c("X", "Y")) %>% 
   left_join(Altitude, by = c("X", "Y")) %>% 
   setDT %>% 
   .[!(Site_N %like% "K"),] %>%   #exculde kiman
@@ -59,8 +59,7 @@ write_xlsx(M.data, "./data/clean/for analysis.xlsx")
 
 
 
-=======
->>>>>>> parent of c258162... 5.4.12
+
 #---- Fill na forest type
 library(rgdal)
 library(rgeos)
