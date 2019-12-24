@@ -11,10 +11,10 @@ library(writexl)
 library(rgdal)
 
 #------------------------
-col_names<- read_excel("./data/raw/BBSpointXY/all_20191211 .xlsx",
+col_names<- read_excel("./data/raw/BBSpointXY/all_20191224.xlsx",
                    sheet=1) %>% colnames
 
-xy.19<- read_excel("./data/raw/BBSpointXY/all_20191211 .xlsx",
+xy.19<- read_excel("./data/raw/BBSpointXY/all_20191224.xlsx",
            sheet=1) %>% setDT %>% 
   .[, list(樣區編號, 樣點代號, 縣市, X_經度, Y_緯度)] %>% 
   setnames(., c("Site_N", "Point", "County", "X", "Y")) %>% 
@@ -119,7 +119,7 @@ S15 <-
          "X.y.y", "Y.y.y", "County.y.y",
          "X.y.y.y", "Y.y.y.y", "County.y.y.y") := NULL] 
 
- write_xlsx(S15, "data/clean/Site/Site_2015_v1.xlsx")
+ write_xlsx(S15, "data/clean/Site/Site_2015_v2.xlsx")
 
  
  
@@ -223,7 +223,7 @@ S15 <-
          "X.y.y", "Y.y.y", "County.y.y",
          "X.y.y.y", "Y.y.y.y", "County.y.y.y") := NULL]
  
- write_xlsx(S16, "data/clean/Site/Site_2016_v1.xlsx")
+ write_xlsx(S16, "data/clean/Site/Site_2016_v2.xlsx")
  
  
  
@@ -289,7 +289,7 @@ S15 <-
           "X.y.y", "Y.y.y", "County.y.y",
           "X.y.y.y", "Y.y.y.y", "County.y.y.y") := NULL]
   
-  write_xlsx(S17, "data/clean/Site/Site_2017_v1.xlsx")
+  write_xlsx(S17, "data/clean/Site/Site_2017_v2.xlsx")
  
   
 #2018
@@ -355,7 +355,7 @@ S15 <-
           "X.y.y", "Y.y.y", "County.y.y",
           "X.y.y.y", "Y.y.y.y", "County.y.y.y") := NULL] 
   
-  write_xlsx(S18, "data/clean/Site/Site_2018_v1.xlsx")
+  write_xlsx(S18, "data/clean/Site/Site_2018_v2.xlsx")
   
   #2019
   S19 <- 
@@ -413,6 +413,6 @@ S15 <-
           "X.y.y", "Y.y.y", "County.y.y",
           "X.y.y.y", "Y.y.y.y", "County.y.y.y") := NULL]
   
-  write_xlsx(S19, "data/clean/Site/Site_2019_v0.xlsx")
+  write_xlsx(S19, "data/clean/Site/Site_2019_v1.xlsx")
   
   

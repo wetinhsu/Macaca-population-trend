@@ -44,7 +44,26 @@ M.abc <- M.2 %>%
       data.table(.)  #除去row的names
   }) %>%
   rbindlist(., idcol=TRUE) %>% 
-  separate("value", c("Nearest_point","Distance"), "///") 
+  separate("value", c("Nearest_point","Distance"), "///")  %>% 
+  separate(".id", c("Year", "Survey","Site_N"), "_") %>% 
+  .[, c("Site_N") := NULL] %>% 
+  .[, Distance := as.numeric(Distance)]
+
+
+output.1<- M.0 %>% 
+  .[, .N, list(Year, Survey, Site_N)] %>% 
+  .[, Y_S := paste0(Year,"-", Survey)] %>% 
+  dcast(., Site_N ~ Y_S, value.var ="N") %>% 
+  setDT 
+
+
+M.abc %>% .[Distance<300,]  #猴群距離<300m者的第2筆，可能為重複記錄，故刪除猴群記錄
+
+
+write_xlsx(list(
+  "group.Site" = output.1,
+  "groupDistance" = M.abc),
+           "./result/20191210-cheak distacne.xlsx")
 
 #------------------------------------------------------------
 
@@ -76,8 +95,7 @@ M.ab <- M.0 %>%
   rbindlist(., idcol=TRUE) %>% 
   separate("value", c("Nearest_point","Distance"), "///") %>% 
   separate(".id", c("Year", "Survey","Site_N"), "_") %>% 
-  .[, c("Site_N") := NULL]
-
-
+  .[, c("Site_N") := NULL] %>% 
+  .[, Distance := as.numeric(Distance)]
 
 
