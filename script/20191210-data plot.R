@@ -21,6 +21,7 @@ M.data.o <- read_excel("./data/clean/for analysis.xlsx",
   .[TypeName %like% "闊葉", TypeName.n := "闊葉林"] %>% 
   .[TypeName %like% "針葉", TypeName.n := "針葉林"] %>% 
   .[, TypeName.1 := ifelse(Distance>20, "非森林", TypeName.n)] %>% 
+  .[, TypeName.1 := ordered(TypeName.1,c("闊葉林", "針葉林","混淆林","竹林","非森林"))] %>% 
   .[, County := ordered(County,
                         c("宜蘭縣","基隆市","台北市","臺北市",
                           "新北市","台北縣","臺北縣",
@@ -98,7 +99,35 @@ M.data %>% .[Macaca_sur %in% 1, .N, by = list(Year, Survey, County)] %>%
 
 
 
+M.data %>% .[Macaca_sur %in% 1, .N, by = list(Year, Survey, TypeName.1)] %>% 
+  dcast(., Year + Survey ~ TypeName.1, value.var = "N",
+        fun.aggregate = sum,
+        margins = c("Year", "County"))
+
+
+
 #------------------------------------------
+M.data %>% 
+  .[Year < 2019,] %>% 
+  .[!(TypeName.1 %in% "非森林"),] %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year)] %>% 
+  .[, Encounter_rate := V1/N] %>% 
+  
+  ggplot(., aes( Year, Encounter_rate)) +
+  geom_bar(stat="identity", colour = "black", fill=gray(0.8)) +
+  theme_bw() + 
+  xlab("Year")
+  
+
+M.data %>% 
+  .[Year < 2019,] %>% 
+  #.[!(TypeName.1 %in% "非森林"),] %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[Macaca_sur %in% 1, .N, list(TypeName.1, Macaca_dist)] %>% 
+  dcast(., TypeName.1~Macaca_dist, value.var = "N")
+
+
 M.data %>% 
   .[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
@@ -179,5 +208,4 @@ M.data %>%setDT %>%
   ylab("Count")
 
   
-
 
