@@ -92,7 +92,7 @@ M.data.o %>% .[Macaca_sur %in% 1, .N, by = list(Year, Survey, County)] %>%
         fun.aggregate = sum,
         margins = c("Year", "County"))
 
-M.data %>% .[Macaca_sur %in% 1, .N, by = list(Year, Survey, County)] %>% 
+M.data %>% .[Macaca_sur %in% 0, .N, by = list(Year, Survey, County)] %>% 
   dcast(., County ~ Year + Survey, value.var = "N",
         fun.aggregate = sum,
         margins = c("Year", "County"))
@@ -118,6 +118,27 @@ M.data %>%
   geom_bar(stat="identity", colour = "black", fill=gray(0.8)) +
   theme_bw() + 
   xlab("Year")
+
+M.data %>% 
+  .[Year < 2019,] %>% 
+  .[!(TypeName.1 %in% "非森林"),] %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year)] %>% 
+  .[, Encounter_rate := V1/N] %>% 
+  
+  ggplot(., aes( Year, Encounter_rate)) +
+  geom_text(aes(label=V1), vjust=-2, color="red", size=3.5)+
+  geom_text(aes(label=N), vjust=-0.5, color="black", size=3.5)+
+  geom_text(aes(x=2015.5, y=0.014,label="猴群數"),  color="red", size=3.5)+
+  geom_text(aes(x=2015.5, y=0.0135,label="資料筆數"),  color="black", size=3.5)+
+  geom_point()+geom_line() +
+  ylim(0.006,0.014)+
+  theme_bw() + 
+  xlab("Year")
+
+
+
+
   
 
 M.data %>% 
