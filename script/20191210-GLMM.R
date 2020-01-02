@@ -111,10 +111,10 @@ allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D +  Region 
 
 
 
-df$Altitude <-  scale(df$Altitude,scale =T)
-df$julian.D <-  scale(df$julian.D,scale =T)
+df$Altitude.1 <-  scale(df$Altitude,scale =T)
+df$julian.D.1 <-  scale(df$julian.D,scale =T)
 
-m1 <- glmer(Macaca_sur ~  Year.re + TypeName.1 + Altitude + julian.D +  Region + (1|Site_N), 
+m1 <- glmer(Macaca_sur ~  Year.re + TypeName.1 + Altitude.1 + julian.D.1 +  Region + (1|Site_N), 
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 
@@ -126,14 +126,14 @@ Anova(m1)
 
 summary(glht(m1, linfct = mcp(TypeName.1 = "Tukey")))
 summary(glht(m1, linfct = mcp(Survey = "Tukey")))
-summary(glht(m1, linfct = mcp(Altitude = "Tukey")))
+summary(glht(m1, linfct = mcp(Altitude.1 = "Tukey")))
 summary(glht(m1, linfct = mcp(Region = "Tukey")))
 
 
 #AICc==============================================
 options(na.action = "na.fail")
 d1<- dredge(
-  glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D +  Region + (1|Site_N), 
+  glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude.1 + julian.D.1 +  Region + (1|Site_N), 
         family = binomial, data = df,
         control = glmerControl(optimizer = "bobyqa")), 
   trace = T)
@@ -187,7 +187,7 @@ aa<- df %>% setDT %>%
   .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
   .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]  %>% 
   .[, julian.D_f := cut(julian.D,
-                        breaks = c(0,135,195),
+                        breaks = c(seq(0,210,15)),
                         include.lowest = T)] %>% 
   .[, .(Mean = mean(A, na.rm=T),
         SD = sd(A, na.rm=T)/sqrt(length(A)),
@@ -196,16 +196,18 @@ aa<- df %>% setDT %>%
   .[, N:= sum(n)]
 
 
-sum(aa$N*(aa$N-aa$n)*(aa$SD)^2/aa$n, na.rm=T)/(unique(aa$N)^2)
+(se.25 <- sum(aa$N*(aa$N-aa$n)*(aa$SD)^2/aa$n, na.rm=T)/(unique(aa$N)^2))
 mean(aa$Mean)
+
+se.25^0.5*1.28  #80%CI=se*1.28
 
 
 ##<100
 bb<- df %>% setDT %>% 
   .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
   .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]  %>% 
-  .[, julian.D_f := cut(julian.D,
-                        breaks = c(0,135,195),
+  .[, julian.D_F := cut(julian.D,
+                        breaks = c(seq(0,210,15)),
                         include.lowest = T)] %>% 
   
   .[, .(Mean = mean(AB, na.rm=T),
@@ -215,6 +217,7 @@ bb<- df %>% setDT %>%
   .[, N:= sum(n)]
 
 
-sum(bb$N*(bb$N-bb$n)*(bb$SD)^2/bb$n, na.rm=T)/(unique(bb$N)^2)
+(se.100 <- sum(bb$N*(bb$N-bb$n)*(bb$SD)^2/bb$n, na.rm=T)/(unique(bb$N)^2))
 mean(bb$Mean)
 
+se.100^0.5*1.28

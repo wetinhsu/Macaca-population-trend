@@ -44,7 +44,7 @@ Altitude<- read.csv("./data/clean/gis/S_all_Altitude.csv") %>%
   setDT %>% 
   setnames(.,c("Altitude", "X", "Y"))
 
-M.data %<>%
+M.data %>%
   left_join(Forest, by = c("X", "Y")) %>% 
   left_join(Altitude, by = c("X", "Y")) %>% 
   setDT %>% 

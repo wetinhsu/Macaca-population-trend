@@ -106,6 +106,31 @@ M.data %>% .[Macaca_sur %in% 1, .N, by = list(Year, Survey, TypeName.1)] %>%
 
 
 
+M.data.o %>% 
+  .[Macaca_sur %in%1,] %>% 
+  .[,.(ll=length(Macaca_sur),
+       mm=length(unique(Site_N)),
+       kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
+  dcast(.,County ~ Year , value.var = c( "ll","mm","kk"))
+
+
+
+M.data.o %>% 
+  .[Macaca_sur %in% 0 & !is.na(Macaca_dist),] %>% 
+  .[,.(ll=length(Macaca_sur),
+       mm=length(unique(Site_N)),
+       kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
+  dcast(.,County ~ Year , value.var = c( "ll","mm","kk"))
+
+
+
+
+
+M.data.1 %>% 
+  .[,.(ll=length(Macaca_sur), M = sum(Macaca_sur,na.rm=T)), by = list(Year, Survey, TypeName.1)]%>%
+  dcast(.,Year + Survey ~ TypeName.1, value.var = c("ll", "M"))
+
+
 #------------------------------------------
 M.data %>% 
   .[Year < 2019,] %>% 
