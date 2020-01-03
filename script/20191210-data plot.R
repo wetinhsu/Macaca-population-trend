@@ -9,7 +9,7 @@ library(dplyr)
 library(writexl)
 library(ggplot2)
 library(lattice)
-library(reshape2)
+#library(reshape2)
 
 #Original data---- 
 
@@ -52,6 +52,15 @@ M.data.o <- read_excel("./data/clean/for analysis.xlsx",
   .[, julian.D := yday(DATE)] %>% 
   .[, Altitude_c := substr(Site_N,1,1)] %>% setDT 
 
+M.data.o %<>%  dcast.data.table(.,Year + Site_N ~ Survey, value.var = "Macaca_sur") %>%  
+  #計算第1旅次及第2旅次調查的樣點數
+  .[`1` %in% 0,] %>%  #找出有第2旅次沒第1旅次的樣區
+  .[M.data.o, on = c("Year", "Site_N")] %>%  
+  .[!is.na(`1`), Survey := 1] %>%  #將第1次調查的旅次改回1
+  .[,`1` := NULL]%>%
+  .[,`2` := NULL]
+
+
 M.data.o$Year %<>% as.numeric
 M.data.o$Survey %<>% as.numeric
 M.data.o$Point %<>% as.numeric
@@ -59,6 +68,8 @@ M.data.o$Macaca_sur %<>% as.numeric
 M.data.o$Month %<>% as.numeric
 M.data.o$Day %<>% as.numeric
 M.data.o$Distance %<>% as.numeric
+
+
 
 #Remove duplicate data-------------------------------------------
 M.data <- M.data.o %>% copy(.) %>% 
@@ -126,16 +137,16 @@ M.data.o %>%
 
 
 
-M.data.1 %>% 
+M.data.o %>% 
   .[,.(ll=length(Macaca_sur), M = sum(Macaca_sur,na.rm=T)), by = list(Year, Survey, TypeName.1)]%>%
   dcast(.,Year + Survey ~ TypeName.1, value.var = c("ll", "M"))
 
 
 #------------------------------------------
-M.data %>% 
+M.data %>% setDT %>% 
   .[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
-  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year)] %>% 
   .[, Encounter_rate := V1/N] %>% 
   
@@ -154,10 +165,10 @@ M.data %>%
   ggplot(., aes( Year, Encounter_rate)) +
   geom_text(aes(label=V1), vjust=-2, color="red", size=3.5)+
   geom_text(aes(label=N), vjust=-0.5, color="black", size=3.5)+
-  geom_text(aes(x=2015.5, y=0.014,label="猴群數"),  color="red", size=3.5)+
-  geom_text(aes(x=2015.5, y=0.0135,label="資料筆數"),  color="black", size=3.5)+
+  geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
+  geom_text(aes(x=2015.5, y=0.023,label="資料筆數"),  color="black", size=3.5)+
   geom_point()+geom_line() +
-  ylim(0.006,0.014)+
+  ylim(0.010,0.025)+
   theme_bw() + 
   xlab("Year")
 
