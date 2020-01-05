@@ -113,7 +113,7 @@ allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D +  Region 
 df$Altitude.1 <-  scale(df$Altitude,scale =T)
 df$julian.D.1 <-  scale(df$julian.D,scale =T)
 
-m1 <- glmer(Macaca_sur ~  Year.re + TypeName.1 + Altitude + julian.D +  Region + (1|Site_N), 
+m1 <- glmer(Macaca_sur ~  Year.re + TypeName.1 + Altitude.1 + julian.D.1 +  Region + (1|Site_N), 
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 
@@ -121,16 +121,22 @@ summary(m1)
 
 
 
-allFit(glmer(Macaca_sur ~  Year.re + Altitude.1 + julian.D.1 +  Region + (1|Site_N), 
+allFit(glmer(Macaca_sur ~ Altitude + Year.re + julian.D +  Region + (1|Site_N), 
              family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
 
-m2 <- glmer(Macaca_sur ~  Year.re  + Altitude.1 + julian.D.1 +  Region + (1|Site_N), 
+
+
+
+allFit(glmer(Macaca_sur ~  Altitude.1 + Year.re + julian.D.1 +  Region + (1|Site_N), 
+             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
+
+m2 <- glmer(Macaca_sur ~ Altitude.1 + Year.re  +  julian.D.1 +  Region + (1|Site_N), 
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 
 summary(m2)
 
-
+Anova(m2)
 
 
 #anova table==============================================
