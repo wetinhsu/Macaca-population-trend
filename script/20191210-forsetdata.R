@@ -22,6 +22,7 @@ S.all<- list.files("./data/clean/Site/", pattern = "Site_", full.names = T) %>%
     do.call(rbind, .) %>% 
     setDT
 
+S.all %>% .[, .N, by = list(Year, Survey, Site_N, Point)] %>% .[ N >1,]
 S.all %>% .[, list(X, Y)] %>% unique %>% .[, NO := 1 : nrow(.)] %>% write.csv(., "./data/clean/gis/S_all.csv", row.names = F)
 
 M.data<- M.all %>% 
@@ -31,7 +32,7 @@ M.data<- M.all %>%
   .[, X := as.numeric(X)] %>% 
   .[, Y := as.numeric(Y)]
 
-
+M.data %>% .[, .N, by = list(Year, Survey, Site_N, Point)] %>% .[ N >1,]
 
 #------------
 
@@ -44,15 +45,11 @@ Altitude<- read.csv("./data/clean/gis/S_all_Altitude.csv") %>%
   setDT %>% 
   setnames(.,c("Altitude", "X", "Y"))
 
-M.data %>%
+M.data %<>%
   left_join(Forest, by = c("X", "Y")) %>% 
   left_join(Altitude, by = c("X", "Y")) %>% 
-  setDT %>% 
-  .[!(Site_N %like% "K"),] %>%   #exculde kiman
-  .[!(Site_N %in% c("A08-01", "A08-02", "A08-03", "A08-04",
-                    "A08-05", "A08-06", "A08-07", "A08-08", "A08-09")),]  #exclude蘭嶼
-
-write_xlsx(M.data, "./data/clean/for analysis.xlsx")
+  setDT 
+write_xlsx(M.data, "./data/clean/full_combind_data.xlsx")
 
 
 

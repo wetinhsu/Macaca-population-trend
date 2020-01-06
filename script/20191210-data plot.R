@@ -13,7 +13,7 @@ library(lattice)
 
 #Original data---- 
 
-M.data.o <- read_excel("./data/clean/for analysis.xlsx",
+M.data <- read_excel("./data/clean/for analysis.xlsx",
                      sheet=1) %>% setDT %>% 
   .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
   .[TypeName %like% "混", TypeName.n := "混淆林"] %>% 
@@ -52,72 +52,21 @@ M.data.o <- read_excel("./data/clean/for analysis.xlsx",
   .[, julian.D := yday(DATE)] %>% 
   .[, Altitude_c := substr(Site_N,1,1)] %>% setDT 
 
-M.data.o %<>%  dcast.data.table(.,Year + Site_N ~ Survey, value.var = "Macaca_sur") %>%  
-  #計算第1旅次及第2旅次調查的樣點數
-  .[`1` %in% 0,] %>%  #找出有第2旅次沒第1旅次的樣區
-  .[M.data.o, on = c("Year", "Site_N")] %>%  
-  .[!is.na(`1`), Survey := 1] %>%  #將第1次調查的旅次改回1
-  .[,`1` := NULL]%>%
-  .[,`2` := NULL]
 
 
-M.data.o$Year %<>% as.numeric
-M.data.o$Survey %<>% as.numeric
-M.data.o$Point %<>% as.numeric
-M.data.o$Macaca_sur %<>% as.numeric
-M.data.o$Month %<>% as.numeric
-M.data.o$Day %<>% as.numeric
-M.data.o$Distance %<>% as.numeric
+M.data$Year %<>% as.numeric
+M.data$Survey %<>% as.numeric
+M.data$Point %<>% as.numeric
+M.data$Macaca_sur %<>% as.numeric
+M.data$Month %<>% as.numeric
+M.data$Day %<>% as.numeric
+M.data$Distance %<>% as.numeric
 
 
-
-#Remove duplicate data-------------------------------------------
-M.data <- M.data.o %>% copy(.) %>% 
-  .[Year %in% 2015 & Survey %in% 2 & Site_N %in% "A29-17" & Point %in% 7,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2015 & Survey %in% 2 & Site_N %in% "A33-28" & Point %in% 7,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2016 & Survey %in% 1 & Site_N %in% "B33-01" & Point %in% 4,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2017 & Survey %in% 1 & Site_N %in% "B38-07" & Point %in% 7,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2018 & Survey %in% 1 & Site_N %in% "A35-15" & Point %in% 5,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2018 & Survey %in% 2 & Site_N %in% "A28-10" & Point %in% 6,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2019 & Survey %in% 1 & Site_N %in% "B14-02" & Point %in% 6,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2019 & Survey %in% 1 & Site_N %in% "B38-08" & Point %in% 5,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2019 & Survey %in% 2 & Site_N %in% "A20-02" & Point %in% 3,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2019 & Survey %in% 2 & Site_N %in% "A33-32" & Point %in% 6,
-    Macaca_sur := NA] 
-
-M.data.o %>% .[Macaca_sur %in% 1, .N]
-M.data %>% .[Macaca_sur %in% 1, .N]
+M.data %>%.[Macaca_sur %in%1,] %>% .[, .N]
 #-----------------------------------
 
-M.data.o %>% .[Macaca_sur %in% 1, .N, by = list(Year, Survey, County)] %>% 
-  dcast(., County ~ Year + Survey, value.var = "N",
-        fun.aggregate = sum,
-        margins = c("Year", "County"))
-
-M.data %>% .[Macaca_sur %in% 0, .N, by = list(Year, Survey, County)] %>% 
-  dcast(., County ~ Year + Survey, value.var = "N",
-        fun.aggregate = sum,
-        margins = c("Year", "County"))
-
-
-
-M.data %>% .[Macaca_sur %in% 1, .N, by = list(Year, Survey, TypeName.1)] %>% 
-  dcast(., Year + Survey ~ TypeName.1, value.var = "N",
-        fun.aggregate = sum,
-        margins = c("Year", "County"))
-
-
-
-M.data.o %>% 
+M.data %>% 
   .[Macaca_sur %in%1,] %>% 
   .[,.(ll=length(Macaca_sur),
        mm=length(unique(Site_N)),
@@ -126,7 +75,7 @@ M.data.o %>%
 
 
 
-M.data.o %>% 
+M.data %>% 
   .[Macaca_sur %in% 0 & !is.na(Macaca_dist),] %>% 
   .[,.(ll=length(Macaca_sur),
        mm=length(unique(Site_N)),
@@ -137,7 +86,7 @@ M.data.o %>%
 
 
 
-M.data.o %>% 
+M.data %>% 
   .[,.(ll=length(Macaca_sur), M = sum(Macaca_sur,na.rm=T)), by = list(Year, Survey, TypeName.1)]%>%
   dcast(.,Year + Survey ~ TypeName.1, value.var = c("ll", "M"))
 
@@ -253,6 +202,7 @@ M.data %>%
 
 
 M.data %>%setDT %>% 
+  .[Year < 2019,] %>% 
   .[Macaca_sur %in% 1,DD := cut(Distance, breaks = seq(0,100,10),
                                 ordered_result = T,
                                 include.lowest = T)] %>% 

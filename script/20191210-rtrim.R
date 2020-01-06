@@ -8,44 +8,243 @@ library(rtrim)
 library(dplyr)
 library(openxlsx)
 library(rtrim)
+#--------------------------------
 
-#------------------------------
-setwd("D:/R/bbs_handover_temp_v20190123 - WT")
-###### 建立Birdstats需要的樣點代號 plotnr
-site <- read.xlsx("./sampling/02_樣區表_v2.7.xlsx", sheet=c("管理者用"), startRow=1, colNames=TRUE)
-colnames(site)
-site <- site[,c("plotnr","HJHsiu3","ELEV","樣區編號", "地點.(樣區名稱)")]
-colnames(site) <- c("plotnr", "eco3", "elev3", "siteid", "sitename")
+#Original data---- 
 
-# 建立Birdstats的cov1 --- 5: >2500m, 4: 1000-2500m, 3: West(<1000m), 2: East(<1000m), 1: North(<1000m)
+M.data <- read_excel("./data/clean/for analysis.xlsx",
+                     sheet=1) %>% setDT %>% 
+  .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
+  .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
+  .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
+  .[TypeName %like% "闊葉", TypeName.n := "broad-leaved"] %>% 
+  .[TypeName %like% "針葉", TypeName.n := "coniferous"] %>% 
+  .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)] %>% 
+  .[, County := ordered(County,
+                        c("宜蘭縣","基隆市","台北市","臺北市",
+                          "新北市","台北縣","臺北縣",
+                          "桃園縣","桃園市","新竹市",
+                          "新竹縣","苗栗縣",
+                          "台中市","臺中市",
+                          "台中縣","臺中縣",
+                          "彰化縣","南投縣","南投市",
+                          "雲林縣","嘉義縣","嘉義市",
+                          "台南市","臺南市",
+                          "台南縣","臺南縣",
+                          "高雄縣","高雄市",
+                          "屏東縣", "花蓮縣",
+                          "台東縣","臺東縣"))] %>% 
+  
+  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
+                     "新北市","台北縣","臺北縣",
+                     "桃園縣","桃園市","新竹市",
+                     "新竹縣","苗栗縣"), Region := "North"] %>%
+  .[County %in% list("台中市","臺中市",
+                     "台中縣","臺中縣",
+                     "彰化縣","南投縣","南投市",
+                     "雲林縣","嘉義縣","嘉義市"), Region := "Center"] %>%
+  .[County %in% list("台南市","臺南市",
+                     "台南縣","臺南縣",
+                     "高雄縣","高雄市",
+                     "屏東縣"), Region := "South"]%>%
+  .[County %in% list("花蓮縣",
+                     "台東縣","臺東縣"), Region := "East"] %>% 
+  .[, julian.D := yday(DATE)] %>% 
+  .[, Altitude_c := substr(Site_N,1,1)] %>% setDT 
 
-site$cov1 <- ifelse(site$elev == 3, 5, 
-                    ifelse(site$elev == 2, 4, 
-                           ifelse(site$eco3 == 'West', 3, 
-                                  ifelse(site$eco3 == 'East', 2, 
-                                         ifelse(site$eco3 == 'North', 1,
-                                                ifelse(site$eco3 == 'Lanyu', 6,
-                                                       7))))))
-
-site <- as.data.table(site)
-
-# check for rows with NA
-site[!complete.cases(site),]
-
-# if NA kick it out
-site <- site[ !(plotnr %in% NA)]
-
-# add it back to all data
-colnames(site)[4] <- "Site_N"
-df <- left_join(df, site[,c(4,6)], by = "Site_N")
-df <- as.data.table(df)
-
-# check for NAs in cov1
-df[!complete.cases(df$cov1),]
+M.data$Year %<>% as.numeric
+M.data$Survey %<>% as.numeric
+M.data$Point %<>% as.numeric
+M.data$Macaca_sur %<>% as.numeric
+M.data$Month %<>% as.numeric
+M.data$Day %<>% as.numeric
+M.data$Distance %<>% as.numeric
+M.data$julian.D %<>% as.numeric
+M.data$Region %<>% as.factor
+M.data$TypeName.1 %<>% as.factor
+M.data$Site_N %<>% as.factor
 
 
-#----------------------------------------------------
-#df請搭配20191210-GLMM的df使用。
+
+county.area <- read.csv("./data/clean/gis/county area.csv", header = T) %>% 
+  setDT %>% 
+  setnames(.,c("County", "Area", "perimeter")) %>% 
+  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
+                     "新北市","台北縣","臺北縣",
+                     "桃園縣","桃園市","新竹市",
+                     "新竹縣","苗栗縣"), Region := "North"] %>%
+  .[County %in% list("台中市","臺中市",
+                     "台中縣","臺中縣",
+                     "彰化縣","南投縣","南投市",
+                     "雲林縣","嘉義縣","嘉義市"), Region := "Center"] %>%
+  .[County %in% list("台南市","臺南市",
+                     "台南縣","臺南縣",
+                     "高雄縣","高雄市",
+                     "屏東縣"), Region := "South"]%>%
+  .[County %in% list("花蓮縣",
+                     "台東縣","臺東縣"), Region := "East"] %>% 
+  .[!is.na(Region),] %>% 
+  .[, .(area=sum(Area)), by = list(Region)] %>% 
+  .[, prob_Area:= (area/sum(area))] 
+
+weight <- 
+  M.data %>% 
+  setDT %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[Year < 2019,] %>%
+  .[!(TypeName.1 %in% "Not forest"), ] %>% 
+  .[, SP := paste0(Site_N,"-",Point)]  %>%
+  .[, list(Year, SP, Survey, Region)] %>%
+  .[, point_n := .N, by = list(Year, SP, Region)] %>% 
+  .[, SP_n:= .N, by = list(Region)] %>%
+  left_join(county.area)  %>% setDT %>%
+  .[, weight := (prob_Area / SP_n /point_n)] 
+
+
+
+
+  .[!duplicated(.)] %>%
+  .[, site_n :=length(unique(Site_N)), by = c( "cov1")]  %>%
+  .[, point_n :=length(Point), by = c("Year", "Site_N", "cov1")]   %>%  #weight := prob_Area / site_n /調查次數
+  .[, list(Year, Site_N, cov1, weight)]%>%
+  .[!duplicated(.)] 
+
+
+
+
+df <- 
+  M.data %>% 
+  setDT %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[Year < 2019,] %>%
+  .[!(TypeName.1 %in% "Not forest"), ] %>% 
+  .[, SP := paste0(Site_N,"-",Point)] %>% 
+  .[, .(number = sum(Macaca_sur)), by = list(Year, SP, Region)] %>% 
+  .[, N := sum(number), by = list(SP, Region)] %>% 
+  .[!(N %in% 0),] %>% 
+  .[, N := NULL] %>% 
+  .[, Region := factor(Region)] %>% 
+  setDF
+
+m1 <- trim(df,
+           count_col = "number",
+           site_col = "SP",
+           year_col = "Year",
+           #weights_col = "weight",
+           #covar_cols = "Region",
+           model =  2,
+           changepoints = "all",
+           overdisp = T,
+           serialcor = F, 
+           autodelete = T, 
+           stepwise = F)
+
+
+summary(m1)
+wald(m1)
+totals(m1, "imputed", obs =F) %>% plot
+index(m1, "imputed", covars = F) %>% plot
+overall(m1,"imputed") %T>% plot
+
+
+
+plot(overall(m1, "imputed"))
+title( "imputed" ) 
+
+heatmap(m1, "imputed") 
+title( "imputed" )
+
+
+index(m1, "imputed", covars = F) %>% plot(., pct = T, main = "imputed") 
+index(m1, "imputed", covars = T) %>% plot(., pct = T, main = "imputed")
+
+
+
+
+#East------
+m2 <- trim(df[df$Region=="East",],
+           count_col = "number",
+           site_col = "SP",
+           year_col = "Year",
+           #weights_col = "weight",
+           #covar_cols = "Region",
+           model =  2,
+           changepoints = "all",
+           overdisp = F,
+           serialcor = F, 
+           autodelete = T, 
+           stepwise = F)
+
+
+overall(m2,"imputed") %T>% plot
+index(m2, "imputed", covars = F) %>% plot(., pct = T, main = "imputed") 
+
+
+
+#North------
+m3 <- trim(df[df$Region=="North",],
+           count_col = "number",
+           site_col = "SP",
+           year_col = "Year",
+           #weights_col = "weight",
+           #covar_cols = "Region",
+           model =  2,
+           changepoints = "all",
+           overdisp = T,
+           serialcor = F, 
+           autodelete = T, 
+           stepwise = F)
+
+
+overall(m3,"imputed") %T>% plot
+index(m3, "imputed", covars = F) %>% plot(., pct = T, main = "imputed") 
+
+
+#Center------
+m4 <- trim(df[df$Region=="Center",],
+           count_col = "number",
+           site_col = "SP",
+           year_col = "Year",
+           #weights_col = "weight",
+           #covar_cols = "Region",
+           model =  2,
+           changepoints = "all",
+           overdisp = F,
+           serialcor = F, 
+           autodelete = T, 
+           stepwise = F)
+
+
+overall(m4,"imputed") %T>% plot
+index(m4, "imputed", covars = F) %>% plot(., pct = T, main = "imputed") 
+
+
+#South------
+m5 <- trim(df[df$Region=="South",],
+           count_col = "number",
+           site_col = "SP",
+           year_col = "Year",
+           #weights_col = "weight",
+           #covar_cols = "Region",
+           model =  2,
+           changepoints = "all",
+           overdisp = F,
+           serialcor = F, 
+           autodelete = T, 
+           stepwise = F)
+
+
+overall(m5,"imputed") %T>% plot
+index(m5, "imputed", covars = F) %>% plot(., pct = T, main = "imputed") 
+
+
+
+
+
+
+
+
+
 
 
 #weights ===============================================

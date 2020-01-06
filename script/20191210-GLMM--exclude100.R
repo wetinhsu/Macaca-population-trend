@@ -6,14 +6,13 @@ library(car)
 library(magrittr)
 library(multcomp)
 library(ggplot2)
-library(psych)
 library(readxl)
 library(MuMIn)
 #------------------------------------------------
 
 #Original data---- 
 
-M.data.o <- read_excel("./data/clean/for analysis.xlsx",
+M.data <- read_excel("./data/clean/for analysis.xlsx",
                        sheet=1) %>% setDT %>% 
   .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
   .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
@@ -53,40 +52,19 @@ M.data.o <- read_excel("./data/clean/for analysis.xlsx",
   .[, julian.D := yday(DATE)] %>% 
   .[, Altitude_c := substr(Site_N,1,1)] %>% setDT 
 
-M.data.o$Year %<>% as.numeric
-M.data.o$Survey %<>% as.numeric
-M.data.o$Point %<>% as.numeric
-M.data.o$Macaca_sur %<>% as.numeric
-M.data.o$Month %<>% as.numeric
-M.data.o$Day %<>% as.numeric
-M.data.o$Distance %<>% as.numeric
-M.data.o$julian.D %<>% as.numeric
-M.data.o$Region %<>% as.factor
-M.data.o$TypeName.1 %<>% as.factor
-M.data.o$Site_N %<>% as.factor
+M.data$Year %<>% as.numeric
+M.data$Survey %<>% as.numeric
+M.data$Point %<>% as.numeric
+M.data$Macaca_sur %<>% as.numeric
+M.data$Month %<>% as.numeric
+M.data$Day %<>% as.numeric
+M.data$Distance %<>% as.numeric
+M.data$julian.D %<>% as.numeric
+M.data$Region %<>% as.factor
+M.data$TypeName.1 %<>% as.factor
+M.data$Site_N %<>% as.factor
 
-#Remove duplicate data-------------------------------------------
-M.data <- M.data.o %>% copy(.) %>% 
-  .[Year %in% 2015 & Survey %in% 2 & Site_N %in% "A29-17" & Point %in% 7,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2015 & Survey %in% 2 & Site_N %in% "A33-28" & Point %in% 7,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2016 & Survey %in% 1 & Site_N %in% "B33-01" & Point %in% 4,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2017 & Survey %in% 1 & Site_N %in% "B38-07" & Point %in% 7,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2018 & Survey %in% 1 & Site_N %in% "A35-15" & Point %in% 5,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2018 & Survey %in% 2 & Site_N %in% "A28-10" & Point %in% 6,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2019 & Survey %in% 1 & Site_N %in% "B14-02" & Point %in% 6,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2019 & Survey %in% 1 & Site_N %in% "B38-08" & Point %in% 5,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2019 & Survey %in% 2 & Site_N %in% "A20-02" & Point %in% 3,
-    Macaca_sur := NA] %>% 
-  .[Year %in% 2019 & Survey %in% 2 & Site_N %in% "A33-32" & Point %in% 6,
-    Macaca_sur := NA] 
+
 #---------------------------------------------------------------------
 
 M.data <- M.data %>% 
@@ -100,8 +78,7 @@ M.data <- M.data %>%
 df <- 
   M.data %>% 
   .[Year < 2019,] %>%
-  .[!(TypeName.1 %in% "Not forest"), ] %>% 
-  .[Macaca_sur %in% 1 & Macaca_dist %in% "C", Mcaca_sur := 0]
+  .[!(TypeName.1 %in% "Not forest"), ] 
 
 #-------------------------------------------
 
@@ -120,25 +97,6 @@ m1 <- glmer(Macaca_sur ~  Year.re + TypeName.1 + Altitude.1 + julian.D.1 +  Regi
 summary(m1)
 
 
-
-allFit(glmer(Macaca_sur ~ Altitude + Year.re + julian.D +  Region + (1|Site_N), 
-             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
-
-
-
-
-allFit(glmer(Macaca_sur ~  Altitude.1 + Year.re + julian.D.1 +  Region + (1|Site_N), 
-             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
-
-m2 <- glmer(Macaca_sur ~ Altitude.1 + Year.re  +  julian.D.1 +  Region + (1|Site_N), 
-            family = binomial, data = df,
-            control = glmerControl(optimizer = "bobyqa"))
-
-summary(m2)
-
-Anova(m2)
-
-
 #anova table==============================================
 Anova(m1)
 
@@ -152,7 +110,7 @@ summary(glht(m1, linfct = mcp(Region = "Tukey")))
 #AICc==============================================
 options(na.action = "na.fail")
 d1<- dredge(
-  glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D +  Region + (1|Site_N), 
+  glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude.1 + julian.D.1 +  Region + (1|Site_N), 
         family = binomial, data = df,
         control = glmerControl(optimizer = "bobyqa")), 
   trace = T)
@@ -163,3 +121,69 @@ summary(model.avg(d1, subset = delta < 2))
 importance(d1)
 
 sw(model.avg(d1, subset = delta < 2))
+
+#---------------------
+
+allFit(glmer(Macaca_sur ~ Altitude + Year.re + julian.D +  Region + (1|Site_N), 
+             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
+
+allFit(glmer(Macaca_sur ~  Altitude.1 + Year.re + julian.D.1 +  Region + (1|Site_N), 
+             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
+
+m2 <- glmer(Macaca_sur ~ Altitude.1 + Year.re  +  julian.D.1 +  Region + (1|Site_N), 
+            family = binomial, data = df,
+            control = glmerControl(optimizer = "bobyqa"))
+
+summary(m2)
+
+Anova(m2)
+
+
+
+#Estimate3==============================================
+##<25
+aa<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]  %>% 
+  .[, .(Mean = mean(A, na.rm=T),
+        SD = sd(A, na.rm=T)/sqrt(length(A)),
+        n = .N), 
+    by = list(TypeName.1, Region)] %>%
+  .[, N:= sum(n)]
+
+mean(aa$Mean)%>% round(.,7)
+(var.25 <- sum(aa$N*(aa$N-aa$n)*(aa$SD)^2/aa$n, na.rm=T)/(unique(aa$N)^2))
+var.25^0.5 %>% round(.,7)
+
+mean(aa$Mean)-(var.25^0.5*1.28)%>% round(.,7)
+mean(aa$Mean)+(var.25^0.5*1.28)%>% round(.,7)  #80%CI=se*1.28
+
+mean(aa$Mean)-(var.25^0.5*1.96)%>% round(.,7)
+mean(aa$Mean)+(var.25^0.5*1.96)%>% round(.,7)
+
+
+21536.41/(0.025*0.025*pi)
+
+
+##<100
+bb<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]  %>% 
+  .[, .(Mean = mean(AB, na.rm=T),
+        SD = sd(AB, na.rm=T)/sqrt(length(AB)),
+        n = .N), 
+    by = list(TypeName.1, Region)] %>%
+  .[, N:= sum(n)]
+
+mean(bb$Mean)%>% round(.,7)
+(var.100 <- sum(bb$N*(bb$N-bb$n)*(bb$SD)^2/bb$n, na.rm=T)/(unique(bb$N)^2))
+var.100^0.5%>% round(.,7)
+
+mean(bb$Mean)-var.100^0.5*1.28%>% round(.,7)
+mean(bb$Mean)+var.100^0.5*1.28%>% round(.,7)
+
+mean(bb$Mean)-var.100^0.5*1.96%>% round(.,7)
+mean(bb$Mean)+var.100^0.5*1.96%>% round(.,7)
+
+
+21536.41/(0.1*0.1*pi)

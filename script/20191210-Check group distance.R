@@ -60,10 +60,6 @@ output.1<- M.0 %>%
 M.abc %>% .[Distance<300,]  #猴群距離<300m者的第2筆，可能為重複記錄，故刪除猴群記錄
 
 
-write_xlsx(list(
-  "group.Site" = output.1,
-  "groupDistance" = M.abc),
-           "./result/20191210-cheak distacne.xlsx")
 
 #------------------------------------------------------------
 

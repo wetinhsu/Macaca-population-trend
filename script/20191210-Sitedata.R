@@ -173,7 +173,7 @@ S15 <-
      list.files(x, pattern = "BBSdata_2016", full.names = T) %>%  
        read_xlsx(., sheet = "birddata", cell_cols("D:AF")) %>% 
        setDT %>%
-       .[時段 %in% c("A", "B"),] %>%
+       .[時段 %in% c("A", "B","NA"),] %>%
        #.[!(時段 %in% "Supplementary"),] %>%
        .[調查旅次編號 %in% c(1,2)] %>%
        #.[ 分析 %in% "Y",] %>%
@@ -299,7 +299,7 @@ S15 <-
       list.files(x, pattern = "BBSdata_2018", full.names = T) %>%  
         read_xlsx(., sheet = "birddata", cell_cols("D:AF")) %>% 
         setDT %>%
-        .[時段 %in% c("A", "B","a","b"),] %>%
+        .[時段 %in% c("A", "B","a","b","NA"),] %>%
         #.[!(時段 %in% "Supplementary"),] %>%
         .[調查旅次編號 %in% c(1,2)] %>%
         #.[ 分析 %in% "Y",] %>%
@@ -355,7 +355,7 @@ S15 <-
           "X.y.y", "Y.y.y", "County.y.y",
           "X.y.y.y", "Y.y.y.y", "County.y.y.y") := NULL] 
   
-  write_xlsx(S18, "data/clean/Site/Site_2018_v2.xlsx")
+  write_xlsx(S18, "data/clean/Site/Site_2018_v3.xlsx")
   
   #2019
   S19 <- 
