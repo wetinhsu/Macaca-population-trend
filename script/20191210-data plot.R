@@ -215,4 +215,43 @@ M.data %>%setDT %>%
   ylab("Count")
 
   
+M.data %>% 
+  .[Year < 2019,] %>% 
+  .[!(TypeName.1 %in% "非森林"),] %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Region)]  %>% 
+  .[, Encounter_rate := V1/N] %>% 
+  
+  ggplot(., aes( Year, Encounter_rate, group = Region,col= Region))+
+  geom_point() +
+  geom_line()+ 
+  theme_bw()+ 
+  xlab("Year")
 
+
+M.data %>% 
+  .[Year < 2019,] %>% 
+  .[!(TypeName.1 %in% "非森林"),] %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, TypeName.1)]  %>% 
+  .[, Encounter_rate := V1/N] %>% 
+  
+  ggplot(., aes( Year, Encounter_rate, group = TypeName.1,col= TypeName.1))+
+  geom_point() +
+  geom_line()+ 
+  theme_bw()+ 
+  xlab("Year")
+
+
+M.data %>% 
+  .[Year < 2019,] %>% 
+  .[!(TypeName.1 %in% "非森林"),] %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, julian.D)]  %>% 
+  .[, Encounter_rate := V1/N] %>% 
+  
+  ggplot(., aes( julian.D, Encounter_rate, group = factor(Year),col= factor(Year)))+
+  geom_point() +
+  #geom_line()+ 
+  theme_bw()+ 
+  xlab("julian.D")

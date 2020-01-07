@@ -8,6 +8,7 @@ library(rtrim)
 library(dplyr)
 library(openxlsx)
 library(rtrim)
+library(readxl)
 #--------------------------------
 
 #Original data---- 
@@ -95,19 +96,12 @@ weight <-
   .[!(TypeName.1 %in% "Not forest"), ] %>% 
   .[, SP := paste0(Site_N,"-",Point)]  %>%
   .[, list(Year, SP, Survey, Region)] %>%
-  .[, point_n := .N, by = list(Year, SP, Region)] %>% 
-  .[, SP_n:= .N, by = list(Region)] %>%
+  .[, .(point_n = .N), by = list(Year, SP, Region)] %>% 
+  .[, SP_n := .N, by = list(Year,Region)] %>%
   left_join(county.area)  %>% setDT %>%
   .[, weight := (prob_Area / SP_n /point_n)] 
 
 
-
-
-  .[!duplicated(.)] %>%
-  .[, site_n :=length(unique(Site_N)), by = c( "cov1")]  %>%
-  .[, point_n :=length(Point), by = c("Year", "Site_N", "cov1")]   %>%  #weight := prob_Area / site_n /調查次數
-  .[, list(Year, Site_N, cov1, weight)]%>%
-  .[!duplicated(.)] 
 
 
 
@@ -121,20 +115,54 @@ df <-
   .[, SP := paste0(Site_N,"-",Point)] %>% 
   .[, .(number = sum(Macaca_sur)), by = list(Year, SP, Region)] %>% 
   .[, N := sum(number), by = list(SP, Region)] %>% 
+  left_join(weight[, c(1:2, 8)])  %>% setDT %>%
   .[!(N %in% 0),] %>% 
   .[, N := NULL] %>% 
   .[, Region := factor(Region)] %>% 
   setDF
 
+#--
+ggplot.bbs <- function(x, vernacularName){
+  p <- ggplot(x, aes(x=time, y=imputed)) + 
+    geom_errorbar(aes(ymin=imputed-se_imp, ymax=imputed+se_imp), width=.1, colour = '#f3e4c2', size = .5) +
+    geom_line(colour = '#f3e4c2', size = 2, linetype = 1) +
+    geom_point(colour='#f3e4c2', size=8, shape=21, stroke = 2, fill='#ef4926') +
+    ggtitle(vernacularName) +
+    expand_limits(y=0) +
+    scale_x_continuous(breaks = x$time)+
+    scale_y_continuous()+
+    # coord_cartesian(ylim=c(0,150)) +
+    #theme with white background
+    
+    theme_bw() +
+    #eliminates background, gridlines, and chart border
+    theme(
+      plot.background = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.border = element_blank(),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      axis.text.x = element_text(angle = 30, hjust = 1),
+      text = element_text(size=30),
+      axis.line.x = element_line(color="black", size = .1),
+      axis.line.y = element_line(color="black", size = .1)) +
+    geom_hline(yintercept=100, colour = "grey", linetype = 3)
+  
+}
+
+#---
+
+
 m1 <- trim(df,
            count_col = "number",
            site_col = "SP",
            year_col = "Year",
-           #weights_col = "weight",
-           #covar_cols = "Region",
+           weights_col = "weight",
+           covar_cols = "Region",
            model =  2,
            changepoints = "all",
-           overdisp = T,
+           overdisp = F,
            serialcor = F, 
            autodelete = T, 
            stepwise = F)
@@ -144,20 +172,63 @@ summary(m1)
 wald(m1)
 totals(m1, "imputed", obs =F) %>% plot
 index(m1, "imputed", covars = F) %>% plot
+index(m1, "imputed", covars = T) %>% plot
 overall(m1,"imputed") %T>% plot
 
 
 
-plot(overall(m1, "imputed"))
+plot(overall(m1, "imputed"), axes = F)
+axis(1, at = 2015:2018, cex.axis=1.5)
+axis(2, cex.axis=1.5)
+box()
 title( "imputed" ) 
 
-heatmap(m1, "imputed") 
+heatmap(m1, "imputed", cex.axis=1.5) 
 title( "imputed" )
 
 
-index(m1, "imputed", covars = F) %>% plot(., pct = T, main = "imputed") 
-index(m1, "imputed", covars = T) %>% plot(., pct = T, main = "imputed")
+index(m1, "imputed", covars = F) %>% plot(., pct = T, main = "imputed")
 
+index(m1, "imputed", covars = T) %>% 
+  plot(., pct = T, main = "imputed",
+       axes = F,
+       xaxs="i", cex.lab = 1.3)
+axis(1, at = 2015:2018, cex.axis=1.5)
+axis(2, cex.axis=1)
+box()
+
+
+
+idx <- index(m1, "imputed", covars = T)  %>% setDT %>%
+  .[,list(covariate, category, time, imputed = imputed*100, se_imp = se_imp*100)] 
+
+
+p <- ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) + 
+  geom_errorbar(aes(ymin=imputed-se_imp, ymax=imputed+se_imp), width=.1, colour = '#f3e4c2', size = .9) +
+  geom_line(colour = '#f3e4c2', size = 2, linetype = 1) +
+  geom_point(colour='#f3e4c2', size=8, shape=21, stroke = 2, fill='#ef4926') +
+  expand_limits(y=0) +
+  scale_x_continuous(breaks = 2015:2018)+
+  scale_y_continuous()+
+  # coord_cartesian(ylim=c(0,150)) +
+  #theme with white background
+  
+  theme_bw() +
+  #eliminates background, gridlines, and chart border
+  theme(
+    plot.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    text = element_text(size=30),
+    axis.line.x = element_line(color="black", size = .1),
+    axis.line.y = element_line(color="black", size = .1)) +
+  geom_hline(yintercept=100, colour = "grey", linetype = 3)
+
+plot(p)
 
 
 
@@ -166,7 +237,7 @@ m2 <- trim(df[df$Region=="East",],
            count_col = "number",
            site_col = "SP",
            year_col = "Year",
-           #weights_col = "weight",
+           weights_col = "weight",
            #covar_cols = "Region",
            model =  2,
            changepoints = "all",
@@ -186,7 +257,7 @@ m3 <- trim(df[df$Region=="North",],
            count_col = "number",
            site_col = "SP",
            year_col = "Year",
-           #weights_col = "weight",
+           weights_col = "weight",
            #covar_cols = "Region",
            model =  2,
            changepoints = "all",
@@ -205,7 +276,7 @@ m4 <- trim(df[df$Region=="Center",],
            count_col = "number",
            site_col = "SP",
            year_col = "Year",
-           #weights_col = "weight",
+           weights_col = "weight",
            #covar_cols = "Region",
            model =  2,
            changepoints = "all",
@@ -224,7 +295,7 @@ m5 <- trim(df[df$Region=="South",],
            count_col = "number",
            site_col = "SP",
            year_col = "Year",
-           #weights_col = "weight",
+           weights_col = "weight",
            #covar_cols = "Region",
            model =  2,
            changepoints = "all",
@@ -238,112 +309,3 @@ overall(m5,"imputed") %T>% plot
 index(m5, "imputed", covars = F) %>% plot(., pct = T, main = "imputed") 
 
 
-
-
-
-
-
-
-
-
-
-#weights ===============================================
-weight.o <- read_excel("./data/weight.xlsx")  %>% setDT  
-colnames(weight.o) <- c("Name", "cov1", "Area", "Site_n","prob_Site", "prob_Area",  "weight")
-
-
-weight <- df %>%
-  .[, list(Year, Site_N, Point, Survey, cov1)] %>%
-  .[!duplicated(.)] %>%
-  .[, site_n :=length(unique(Site_N)), by = c( "cov1")]  %>%
-  .[, point_n :=length(Point), by = c("Year", "Site_N", "cov1")]   %>%
-  left_join(weight.o[, c(1:3, 6)])  %>% setDT %>%
-  .[, weight := (prob_Area / site_n /point_n)] %>%  #weight := prob_Area / site_n /調查次數
-  .[, list(Year, Site_N, cov1, weight)]%>%
-  .[!duplicated(.)] 
-
-df %<>%.[, species_nr :=840]
-#region=========
-#計算各物種在不同分區內的年平均樣區數，小於1者，設為NA，不列入分析
-
-region <- df %>%
-  .[, list(species_nr, Year, Site_N,  cov1)] %>%
-  .[!duplicated(.)] %>%
-  .[, cov1 := factor(cov1,1:7)] %>%
-  
-  split(., .$species_nr) %>%  #依species_nrz分成list的形式處理資料
-  lapply(., function(x){      #計算出現各cov1的年平均樣區數，ex: 2011、2013有調查到，則算2011至今的年平均樣區數
-    x %>% .[, year := factor(Year, min(Year) : max(df$Year))] %>%
-      dcast(.,  year ~ cov1, value.var = "cov1", length, drop =F)  %>%
-      .[,-1] %>%                  
-      apply(., 2,mean)
-  }) %>%
-  do.call(rbind, .) %>%
-  melt(.,value.name = "site_peryear") %>%  setDT %>%
-  .[,list( species_nr = Var1,
-           cov1 = Var2,
-           site_peryear)] %>%
-  .[site_peryear >= 1, Region := cov1  ] %>%
-  .[cov1 %in% 5, Region := 4  ] %>%
-  .[site_peryear < 1, Region := NA  ] 
-
-summary(region)
-#------------------------
-
-
-bird.data <- df %>% setDT%>% 
-  aggregate(Macaca_sur ~ Year + Site_N + species_nr, ., sum, na.rm=T, drop = T) %>% setDT %>%
-  split(., .$species_nr)%>% 
-  lapply(., function(x) left_join( weight, x, suffix = c("", ".y")) ) %>%
-  mapply(   function(x, y) { left_join(x, y, by= "cov1", suffix = c("", ".y"))}, ., split(region,region$species_nr),SIMPLIFY =F) %>%
-  #lapply(., function(x) left_join(x, habitat, suffix = c("", ".y")) )   %>% 
-  lapply(., function(x) { x %>% setDT %>%
-      .[, species_nr := unique(na.exclude(species_nr))] %>%
-      .[order(Site_N),] %>%
-      .[, n:= sum(Macaca_sur, na.rm = T), by = "Site_N"] %>%
-      .[! (n %in% 0),] %>%    #移除沒有出現過鳥資料的siteid
-      .[is.na(Macaca_sur), Macaca_sur:=0] %>%
-      #.[!(Habitat %in% "A"), Habitat:= "others"] %>%
-      .[order(Year),] %>%
-      .[!is.na(Macaca_sur), min.y := min(Year)] %>%
-      .[, min.y := min(min.y, na.rm = T)] %>%
-      .[!(Year < min.y),] %>%                             #移除鳥類出現年份之前的資料
-      .[, c( "species_nr.y", "site_peryear", "n", "min.y") := NULL]  %>% #移除輔助欄
-      .[, Region := factor(Region)] #%>%
-      #.[, Habitat := factor(Habitat)]
-  } ) %>% 
-  rbindlist(.)
-
-
-setDF(bird.data)
-m1 <- trim(bird.data,
-           count_col = "Macaca_sur",
-           site_col = "Site_N",
-           year_col = "Year",
-           weights_col = "weight",
-           covar_cols = "Region",
-           model =  2,
-           #changepoints = "all",
-           overdisp = T,
-           serialcor = F, 
-           autodelete = T, 
-           stepwise = F)
-
-
-
-summary(m1)
-wald(m1)
-totals(m1, "fitted", obs =F) %>% plot
-index(m1, "fitted", covars = T) %>% plot
-overall(m1,"imputed") %T>% plot
-
-
-plot(overall(m1, "imputed"))
-title( "imputed" ) 
-
-heatmap(m1, "imputed") 
-title( "imputed" )
-
-
-index(m1, "imputed", covars = F) %>% plot(., pct = T, main = "imputed") 
-index(m1, "imputed", covars = T) %>% plot(., pct = T, main = "imputed")
