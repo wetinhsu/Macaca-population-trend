@@ -206,10 +206,10 @@ idx <- index(m1, "imputed", covars = T)  %>% setDT %>%
 p <- ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) + 
   geom_errorbar(aes(ymin=imputed-se_imp, ymax=imputed+se_imp), width=.1, colour = '#f3e4c2', size = .9) +
   geom_line(colour = '#f3e4c2', size = 2, linetype = 1) +
-  geom_point(colour='#f3e4c2', size=8, shape=21, stroke = 2, fill='#ef4926') +
-  expand_limits(y=0) +
+  geom_point(colour='#f3e4c2', size = 8, shape = 21, stroke = 2, fill='#ef4926') +
+  expand_limits(y = 0) +
   scale_x_continuous(breaks = 2015:2018)+
-  scale_y_continuous()+
+  scale_y_continuous(breaks = c(0, 100, 400, 800, 1200))+
   # coord_cartesian(ylim=c(0,150)) +
   #theme with white background
   

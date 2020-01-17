@@ -78,7 +78,8 @@ M.data <- M.data %>%
 df <- 
   M.data %>% 
   .[Year < 2019,] %>%
-  .[!(TypeName.1 %in% "Not forest"), ] 
+  .[!(TypeName.1 %in% "Not forest"), ] %>% 
+  .[Macaca_dist %in% "c", Macaca_sur :=0]
 
 #-------------------------------------------
 
