@@ -1,19 +1,17 @@
-# data analysis
 
 library(data.table)
-library(lme4)
 library(car)
 library(magrittr)
 library(multcomp)
 library(ggplot2)
 library(readxl)
-library(MuMIn)
+
 #------------------------------------------------
 
 #Original data---- 
 
 M.data <- read_excel("./data/clean/for analysis.xlsx",
-                       sheet=1) %>% setDT %>% 
+                     sheet=1) %>% setDT %>% 
   .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
   .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
   .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
@@ -51,24 +49,7 @@ M.data <- read_excel("./data/clean/for analysis.xlsx",
                      "台東縣","臺東縣"), Region := "East"] %>% 
   .[, julian.D := yday(DATE)] %>% 
   .[, Altitude_c := substr(Site_N,1,1)] %>% setDT %>% 
-  .[julian.D > 75 & julian.D <= 180, ] %>% 
-  
-  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
-                     "新北市","台北縣","臺北縣",
-                     "桃園縣","桃園市","新竹市",
-                     "新竹縣","苗栗縣"), Region2 := "North"] %>% 
-  .[County %in% list("台中市","臺中市",
-                     "台中縣","臺中縣",
-                     "彰化縣","南投縣","南投市"), Region2 := "Center1"] %>% 
-  .[County %in% list("雲林縣","嘉義縣","嘉義市",
-                     "台南市","臺南市",
-                     "台南縣","臺南縣"), Region2 := "Center2"] %>%
-  .[County %in% list("高雄縣","高雄市",
-                     "屏東縣"), Region2 := "South"]%>%
-  .[County %in% list("花蓮縣",
-                     "台東縣","臺東縣"), Region2 := "East"] 
-
-
+  .[julian.D > 75 & julian.D <= 180, ]
 
 M.data$Year %<>% as.numeric
 M.data$Survey %<>% as.numeric
@@ -81,7 +62,7 @@ M.data$julian.D %<>% as.numeric
 M.data$Region %<>% as.factor
 M.data$TypeName.1 %<>% as.factor
 M.data$Site_N %<>% as.factor
-M.data$Region2 %<>% as.factor
+
 
 #---------------------------------------------------------------------
 
@@ -99,65 +80,75 @@ df <-
   .[!(TypeName.1 %in% "Not forest"), ] %>% 
   .[Macaca_dist %in% "c", Macaca_sur :=0]
 
-#-------------------------------------------
+#Estimate==============================================
+##<25
+aa<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]  %>% 
+  .[, .(Mean = mean(A, na.rm=T),
+        SD = sd(A, na.rm=T)/sqrt(length(A)),
+        n = .N), 
+    by = list(TypeName.1, Region)] %>%
+  .[, N:= sum(n)]
 
-allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D +  Region2 + (1|Site_N), 
-             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
+mean(aa$Mean)%>% round(.,7)
+(var.25 <- sum(aa$N*(aa$N-aa$n)*(aa$SD)^2/aa$n, na.rm=T)/(unique(aa$N)^2))
+var.25^0.5 %>% round(.,7)
+
+mean(aa$Mean)-(var.25^0.5*1.28)%>% round(.,7)
+mean(aa$Mean)+(var.25^0.5*1.28)%>% round(.,7)  #80%CI=se*1.28
+
+mean(aa$Mean)-(var.25^0.5*1.96)%>% round(.,7)
+mean(aa$Mean)+(var.25^0.5*1.96)%>% round(.,7)
+
+
+21536.41/(0.025*0.025*pi)
+
+
+##<100
+bb<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]  %>% 
+  .[, .(Mean = mean(AB, na.rm=T),
+        SD = sd(AB, na.rm=T)/sqrt(length(AB)),
+        n = .N), 
+    by = list(TypeName.1, Region)] %>%
+  .[, N:= sum(n)]
+
+mean(bb$Mean)%>% round(.,7)
+(var.100 <- sum(bb$N*(bb$N-bb$n)*(bb$SD)^2/bb$n, na.rm=T)/(unique(bb$N)^2))
+var.100^0.5%>% round(.,7)
+
+mean(bb$Mean)-var.100^0.5*1.28%>% round(.,7)
+mean(bb$Mean)+var.100^0.5*1.28%>% round(.,7)
+
+mean(bb$Mean)-var.100^0.5*1.96%>% round(.,7)
+mean(bb$Mean)+var.100^0.5*1.96%>% round(.,7)
+
+
+21536.41/(0.1*0.1*pi)
 
 
 
-df$Altitude.1 <-  scale(df$Altitude,scale =T)
-df$julian.D.1 <-  scale(df$julian.D,scale =T)
-
-m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 +  Region2 + (1|Site_N), 
-            family = binomial, data = df,
-            control = glmerControl(optimizer = "bobyqa"))
+#bootstrap-------------------------
+bb<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)] 
 
 
+replicate(10000, mean(sample(bb$AB, replace = TRUE))) %>%
+         quantile(.,probs = c(0.025, 0.975))
+  
+replicate(10000, mean(sample(bb$AB, replace = TRUE))) %>% mean
 
-summary(m1)
+21536.41/(0.1*0.1*pi)
 
 
-#anova table==============================================
-Anova(m1)
 
+replicate(10000, mean(sample(bb$A, replace = TRUE))) %>%
+  quantile(.,probs = c(0.025, 0.975))
 
-summary(glht(m1, linfct = mcp(TypeName.1 = "Tukey")))
-summary(glht(m1, linfct = mcp(Region = "Tukey")))
+replicate(10000, mean(sample(bb$A, replace = TRUE))) %>% mean
 
-summary(glht(m1, linfct = c("Year.re = 0",
-                            "Altitude.1 = 0",
-                            "julian.D.1 = 0"))) 
-
-#AICc==============================================
-options(na.action = "na.fail")
-d1<- dredge(
-  glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude.1 + julian.D.1 +  Region2 + (1|Site_N), 
-        family = binomial, data = df,
-        control = glmerControl(optimizer = "bobyqa")), 
-  trace = T)
-
-summary(model.avg(d1))
-summary(model.avg(d1, subset = delta < 2))
-
-importance(d1)
-
-sw(model.avg(d1, subset = delta < 2))
-
-#---------------------
-
-allFit(glmer(Macaca_sur ~ Altitude + Year.re + julian.D +  Region + (1|Site_N), 
-             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
-
-allFit(glmer(Macaca_sur ~  Altitude.1 + Year.re + julian.D.1 +  Region + (1|Site_N), 
-             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
-
-m2 <- glmer(Macaca_sur ~ Altitude.1 + Year.re  +  julian.D.1 +  Region + (1|Site_N), 
-            family = binomial, data = df,
-            control = glmerControl(optimizer = "bobyqa"))
-
-summary(m2)
-
-Anova(m2)
-
+21536.41/(0.025*0.025*pi)
 

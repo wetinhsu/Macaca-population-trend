@@ -107,7 +107,9 @@ M.data.1 <-
   .[!(Site_N %like% "K"),] %>%   #exculde kiman
   .[!(Site_N %in% c("A08-01", "A08-02", "A08-03", "A08-04",   #exclude蘭嶼
                     "A08-05", "A08-06", "A08-07", "A08-08", "A08-09")),] %>% 
-  .[Macaca_sur %in% 1 & Macaca_dist %in% "C", Mcaca_sur := 0] #exculde >100m
+  .[Macaca_sur %in% 1 & Macaca_dist %in% "C", Mcaca_sur := 0]   #exculde >100m
+
+
 
 M.data.1 %>%  .[, .N, by = list(Year, Survey, Site_N, Point)] %>% .[ N >1,]
 
