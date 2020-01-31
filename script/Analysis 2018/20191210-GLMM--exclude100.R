@@ -17,8 +17,8 @@ M.data <- read_excel("./data/clean/for analysis.xlsx",
   .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
   .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
   .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
-  .[TypeName %like% "闊葉", TypeName.n := "broad-leaved"] %>% 
-  .[TypeName %like% "針葉", TypeName.n := "coniferous"] %>% 
+  .[TypeName %like% "闊葉樹林型", TypeName.n := "broad-leaved"] %>% 
+  .[TypeName %like% "針葉樹林型", TypeName.n := "coniferous"] %>% 
   .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)] %>% 
   .[, County := ordered(County,
                         c("宜蘭縣","基隆市","台北市","臺北市",
@@ -51,7 +51,7 @@ M.data <- read_excel("./data/clean/for analysis.xlsx",
                      "台東縣","臺東縣"), Region := "East"] %>% 
   .[, julian.D := yday(DATE)] %>% 
   .[, Altitude_c := substr(Site_N,1,1)] %>% setDT %>% 
-  .[julian.D > 75 & julian.D <= 180, ] %>% 
+  .[julian.D > 60 & julian.D <= 180, ] %>% 
   
   .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
                      "新北市","台北縣","臺北縣",
@@ -65,8 +65,9 @@ M.data <- read_excel("./data/clean/for analysis.xlsx",
                      "台南縣","臺南縣"), Region2 := "Center2"] %>%
   .[County %in% list("高雄縣","高雄市",
                      "屏東縣"), Region2 := "South"]%>%
-  .[County %in% list("花蓮縣",
-                     "台東縣","臺東縣"), Region2 := "East"] 
+  .[County %in% list("花蓮縣"
+                     ), Region2 := "East1"] %>%
+  .[County %in% list("台東縣","臺東縣"), Region2 := "East2"]
 
 
 
@@ -123,7 +124,7 @@ Anova(m1)
 
 
 summary(glht(m1, linfct = mcp(TypeName.1 = "Tukey")))
-summary(glht(m1, linfct = mcp(Region = "Tukey")))
+summary(glht(m1, linfct = mcp(Region2 = "Tukey")))
 
 summary(glht(m1, linfct = c("Year.re = 0",
                             "Altitude.1 = 0",

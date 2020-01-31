@@ -106,8 +106,66 @@ M.data.1 <-
     Macaca_sur := NA]  %>% #exculde 重複記錄
   .[!(Site_N %like% "K"),] %>%   #exculde kiman
   .[!(Site_N %in% c("A08-01", "A08-02", "A08-03", "A08-04",   #exclude蘭嶼
-                    "A08-05", "A08-06", "A08-07", "A08-08", "A08-09")),] %>% 
-  .[Macaca_sur %in% 1 & Macaca_dist %in% "C", Mcaca_sur := 0]   #exculde >100m
+                    "A08-05", "A08-06", "A08-07", "A08-08", "A08-09")),] 
+
+# for analysis2015-2018
+M.data.1 %<>%
+  setDT %>% 
+  .[Macaca_sur %in% 1 & Macaca_dist %in% "C", Mcaca_sur := 0] %>% #exculde >100m
+  .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
+  .[TypeName %like% "混", TypeName.n := "混淆林"] %>% 
+  .[TypeName %like% "竹林", TypeName.n := "竹林"] %>% 
+  .[TypeName %like% "闊葉樹林型", TypeName.n := "闊葉林"] %>% 
+  .[TypeName %like% "針葉樹林型", TypeName.n := "針葉林"] %>% 
+  .[, TypeName.1 := ifelse(Distance>20, "非森林", TypeName.n)] %>% 
+  .[, TypeName.1 := ordered(TypeName.1,c("闊葉林", "針葉林","混淆林","竹林","非森林"))] %>% 
+  .[, County := ordered(County,
+                        c("宜蘭縣","基隆市","台北市","臺北市",
+                          "新北市","台北縣","臺北縣",
+                          "桃園縣","桃園市","新竹市",
+                          "新竹縣","苗栗縣",
+                          "台中市","臺中市","台中縣","臺中縣",
+                          "彰化縣","南投縣","南投市",
+                          "雲林縣","嘉義縣","嘉義市",
+                          "台南市","臺南市","台南縣","臺南縣",
+                          "高雄縣","高雄市",
+                          "屏東縣", "花蓮縣",
+                          "台東縣","臺東縣"))] %>% 
+  
+  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
+                     "新北市","台北縣","臺北縣",
+                     "桃園縣","桃園市","新竹市",
+                     "新竹縣","苗栗縣"), Region := "North"] %>%
+  .[County %in% list("台中市","臺中市",
+                     "台中縣","臺中縣",
+                     "彰化縣","南投縣","南投市",
+                     "雲林縣","嘉義縣","嘉義市"), Region := "Center"] %>%
+  .[County %in% list("台南市","臺南市",
+                     "台南縣","臺南縣",
+                     "高雄縣","高雄市",
+                     "屏東縣"), Region := "South"]%>%
+  .[County %in% list("花蓮縣",
+                     "台東縣","臺東縣"), Region := "East"] %>% 
+  .[, julian.D := yday(DATE)] %>% 
+  .[, Altitude_c := substr(Site_N,1,1)] %>% setDT %>% 
+  
+  .[julian.D > 60 & julian.D <= 180, ] %>% 
+  
+  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
+                     "新北市","台北縣","臺北縣",
+                     "桃園縣","桃園市","新竹市",
+                     "新竹縣","苗栗縣"), Region2 := "North"] %>% 
+  .[County %in% list("台中市","臺中市",
+                     "台中縣","臺中縣",
+                     "彰化縣","南投縣","南投市"), Region2 := "Center1"] %>% 
+  .[County %in% list("雲林縣","嘉義縣","嘉義市",
+                     "台南市","臺南市",
+                     "台南縣","臺南縣"), Region2 := "Center2"] %>%
+  .[County %in% list("高雄縣","高雄市",
+                     "屏東縣"), Region2 := "South"]%>%
+  .[County %in% list("花蓮縣"), Region2 := "East1"] %>%
+  .[County %in% list("台東縣","臺東縣"), Region2 := "East2"]
+
 
 
 

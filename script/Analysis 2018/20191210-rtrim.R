@@ -51,7 +51,24 @@ M.data <- read_excel("./data/clean/for analysis.xlsx",
   .[County %in% list("花蓮縣",
                      "台東縣","臺東縣"), Region := "East"] %>% 
   .[, julian.D := yday(DATE)] %>% 
-  .[, Altitude_c := substr(Site_N,1,1)] %>% setDT 
+  .[, Altitude_c := substr(Site_N,1,1)] %>% setDT %>% 
+  .[julian.D > 75 & julian.D <= 180, ] %>% 
+  
+  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
+                     "新北市","台北縣","臺北縣",
+                     "桃園縣","桃園市","新竹市",
+                     "新竹縣","苗栗縣"), Region2 := "North"] %>% 
+  .[County %in% list("台中市","臺中市",
+                     "台中縣","臺中縣",
+                     "彰化縣","南投縣","南投市"), Region2 := "Center1"] %>% 
+  .[County %in% list("雲林縣","嘉義縣","嘉義市",
+                     "台南市","臺南市",
+                     "台南縣","臺南縣"), Region2 := "Center2"] %>%
+  .[County %in% list("高雄縣","高雄市",
+                     "屏東縣"), Region2 := "South"]%>%
+  .[County %in% list("花蓮縣",
+                     "台東縣","臺東縣"), Region2 := "East"] 
+
 
 M.data$Year %<>% as.numeric
 M.data$Survey %<>% as.numeric
@@ -64,7 +81,7 @@ M.data$julian.D %<>% as.numeric
 M.data$Region %<>% as.factor
 M.data$TypeName.1 %<>% as.factor
 M.data$Site_N %<>% as.factor
-
+M.data$Region2 %<>% as.factor
 
 
 county.area <- read.csv("./data/clean/gis/county area.csv", header = T) %>% 
@@ -84,8 +101,26 @@ county.area <- read.csv("./data/clean/gis/county area.csv", header = T) %>%
                      "屏東縣"), Region := "South"]%>%
   .[County %in% list("花蓮縣",
                      "台東縣","臺東縣"), Region := "East"] %>% 
-  .[!is.na(Region),] %>% 
-  .[, .(area=sum(Area)), by = list(Region)] %>% 
+  
+  
+  
+  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
+                     "新北市","台北縣","臺北縣",
+                     "桃園縣","桃園市","新竹市",
+                     "新竹縣","苗栗縣"), Region2 := "North"] %>% 
+  .[County %in% list("台中市","臺中市",
+                     "台中縣","臺中縣",
+                     "彰化縣","南投縣","南投市"), Region2 := "Center1"] %>% 
+  .[County %in% list("雲林縣","嘉義縣","嘉義市",
+                     "台南市","臺南市",
+                     "台南縣","臺南縣"), Region2 := "Center2"] %>%
+  .[County %in% list("高雄縣","高雄市",
+                     "屏東縣"), Region2 := "South"]%>%
+  .[County %in% list("花蓮縣",
+                     "台東縣","臺東縣"), Region2 := "East"] %>% 
+  
+  .[!is.na(Region2),] %>% 
+  .[, .(area=sum(Area)), by = list(Region2)] %>% 
   .[, prob_Area:= (area/sum(area))] 
 
 weight <- 
@@ -95,9 +130,9 @@ weight <-
   .[Year < 2019,] %>%
   .[!(TypeName.1 %in% "Not forest"), ] %>% 
   .[, SP := paste0(Site_N,"-",Point)]  %>%
-  .[, list(Year, SP, Survey, Region)] %>%
-  .[, .(point_n = .N), by = list(Year, SP, Region)] %>% 
-  .[, SP_n := .N, by = list(Year,Region)] %>%
+  .[, list(Year, SP, Survey, Region2)] %>%
+  .[, .(point_n = .N), by = list(Year, SP, Region2)] %>% 
+  .[, SP_n := .N, by = list(Year,Region2)] %>%
   left_join(county.area)  %>% setDT %>%
   .[, weight := (prob_Area / SP_n /point_n)] 
 
@@ -113,12 +148,12 @@ df <-
   .[Year < 2019,] %>%
   .[!(TypeName.1 %in% "Not forest"), ] %>% 
   .[, SP := paste0(Site_N,"-",Point)] %>% 
-  .[, .(number = sum(Macaca_sur)), by = list(Year, SP, Region)] %>% 
-  .[, N := sum(number), by = list(SP, Region)] %>% 
+  .[, .(number = sum(Macaca_sur)), by = list(Year, SP, Region2)] %>% 
+  .[, N := sum(number), by = list(SP, Region2)] %>% 
   left_join(weight[, c(1:2, 8)])  %>% setDT %>%
   .[!(N %in% 0),] %>% 
   .[, N := NULL] %>% 
-  .[, Region := factor(Region)] %>% 
+  .[, Region2 := factor(Region2)] %>% 
   setDF
 
 #--
@@ -159,7 +194,7 @@ m1 <- trim(df,
            site_col = "SP",
            year_col = "Year",
            weights_col = "weight",
-           covar_cols = "Region",
+           covar_cols = "Region2",
            model =  2,
            changepoints = "all",
            overdisp = F,
@@ -209,7 +244,7 @@ p <- ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) +
   geom_point(colour='#f3e4c2', size = 8, shape = 21, stroke = 2, fill='#ef4926') +
   expand_limits(y = 0) +
   scale_x_continuous(breaks = 2015:2018)+
-  scale_y_continuous(breaks = c(0, 100, 400, 800, 1200))+
+  scale_y_continuous(breaks = c(100, 1000,2000))+
   # coord_cartesian(ylim=c(0,150)) +
   #theme with white background
   
