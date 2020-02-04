@@ -111,7 +111,7 @@ M.data.1 <-
 # for analysis2015-2018
 M.data.1 %<>%
   setDT %>% 
-  .[Macaca_sur %in% 1 & Macaca_dist %in% "C", Mcaca_sur := 0] %>% #exculde >100m
+  .[Macaca_sur %in% 1 & Macaca_dist %in% "C", Macaca_sur := 0] %>% #exculde >100m
   .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
   .[TypeName %like% "混", TypeName.n := "混淆林"] %>% 
   .[TypeName %like% "竹林", TypeName.n := "竹林"] %>% 
