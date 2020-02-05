@@ -10,7 +10,7 @@ library(writexl)
 library(rgdal)
 
 #-----------------------------
-M.all <- read_excel("./data/clean/Macaca/Macaca_1519_v1.xlsx") %>% 
+M.all <- read_excel("./data/clean/Macaca/Macaca_1519_v2.xlsx") %>% 
   setDT
 
 

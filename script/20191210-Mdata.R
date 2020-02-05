@@ -87,4 +87,4 @@ M.all <-
 
 M.all  %>% setDT %>%.[, .N, by =  c("Year", "Site_N", "Point", "Survey")] %>% View
 
-write_xlsx(M.all, "data/clean/MAcaca/Macaca_1519_v1.xlsx")
+write_xlsx(M.all, "data/clean/MAcaca/Macaca_1519_v2.xlsx")

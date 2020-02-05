@@ -359,36 +359,39 @@ S15 <-
   
   #2019
   S19 <- 
-    read_xlsx("data/raw/2019獼猴調查(樣區整理)_分析用.xlsx",
-              sheet = 2,
-              col_types = "text") %>% 
-    setDT %>% 
-    .[, list(`樣點編號`)] %>% 
-    separate("樣點編號", c("Site_a", "Site_b","Point"), "-") %>% setDT %>%
-    .[, Site_N := paste(Site_a, Site_b, sep = "-")]  %>%
-    .[, c("Site_a", "Site_b") := NULL] %>% 
-    .[, Point := as.numeric(Point)]
+    lapply(paste0("./data/raw/"), function(x){
+      list.files(x, pattern = "BBSdata_2019", full.names = T) %>%  
+        read_xlsx(., sheet = "birddata", cell_cols("D:AF")) %>% 
+        setDT %>%
+        #.[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
+        .[!(時段 %in% "Supplementary"),] %>%
+        .[調查旅次編號 %in% c(1,2)] %>%
+        #.[ 分析 %in% "Y",] %>% 
+        .[,list(年, 樣區編號, 樣點編號, 調查旅次編號, 月, 日, `開始時間（時）`, `開始時間（分）`)] %>%
+        setnames(., c("Year", "Site_N", "Point",  "Survey", "Month", "Day", "Hour", "Minute")) %>%
+        .[!duplicated(.)]  
+    } ) %>% 
+    do.call(rbind, .) %>% 
+    data.table%>%
+    .[, Site_N := as.character(Site_N)] %>%
+    .[, Point := as.numeric(Point)] %>%
+    
+    #debug~
+    .[Site_N %in% "A35-10", Point := 1:8] %>%  #假定的調查順序
+    
   
-  S19.survey.condition <- 
-    read_xlsx("data/raw/2019獼猴調查(樣區整理)_分析用.xlsx",
-              sheet = 1) %>% 
-    setDT %>% 
-    .[, list(`樣區\r\n編號`, 第一旅次, 第二旅次)] %>% 
-    setnames(c("Site_N" ,"2019_1", "2019_2")) %>% 
-    .[, list(`2019_1` = ifelse(is.na(`2019_1`), 0, 1),
-             `2019_2` = ifelse(is.na(`2019_2`), 0, 1)),
-      by = Site_N]
-  
-  S19 %<>% S19.survey.condition[., on = "Site_N"] %>% 
-    melt(.,id.vars=c(1, 4),
-         variable.name = "Survey",
-         value.name = "Do.survey") %>% 
-    separate("Survey", c("Year", "Survey"), "_") %>%
-    setDT %>%
-    .[ !(Do.survey %in% 0),] %>% 
-    .[ ,list(Year, Site_N, Point, Survey)] %>%
-    .[ ,c("Month", "Day", "Hour", "Minute") := NA]
-  
+    #~debug
+    
+    .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
+    .[, DD := as.ITime(paste(Hour, Minute,sep = ":"))] %>% 
+    .[, Time:= as.ITime(min(DD)), by = list(Year, Site_N, Point, DATE)] %>%
+    .[, Survey := as.numeric(Survey)] %>%
+    .[, Month := as.numeric(Month)] %>%
+    .[, Day := as.numeric(Day)] %>%
+    .[, Hour := as.numeric(hour(Time))] %>%
+    .[, Minute := as.numeric(minute(Time))] %>%
+    .[, c("DD", "DATE", "Time") := NULL] %>%
+    .[!duplicated(.)]
   S19 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% View  #check N<=2 
   
   S19 %<>% 
@@ -413,6 +416,6 @@ S15 <-
           "X.y.y", "Y.y.y", "County.y.y",
           "X.y.y.y", "Y.y.y.y", "County.y.y.y") := NULL]
   
-  write_xlsx(S19, "data/clean/Site/Site_2019_v1.xlsx")
+  write_xlsx(S19, "data/clean/Site/Site_2019_v2.xlsx")
   
   

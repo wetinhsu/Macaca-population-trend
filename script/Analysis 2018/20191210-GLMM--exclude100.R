@@ -14,60 +14,12 @@ library(MuMIn)
 
 M.data <- read_excel("./data/clean/for analysis.xlsx",
                        sheet=1) %>% setDT %>% 
-  .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
+  #.[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
   .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
   .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
   .[TypeName %like% "闊葉樹林型", TypeName.n := "broad-leaved"] %>% 
   .[TypeName %like% "針葉樹林型", TypeName.n := "coniferous"] %>% 
-  .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)] %>% 
-  .[, County := ordered(County,
-                        c("宜蘭縣","基隆市","台北市","臺北市",
-                          "新北市","台北縣","臺北縣",
-                          "桃園縣","桃園市","新竹市",
-                          "新竹縣","苗栗縣",
-                          "台中市","臺中市",
-                          "台中縣","臺中縣",
-                          "彰化縣","南投縣","南投市",
-                          "雲林縣","嘉義縣","嘉義市",
-                          "台南市","臺南市",
-                          "台南縣","臺南縣",
-                          "高雄縣","高雄市",
-                          "屏東縣", "花蓮縣",
-                          "台東縣","臺東縣"))] %>% 
-  
-  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
-                     "新北市","台北縣","臺北縣",
-                     "桃園縣","桃園市","新竹市",
-                     "新竹縣","苗栗縣"), Region := "North"] %>%
-  .[County %in% list("台中市","臺中市",
-                     "台中縣","臺中縣",
-                     "彰化縣","南投縣","南投市",
-                     "雲林縣","嘉義縣","嘉義市"), Region := "Center"] %>%
-  .[County %in% list("台南市","臺南市",
-                     "台南縣","臺南縣",
-                     "高雄縣","高雄市",
-                     "屏東縣"), Region := "South"]%>%
-  .[County %in% list("花蓮縣",
-                     "台東縣","臺東縣"), Region := "East"] %>% 
-  .[, julian.D := yday(DATE)] %>% 
-  .[, Altitude_c := substr(Site_N,1,1)] %>% setDT %>% 
-  .[julian.D > 60 & julian.D <= 180, ] %>% 
-  
-  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
-                     "新北市","台北縣","臺北縣",
-                     "桃園縣","桃園市","新竹市",
-                     "新竹縣","苗栗縣"), Region2 := "North"] %>% 
-  .[County %in% list("台中市","臺中市",
-                     "台中縣","臺中縣",
-                     "彰化縣","南投縣","南投市"), Region2 := "Center1"] %>% 
-  .[County %in% list("雲林縣","嘉義縣","嘉義市",
-                     "台南市","臺南市",
-                     "台南縣","臺南縣"), Region2 := "Center2"] %>%
-  .[County %in% list("高雄縣","高雄市",
-                     "屏東縣"), Region2 := "South"]%>%
-  .[County %in% list("花蓮縣"
-                     ), Region2 := "East1"] %>%
-  .[County %in% list("台東縣","臺東縣"), Region2 := "East2"]
+  .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)] 
 
 
 
