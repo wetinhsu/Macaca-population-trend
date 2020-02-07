@@ -20,55 +20,8 @@ M.data <- read_excel("./data/clean/for analysis.xlsx",
   .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
   .[TypeName %like% "闊葉", TypeName.n := "broad-leaved"] %>% 
   .[TypeName %like% "針葉", TypeName.n := "coniferous"] %>% 
-  .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)] %>% 
-  .[, County := ordered(County,
-                        c("宜蘭縣","基隆市","台北市","臺北市",
-                          "新北市","台北縣","臺北縣",
-                          "桃園縣","桃園市","新竹市",
-                          "新竹縣","苗栗縣",
-                          "台中市","臺中市",
-                          "台中縣","臺中縣",
-                          "彰化縣","南投縣","南投市",
-                          "雲林縣","嘉義縣","嘉義市",
-                          "台南市","臺南市",
-                          "台南縣","臺南縣",
-                          "高雄縣","高雄市",
-                          "屏東縣", "花蓮縣",
-                          "台東縣","臺東縣"))] %>% 
+  .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)] 
   
-  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
-                     "新北市","台北縣","臺北縣",
-                     "桃園縣","桃園市","新竹市",
-                     "新竹縣","苗栗縣"), Region := "North"] %>%
-  .[County %in% list("台中市","臺中市",
-                     "台中縣","臺中縣",
-                     "彰化縣","南投縣","南投市",
-                     "雲林縣","嘉義縣","嘉義市"), Region := "Center"] %>%
-  .[County %in% list("台南市","臺南市",
-                     "台南縣","臺南縣",
-                     "高雄縣","高雄市",
-                     "屏東縣"), Region := "South"]%>%
-  .[County %in% list("花蓮縣",
-                     "台東縣","臺東縣"), Region := "East"] %>% 
-  .[, julian.D := yday(DATE)] %>% 
-  .[, Altitude_c := substr(Site_N,1,1)] %>% setDT %>% 
-  .[julian.D > 75 & julian.D <= 180, ] %>% 
-  
-  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
-                     "新北市","台北縣","臺北縣",
-                     "桃園縣","桃園市","新竹市",
-                     "新竹縣","苗栗縣"), Region2 := "North"] %>% 
-  .[County %in% list("台中市","臺中市",
-                     "台中縣","臺中縣",
-                     "彰化縣","南投縣","南投市"), Region2 := "Center1"] %>% 
-  .[County %in% list("雲林縣","嘉義縣","嘉義市",
-                     "台南市","臺南市",
-                     "台南縣","臺南縣"), Region2 := "Center2"] %>%
-  .[County %in% list("高雄縣","高雄市",
-                     "屏東縣"), Region2 := "South"]%>%
-  .[County %in% list("花蓮縣",
-                     "台東縣","臺東縣"), Region2 := "East"] 
-
 
 M.data$Year %<>% as.numeric
 M.data$Survey %<>% as.numeric
@@ -116,16 +69,18 @@ county.area <- read.csv("./data/clean/gis/county area.csv", header = T) %>%
                      "台南縣","臺南縣"), Region2 := "Center2"] %>%
   .[County %in% list("高雄縣","高雄市",
                      "屏東縣"), Region2 := "South"]%>%
-  .[County %in% list("花蓮縣",
-                     "台東縣","臺東縣"), Region2 := "East"] %>% 
+  .[County %in% list("花蓮縣"), Region2 := "East1"] %>%
+  .[County %in% list("台東縣","臺東縣"), Region2 := "East2"] %>% 
   
   .[!is.na(Region2),] %>% 
   .[, .(area=sum(Area)), by = list(Region2)] %>% 
-  .[, prob_Area:= (area/sum(area))] 
+  .[, prob_Area:= (area/sum(area))] %>% 
+  .[, Region2 := as.character(Region2)]
 
 weight <- 
   M.data %>% 
-  setDT %>% 
+  setDT  %>% 
+  .[, Region2 := as.character(Region2)]%>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
   .[Year < 2019,] %>%
   .[!(TypeName.1 %in% "Not forest"), ] %>% 
@@ -134,7 +89,8 @@ weight <-
   .[, .(point_n = .N), by = list(Year, SP, Region2)] %>% 
   .[, SP_n := .N, by = list(Year,Region2)] %>%
   left_join(county.area)  %>% setDT %>%
-  .[, weight := (prob_Area / SP_n /point_n)] 
+  .[, weight := (prob_Area / SP_n /point_n)]  
+  
 
 
 
@@ -244,7 +200,7 @@ p <- ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) +
   geom_point(colour='#f3e4c2', size = 8, shape = 21, stroke = 2, fill='#ef4926') +
   expand_limits(y = 0) +
   scale_x_continuous(breaks = 2015:2018)+
-  scale_y_continuous(breaks = c(100, 1000,2000))+
+  scale_y_continuous(breaks = c(100, 5000,10000))+
   # coord_cartesian(ylim=c(0,150)) +
   #theme with white background
   
@@ -264,83 +220,5 @@ p <- ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) +
   geom_hline(yintercept=100, colour = "grey", linetype = 3)
 
 plot(p)
-
-
-
-#East------
-m2 <- trim(df[df$Region=="East",],
-           count_col = "number",
-           site_col = "SP",
-           year_col = "Year",
-           weights_col = "weight",
-           #covar_cols = "Region",
-           model =  2,
-           changepoints = "all",
-           overdisp = F,
-           serialcor = F, 
-           autodelete = T, 
-           stepwise = F)
-
-
-overall(m2,"imputed") %T>% plot
-index(m2, "imputed", covars = F) %>% plot(., pct = T, main = "imputed") 
-
-
-
-#North------
-m3 <- trim(df[df$Region=="North",],
-           count_col = "number",
-           site_col = "SP",
-           year_col = "Year",
-           weights_col = "weight",
-           #covar_cols = "Region",
-           model =  2,
-           changepoints = "all",
-           overdisp = T,
-           serialcor = F, 
-           autodelete = T, 
-           stepwise = F)
-
-
-overall(m3,"imputed") %T>% plot
-index(m3, "imputed", covars = F) %>% plot(., pct = T, main = "imputed") 
-
-
-#Center------
-m4 <- trim(df[df$Region=="Center",],
-           count_col = "number",
-           site_col = "SP",
-           year_col = "Year",
-           weights_col = "weight",
-           #covar_cols = "Region",
-           model =  2,
-           changepoints = "all",
-           overdisp = F,
-           serialcor = F, 
-           autodelete = T, 
-           stepwise = F)
-
-
-overall(m4,"imputed") %T>% plot
-index(m4, "imputed", covars = F) %>% plot(., pct = T, main = "imputed") 
-
-
-#South------
-m5 <- trim(df[df$Region=="South",],
-           count_col = "number",
-           site_col = "SP",
-           year_col = "Year",
-           weights_col = "weight",
-           #covar_cols = "Region",
-           model =  2,
-           changepoints = "all",
-           overdisp = F,
-           serialcor = F, 
-           autodelete = T, 
-           stepwise = F)
-
-
-overall(m5,"imputed") %T>% plot
-index(m5, "imputed", covars = F) %>% plot(., pct = T, main = "imputed") 
 
 

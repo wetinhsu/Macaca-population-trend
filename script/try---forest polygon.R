@@ -101,3 +101,7 @@ Sys.time()
 st.dis<- st_nn(st.all, nc.1, k = 1, returnDist = TRUE) %>% do.call(cbind,.)
 Sys.time()
 
+
+
+# http://strimas.com/r/tidy-sf/
+# https://philmikejones.me/tutorials/2015-09-03-dissolve-polygons-in-r/

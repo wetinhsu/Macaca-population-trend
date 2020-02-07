@@ -25,7 +25,8 @@ S.all<- list.files("./data/clean/Site/", pattern = "Site_", full.names = T) %>%
   .[, Year := as.character(Year)]
 
 S.all %>% .[, .N, by = list(Year, Survey, Site_N, Point)] %>% .[ N >1,]
-S.all %>% .[, list(X, Y)] %>% unique %>% .[, NO := 1 : nrow(.)] %>% write.csv(., "./data/clean/gis/S_all.csv", row.names = F)
+#S.all %>% .[, list(X, Y)] %>% unique %>% .[, NO := 1 : nrow(.)] %>%
+#write.csv(., "./data/clean/gis/S_all.csv", row.names = F)
 
 M.data<- M.all %>% 
   full_join(S.all, by = c("Year", "Site_N", "Point", "Survey")) %>% 
@@ -47,11 +48,12 @@ Altitude<- read.csv("./data/clean/gis/S_all_Altitude.csv") %>%
   setDT %>% 
   setnames(.,c("Altitude", "X", "Y"))
 
+
 M.data %<>%
   left_join(Forest, by = c("X", "Y")) %>% 
   left_join(Altitude, by = c("X", "Y")) %>% 
   setDT 
-write_xlsx(M.data, "./data/clean/full_combind_data.xlsx")
+write_xlsx(M.data, "./data/clean/full_combind_data_V1.xlsx")
 
 
 

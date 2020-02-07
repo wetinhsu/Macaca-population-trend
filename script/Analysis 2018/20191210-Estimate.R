@@ -44,10 +44,35 @@ M.data <- M.data %>%
 df <- 
   M.data %>% 
   .[Year < 2019,] %>%
-  .[!(TypeName.1 %in% "Not forest"), ] %>% 
-  .[Macaca_dist %in% "c", Macaca_sur :=0]
+  .[!(TypeName.1 %in% "Not forest"), ] 
 
 #Estimate==============================================
+#bootstrap-------------------------
+bb<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)] 
+
+
+replicate(5000, mean(sample(bb$AB, replace = TRUE))) %>%
+  quantile(.,probs = c(0.025, 0.975)) 
+
+replicate(5000, mean(sample(bb$AB, replace = TRUE))) %>% mean
+
+21536.41/(0.1*0.1*pi)
+
+
+
+replicate(5000, mean(sample(bb$A, replace = TRUE))) %>%
+  quantile(.,probs = c(0.025, 0.975))
+
+replicate(5000, mean(sample(bb$A, replace = TRUE))) %>% mean
+
+21536.41/(0.025*0.025*pi)
+
+
+
+
+#level-------------------------------
 ##<25
 aa<- df %>% setDT %>% 
   .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
@@ -95,27 +120,4 @@ mean(bb$Mean)+var.100^0.5*1.96%>% round(.,7)
 
 21536.41/(0.1*0.1*pi)
 
-
-
-#bootstrap-------------------------
-bb<- df %>% setDT %>% 
-  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
-  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)] 
-
-
-replicate(10000, mean(sample(bb$AB, replace = TRUE))) %>%
-         quantile(.,probs = c(0.025, 0.975))
-  
-replicate(10000, mean(sample(bb$AB, replace = TRUE))) %>% mean
-
-21536.41/(0.1*0.1*pi)
-
-
-
-replicate(10000, mean(sample(bb$A, replace = TRUE))) %>%
-  quantile(.,probs = c(0.025, 0.975))
-
-replicate(10000, mean(sample(bb$A, replace = TRUE))) %>% mean
-
-21536.41/(0.025*0.025*pi)
 
