@@ -10,17 +10,19 @@ library(writexl)
 library(rgdal)
 
 #-----------------------------
-M.all <- read_excel("./data/clean/Macaca/Macaca_1519_v2.xlsx") %>% 
-  setDT
+M.all <- read_excel("./data/clean/Macaca/Macaca_1519_v2.xlsx", col_types = "text") %>% 
+  setDT %>% 
+  .[, Year := as.character(Year)]
 
 
 S.all<- list.files("./data/clean/Site/", pattern = "Site_", full.names = T) %>% 
     lapply(., function(x){
-      read_xlsx(x, sheet = 1, cell_cols("A:K")) %>% 
+      read_xlsx(x, sheet = 1, cell_cols("A:K"), col_types = "text") %>% 
         setDT
     }) %>% 
     do.call(rbind, .) %>% 
-    setDT
+    setDT  %>% 
+  .[, Year := as.character(Year)]
 
 S.all %>% .[, .N, by = list(Year, Survey, Site_N, Point)] %>% .[ N >1,]
 S.all %>% .[, list(X, Y)] %>% unique %>% .[, NO := 1 : nrow(.)] %>% write.csv(., "./data/clean/gis/S_all.csv", row.names = F)
