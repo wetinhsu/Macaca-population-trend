@@ -10,7 +10,7 @@ library(readxl)
 
 #Original data---- 
 
-M.data <- read_excel("./data/clean/for analysis.xlsx",
+M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
                      sheet=1) %>% setDT %>% 
   .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
   .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
@@ -43,7 +43,7 @@ M.data <- M.data %>%
 #==============================================
 df <- 
   M.data %>% 
-  .[Year < 2019,] %>%
+  #.[Year < 2019,] %>%
   .[!(TypeName.1 %in% "Not forest"), ] 
 
 #Estimate==============================================

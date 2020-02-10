@@ -13,7 +13,7 @@ library(readxl)
 
 #Original data---- 
 
-M.data <- read_excel("./data/clean/for analysis.xlsx",
+M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
                      sheet=1) %>% setDT %>% 
   .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
   .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
@@ -82,7 +82,7 @@ weight <-
   setDT  %>% 
   .[, Region2 := as.character(Region2)]%>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
-  .[Year < 2019,] %>%
+  #.[Year < 2019,] %>%
   .[!(TypeName.1 %in% "Not forest"), ] %>% 
   .[, SP := paste0(Site_N,"-",Point)]  %>%
   .[, list(Year, SP, Survey, Region2)] %>%
@@ -101,7 +101,7 @@ df <-
   M.data %>% 
   setDT %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
-  .[Year < 2019,] %>%
+  #.[Year < 2019,] %>%
   .[!(TypeName.1 %in% "Not forest"), ] %>% 
   .[, SP := paste0(Site_N,"-",Point)] %>% 
   .[, .(number = sum(Macaca_sur)), by = list(Year, SP, Region2)] %>% 
@@ -169,7 +169,7 @@ overall(m1,"imputed") %T>% plot
 
 
 plot(overall(m1, "imputed"), axes = F)
-axis(1, at = 2015:2018, cex.axis=1.5)
+axis(1, at = 2015:2019, cex.axis=1.5)
 axis(2, cex.axis=1.5)
 box()
 title( "imputed" ) 
@@ -184,7 +184,7 @@ index(m1, "imputed", covars = T) %>%
   plot(., pct = T, main = "imputed",
        axes = F,
        xaxs="i", cex.lab = 1.3)
-axis(1, at = 2015:2018, cex.axis=1.5)
+axis(1, at = 2015:2019, cex.axis=1.5)
 axis(2, cex.axis=1)
 box()
 
@@ -199,7 +199,7 @@ p <- ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) +
   geom_line(colour = '#f3e4c2', size = 2, linetype = 1) +
   geom_point(colour='#f3e4c2', size = 8, shape = 21, stroke = 2, fill='#ef4926') +
   expand_limits(y = 0) +
-  scale_x_continuous(breaks = 2015:2018)+
+  scale_x_continuous(breaks = 2015:2019)+
   scale_y_continuous(breaks = c(100, 5000,10000))+
   # coord_cartesian(ylim=c(0,150)) +
   #theme with white background

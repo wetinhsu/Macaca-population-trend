@@ -25,8 +25,10 @@ S.all<- list.files("./data/clean/Site/", pattern = "Site_", full.names = T) %>%
   .[, Year := as.character(Year)]
 
 S.all %>% .[, .N, by = list(Year, Survey, Site_N, Point)] %>% .[ N >1,]
-#S.all %>% .[, list(X, Y)] %>% unique %>% .[, NO := 1 : nrow(.)] %>%
-#write.csv(., "./data/clean/gis/S_all.csv", row.names = F)
+S.all %>% .[, list(X, Y)] %>% unique %>% .[, NO := 1 : nrow(.)] %>%
+write.csv(., 
+          paste0("./data/clean/gis/S_all_",format(Sys.time(), "%Y%m%d"),".csv"),
+          row.names = F)
 
 M.data<- M.all %>% 
   full_join(S.all, by = c("Year", "Site_N", "Point", "Survey")) %>% 

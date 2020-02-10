@@ -12,7 +12,7 @@ library(MuMIn)
 
 #Original data---- 
 
-M.data <- read_excel("./data/clean/for analysis.xlsx",
+M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
                        sheet=1) %>% setDT %>% 
   #.[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
   .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
@@ -48,7 +48,7 @@ M.data <- M.data %>%
 #==============================================
 df <- 
   M.data %>% 
-  .[Year < 2019,] %>%
+  #.[Year < 2019,] %>%
   .[!(TypeName.1 %in% "Not forest"), ] %>% 
   .[Macaca_dist %in% "c", Macaca_sur :=0]
 
@@ -99,13 +99,13 @@ sw(model.avg(d1, subset = delta < 2))
 
 #---------------------
 
-allFit(glmer(Macaca_sur ~ Altitude + Year.re + julian.D +  Region + (1|Site_N), 
+allFit(glmer(Macaca_sur ~ Altitude + Year.re + julian.D +  Region2 + (1|Site_N), 
              family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
 
-allFit(glmer(Macaca_sur ~  Altitude.1 + Year.re + julian.D.1 +  Region + (1|Site_N), 
+allFit(glmer(Macaca_sur ~  Altitude.1 + Year.re + julian.D.1 +  Region2 + (1|Site_N), 
              family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
 
-m2 <- glmer(Macaca_sur ~ Altitude.1 + Year.re  +  julian.D.1 +  Region + (1|Site_N), 
+m2 <- glmer(Macaca_sur ~ Altitude.1 + Year.re  +  julian.D.1 +  Region2 + (1|Site_N), 
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 

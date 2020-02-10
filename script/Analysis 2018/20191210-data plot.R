@@ -13,8 +13,22 @@ library(lattice)
 
 #Original data---- 
 
-M.data <- read_excel("./data/clean/for analysis.xlsx",
-                     sheet=1) %>% setDT
+M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
+                     sheet=1) %>% setDT %>%
+  .[, TypeName.1 := ordered(TypeName.1,c("闊葉林", "針葉林","混淆林","竹林","非森林"))] %>% 
+  .[, County := ordered(County,
+                        c("宜蘭縣","基隆市","台北市","臺北市",
+                          "新北市","台北縣","臺北縣",
+                          "桃園縣","桃園市","新竹市",
+                          "新竹縣","苗栗縣",
+                          "台中市","臺中市","台中縣","臺中縣",
+                          "彰化縣","南投縣","南投市",
+                          "雲林縣","嘉義縣","嘉義市",
+                          "台南市","臺南市","台南縣","臺南縣",
+                          "高雄縣","高雄市",
+                          "屏東縣", "花蓮縣",
+                          "台東縣","臺東縣"))]  
+  
 
 
 M.data$Year %<>% as.numeric
@@ -28,21 +42,21 @@ M.data$Distance %<>% as.numeric
 
 M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
 M.data %>% 
-  .[Year < 2019,] %>% 
+  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   setDT %>%
   .[, .(N = .N, m = sum(Macaca_sur)), by = list(TypeName.1,TypeName)]
 
 M.data %>% 
-  .[Year < 2019,] %>% 
+  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   setDT %>%
   .[, .(N = .N, m = sum(Macaca_sur)), by = list(Region2, County)]
 
 M.data %>% 
-  .[Year < 2019,] %>% 
+  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   setDT %>%
@@ -76,7 +90,7 @@ M.data %>%
 
 
 M.data %>% 
-  .[Year < 2019,] %>% 
+  #.[Year < 2019,] %>% 
   #.[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
   .[Macaca_sur %in% 1, .N, list(TypeName.1, Macaca_dist)] %>% 
@@ -86,7 +100,7 @@ M.data %>%
 
 
 M.data %>% 
-  .[Year < 2019,] %>% 
+  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey)] %>% 
@@ -109,7 +123,7 @@ M.data %>%
 
 Alt.d <- 
 M.data %>% 
-  .[Year < 2019,] %>% 
+  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   .[, Altitude_f := cut(Altitude,
@@ -126,15 +140,15 @@ Alt.d2 <-
 
 ggplot(Alt.d, aes( Altitude_f, Encounter_rate)) +
   geom_boxplot() +
-  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.040, label=V1), vjust=-2, color="red", size=3.5)+
-  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.045, label=N), vjust=-0.5, color="black", size=3.5)+
+  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.067, label=V1), vjust=-2, color="red", size=3.5)+
+  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=-0, color="black", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
   theme_bw() + xlab("Altitude")
 
 Rgn.d <- 
 M.data %>% 
-  .[Year < 2019,] %>% 
+  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
   .[, Region2 := ordered(Region2, c("East1", "East2","Center1", "Center2", "South", "North"))] %>% 
@@ -147,15 +161,15 @@ Rgn.d2 <-
 
 
 ggplot(Rgn.d, aes( Region2, Encounter_rate))+geom_boxplot() +
-  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.085, label=V1), vjust=-2, color="red", size=3.5)+
-  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.095, label=N), vjust=-0.5, color="black", size=3.5)+
+  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.100, label=V1), vjust=-2, color="red", size=3.5)+
+  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.115, label=N), vjust=-0, color="black", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
   theme_bw()
 
 Jd.d <- 
 M.data %>% 
-  .[Year < 2019,] %>% 
+ # .[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
   .[, julian.D_f := cut(julian.D,
@@ -170,8 +184,8 @@ Jd.d2 <-
 
 ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
   geom_boxplot() +
-  geom_text(data=Jd.d2, aes(x=julian.D_f, y = 0.040, label=V1), vjust=-2, color="red", size=3.5)+
-  geom_text(data=Jd.d2, aes(x=julian.D_f, y = 0.047, label=N), vjust=-0.5, color="black", size=3.5)+
+  geom_text(data=Jd.d2, aes(x=julian.D_f, y = 0.053, label=V1), vjust=-2, color="red", size=3.5)+
+  geom_text(data=Jd.d2, aes(x=julian.D_f, y = 0.060, label=N), vjust=-0, color="black", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
   theme_bw() + 
@@ -182,7 +196,7 @@ ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
 
 Type.d <- 
 M.data %>% 
-  .[Year < 2019,] %>% 
+  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   .[, TypeName.1:= ordered(TypeName.1, c("闊葉林", "針葉林", "混淆林", "竹林"))] %>% 
@@ -207,7 +221,7 @@ Type.d2 <-
 
 
 M.data %>%setDT %>% 
-  .[Year < 2019,] %>% 
+  #.[Year < 2019,] %>% 
   .[Macaca_sur %in% 1,DD := cut(Distance, breaks = seq(0,100,10),
                                 ordered_result = T,
                                 include.lowest = T)] %>% 
@@ -221,7 +235,7 @@ M.data %>%setDT %>%
 
   
 M.data %>% 
-  .[Year < 2019,] %>% 
+  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Region2)] %>% 
@@ -238,7 +252,7 @@ M.data %>%
 
 
 M.data %>% 
-  .[Year < 2019,] %>% 
+  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, TypeName.1)] %>% 

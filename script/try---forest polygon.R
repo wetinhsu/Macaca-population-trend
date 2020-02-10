@@ -101,7 +101,11 @@ Sys.time()
 st.dis<- st_nn(st.all, nc.1, k = 1, returnDist = TRUE) %>% do.call(cbind,.)
 Sys.time()
 
-
+cc <-
+  nc %>%
+  st_buffer(dist=0)%>%
+  group_by(TypeName) %>%
+  summarise(area = sum(Area_ha))
 
 # http://strimas.com/r/tidy-sf/
 # https://philmikejones.me/tutorials/2015-09-03-dissolve-polygons-in-r/

@@ -10,7 +10,7 @@ library(writexl)
 library(rgdal)
 library(rgeos)
 #-----------------------------
-M.data <- read_excel("./data/clean/full_combind_data.xlsx") %>% 
+M.data <- read_excel("./data/clean/full_combind_data_V1.xlsx") %>% 
   setDT
 
 
@@ -108,7 +108,7 @@ M.data.1 <-
   .[!(Site_N %in% c("A08-01", "A08-02", "A08-03", "A08-04",   #exclude蘭嶼
                     "A08-05", "A08-06", "A08-07", "A08-08", "A08-09")),] 
 
-# for analysis2015-2018
+# for analysis2015-2019
 M.data.1 %<>%
   setDT %>% 
   .[Macaca_sur %in% 1 & Macaca_dist %in% "C", Macaca_sur := 0] %>% #exculde >100m
@@ -172,4 +172,4 @@ M.data.1 %<>%
 M.data.1 %>%  .[, .N, by = list(Year, Survey, Site_N, Point)] %>% .[ N >1,]
 
 
-write_xlsx(M.data.1, "./data/clean/for analysis.xlsx")
+write_xlsx(M.data.1, "./data/clean/for analysis_V1.xlsx")
