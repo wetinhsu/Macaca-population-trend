@@ -78,7 +78,7 @@ output.1<- M.0 %>%
 write_xlsx(list(
   "group.Site" = output.1,
   "groupDistance" = M.abc),
-  "./result/20191210-cheak distacne.xlsx")
+  "./result/20191210-cheak distacne_V1.xlsx")
 
 
 M.data.1 <- 
@@ -109,9 +109,10 @@ M.data.1 <-
                     "A08-05", "A08-06", "A08-07", "A08-08", "A08-09")),] 
 
 # for analysis2015-2019
-M.data.1 %<>%
+ 
+  M.data.1 %<>%
   setDT %>% 
-  .[Macaca_sur %in% 1 & Macaca_dist %in% "C", Macaca_sur := 0] %>% #exculde >100m
+  .[Macaca_dist %in% "C", Macaca_sur := NA] %>% #exculde >100m
   .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
   .[TypeName %like% "混", TypeName.n := "混淆林"] %>% 
   .[TypeName %like% "竹林", TypeName.n := "竹林"] %>% 
@@ -149,8 +150,6 @@ M.data.1 %<>%
   .[, julian.D := yday(DATE)] %>% 
   .[, Altitude_c := substr(Site_N,1,1)] %>% setDT %>% 
   
-  .[julian.D > 60 & julian.D <= 180, ] %>% 
-  
   .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
                      "新北市","台北縣","臺北縣",
                      "桃園縣","桃園市","新竹市",
@@ -164,12 +163,18 @@ M.data.1 %<>%
   .[County %in% list("高雄縣","高雄市",
                      "屏東縣"), Region2 := "South"]%>%
   .[County %in% list("花蓮縣"), Region2 := "East1"] %>%
-  .[County %in% list("台東縣","臺東縣"), Region2 := "East2"]
+  .[County %in% list("台東縣","臺東縣"), Region2 := "East2"]  
+  
+
+  M.data.2 <-
+    M.data.1 %>%  .[julian.D > 60 & julian.D <= 180, ] 
+
+M.data.1 %>%  .[!(julian.D > 60 & julian.D <= 180), ]  %>% 
+  dcast(Year + Survey ~ julian.D, value.var = "Point")
+  
 
 
+M.data.2 %>%  .[, .N, by = list(Year, Survey, Site_N, Point)] %>% .[ N >1,]
 
 
-M.data.1 %>%  .[, .N, by = list(Year, Survey, Site_N, Point)] %>% .[ N >1,]
-
-
-write_xlsx(M.data.1, "./data/clean/for analysis_V1.xlsx")
+write_xlsx(M.data.2, "./data/clean/for analysis_V1.xlsx")

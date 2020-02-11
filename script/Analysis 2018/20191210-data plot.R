@@ -41,6 +41,7 @@ M.data$Distance %<>% as.numeric
 
 
 M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
+
 M.data %>% 
   #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
@@ -53,9 +54,14 @@ M.data %>%
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   setDT %>%
-  .[, .(N = .N, m = sum(Macaca_sur)), by = list(Region2, County)]
+  
+  .[, .(N = .N, m = sum(Macaca_sur)), by = list(Region2,County,Year)] %>%
+  .[fread(("./data/clean/gis/county area-2.csv"), col.names =c("County", "Area", "perimeter")), on = "County"] %>% 
+  .[, perimeter := NULL] %>%
+  .[!(County %in% c("金門縣","澎湖縣", "連江縣")),] %>%
+  dcast(Region2+County+ Area~ Year, value.var = c("N","m")) 
 
-M.data %>% 
+  M.data %>% 
   #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
@@ -65,7 +71,7 @@ M.data %>%
 #-----------------------------------
 
 M.data %>%  
-  .[Macaca_sur %in%1,] %>%
+  .[Macaca_sur %in% 1,] %>%
   .[,.(ll=length(Macaca_sur),
        mm=length(unique(Site_N)),
        kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
@@ -85,7 +91,8 @@ M.data %>%
 
 
 M.data %>%    
-  .[,.(ll=length(Macaca_sur), M = sum(Macaca_sur,na.rm=T)), by = list(Year, Survey, TypeName.1)]%>%
+  .[,.(ll=length(Macaca_sur), M = sum(Macaca_sur,na.rm=T)),
+    by = list(Year, Survey, TypeName.1)]%>%
   dcast(.,Year + Survey ~ TypeName.1, value.var = c("ll", "M"))
 
 
@@ -140,8 +147,8 @@ Alt.d2 <-
 
 ggplot(Alt.d, aes( Altitude_f, Encounter_rate)) +
   geom_boxplot() +
-  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.067, label=V1), vjust=-2, color="red", size=3.5)+
-  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=-0, color="black", size=3.5)+
+  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.067, label=V1), vjust=-2, color="black", size=3.5)+
+  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=-0, color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
   theme_bw() + xlab("Altitude")
@@ -151,7 +158,7 @@ M.data %>%
   #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
-  .[, Region2 := ordered(Region2, c("East1", "East2","Center1", "Center2", "South", "North"))] %>% 
+  .[, Region2 := ordered(Region2, c("North","Center1", "Center2", "South","East1", "East2" ))] %>% 
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Region2)] %>% 
   .[, Encounter_rate := V1/N] 
 
@@ -161,11 +168,17 @@ Rgn.d2 <-
 
 
 ggplot(Rgn.d, aes( Region2, Encounter_rate))+geom_boxplot() +
-  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.100, label=V1), vjust=-2, color="red", size=3.5)+
-  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.115, label=N), vjust=-0, color="black", size=3.5)+
+  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.100, label=V1), vjust=-2, color="black", size=3.5)+
+  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.115, label=N), vjust=-0, color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
-  theme_bw()
+  theme_bw()+
+  scale_x_discrete("Region", labels = c("North" = "北部",
+                                         "Center1" = "中彰投",
+                                         "Center2" = "雲嘉南",
+                                         "South" = "高屏",
+                                         "East1" = "花蓮",
+                                         "East2" = "台東"))
 
 Jd.d <- 
 M.data %>% 
@@ -184,8 +197,8 @@ Jd.d2 <-
 
 ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
   geom_boxplot() +
-  geom_text(data=Jd.d2, aes(x=julian.D_f, y = 0.053, label=V1), vjust=-2, color="red", size=3.5)+
-  geom_text(data=Jd.d2, aes(x=julian.D_f, y = 0.060, label=N), vjust=-0, color="black", size=3.5)+
+  geom_text(data=Jd.d2, aes(x=julian.D_f, y = 0.053, label=V1), vjust=-2, color="black", size=3.5)+
+  geom_text(data=Jd.d2, aes(x=julian.D_f, y = 0.060, label=N), vjust=-0, color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
   theme_bw() + 
@@ -210,8 +223,8 @@ Type.d2 <-
   
   ggplot(Type.d, aes(TypeName.1, Encounter_rate))+
     geom_boxplot() +
-    geom_text(data=Type.d2, aes(x=TypeName.1, y = 0.040, label=V1), vjust=-2, color="red", size=3.5)+
-    geom_text(data=Type.d2, aes(x=TypeName.1, y = 0.045, label=N), vjust=-0.5, color="black", size=3.5)+
+    geom_text(data=Type.d2, aes(x=TypeName.1, y = 0.040, label=V1), vjust=-2, color="black", size=3.5)+
+    geom_text(data=Type.d2, aes(x=TypeName.1, y = 0.045, label=N), vjust=-0.5, color="red", size=3.5)+
     #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
     #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
     theme_bw() + 
