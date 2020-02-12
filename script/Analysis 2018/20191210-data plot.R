@@ -42,14 +42,14 @@ M.data$Distance %<>% as.numeric
 
 M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
 
-M.data %>% 
+(output.1<- M.data %>% 
   #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   setDT %>%
-  .[, .(N = .N, m = sum(Macaca_sur)), by = list(TypeName.1,TypeName)]
+  .[, .(N = .N, m = sum(Macaca_sur)), by = list(TypeName.1,TypeName)])
 
-M.data %>% 
+(output.2<- M.data %>% 
   #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
@@ -59,53 +59,70 @@ M.data %>%
   .[fread(("./data/clean/gis/county area-2.csv"), col.names =c("County", "Area", "perimeter")), on = "County"] %>% 
   .[, perimeter := NULL] %>%
   .[!(County %in% c("金門縣","澎湖縣", "連江縣")),] %>%
-  dcast(Region2+County+ Area~ Year, value.var = c("N","m")) 
+  dcast(Region2+County+ Area~ Year, value.var = c("N","m")) )
 
-  M.data %>% 
+
+(output.3<- M.data %>% 
   #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   setDT %>%
-  .[, .(N = .N, m = sum(Macaca_sur)), by = list(Region2)]
+  .[, .(N = .N, m = sum(Macaca_sur)), by = list(Region2)])
 
 #-----------------------------------
 
-M.data %>%  
+(output.4<- M.data %>%  
   .[Macaca_sur %in% 1,] %>%
   .[,.(ll=length(Macaca_sur),
        mm=length(unique(Site_N)),
        kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
-  dcast(.,County ~ Year , value.var = c( "ll","mm","kk"))
+  dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))
 
 
 
-M.data %>%   
+(output.5<- M.data %>%   
   .[Macaca_sur %in% 0 & !is.na(Macaca_dist),] %>% 
   .[,.(ll=length(Macaca_sur),
        mm=length(unique(Site_N)),
        kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
-  dcast(.,County ~ Year , value.var = c( "ll","mm","kk"))
+  dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))
 
 
-
-
-
-M.data %>%    
+(output.6<- M.data %>%    
   .[,.(ll=length(Macaca_sur), M = sum(Macaca_sur,na.rm=T)),
     by = list(Year, Survey, TypeName.1)]%>%
-  dcast(.,Year + Survey ~ TypeName.1, value.var = c("ll", "M"))
+  dcast(.,Year + Survey ~ TypeName.1, value.var = c("ll", "M")))
 
 
-M.data %>% 
+(output.7<- M.data %>% 
   #.[Year < 2019,] %>% 
   #.[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
   .[Macaca_sur %in% 1, .N, list(TypeName.1, Macaca_dist)] %>% 
-  dcast(., TypeName.1~Macaca_dist, value.var = "N")
+  dcast(., TypeName.1~Macaca_dist, value.var = "N"))
 
-#------------------------------------------
+write_xlsx(list(
+  TypeName_point = output.1,
+  County_point= output.2,
+  Region2= output.3,
+  group_County = output.4,
+  single_County = output.5, 
+  Forest_Macaca = output.6,
+  Macaca_dist = output.7),
+  paste0("./result/tables_",format(Sys.Date(),"%y%m%d"),".xlsx"))
 
+#know your data------------------------------------------
+M.data %>% .[, .N, by = list(Year, Survey)]
+M.data %>% dcast( County ~ Year + Survey, value.var = "Point", length)
+M.data %>% dcast( TypeName.1 + TypeName ~ Year + Survey, value.var = "Point", length) 
+M.data %>% .[, Altitude_c := cut(Altitude, breaks=seq(0,4000,500), include.lowest = T)] %>%
+  dcast( Altitude_c ~ Year + Survey, value.var = "Point", length) 
+M.data %>%  dcast( julian.D ~ Year + Survey, value.var = "Point", length) %>% View()
 
+  
+  
+
+#--------------------------
 M.data %>% 
   #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 

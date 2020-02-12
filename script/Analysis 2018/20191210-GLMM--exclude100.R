@@ -81,6 +81,7 @@ summary(glht(m1, linfct = c("Year.re = 0",
                             "Altitude.1 = 0",
                             "julian.D.1 = 0"))) 
 
+plot(cld(glht(m1, linfct = mcp(Region2 = "Tukey"))))
 #AICc==============================================
 options(na.action = "na.fail")
 d1<- dredge(

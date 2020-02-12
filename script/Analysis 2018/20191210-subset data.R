@@ -18,7 +18,7 @@ M.data %<>%
   dcast.data.table(.,Year + Site_N ~ Survey, value.var = "Macaca_sur") %>%  
   #計算第1旅次及第2旅次調查的樣點數
   .[`1` %in% 0,] %>%  #找出有第2旅次沒第1旅次的樣區
-  .[M.data, on = c("Year", "Site_N")] %>%  
+  .[M.data, on = c("Year", "Site_N")] %>%
   .[!is.na(`1`), Survey := 1] %>%  #將第1次調查的旅次改回1
   .[,`1` := NULL]%>%
   .[,`2` := NULL]
@@ -110,7 +110,7 @@ M.data.1 <-
 
 # for analysis2015-2019
  
-  M.data.1 %<>%
+M.data.1 %<>%
   setDT %>% 
   .[Macaca_dist %in% "C", Macaca_sur := NA] %>% #exculde >100m
   .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
@@ -166,8 +166,8 @@ M.data.1 <-
   .[County %in% list("台東縣","臺東縣"), Region2 := "East2"]  
   
 
-  M.data.2 <-
-    M.data.1 %>%  .[julian.D > 60 & julian.D <= 180, ] 
+M.data.2 <-
+  M.data.1 %>%  .[julian.D > 60 & julian.D <= 180, ] 
 
 M.data.1 %>%  .[!(julian.D > 60 & julian.D <= 180), ]  %>% 
   dcast(Year + Survey ~ julian.D, value.var = "Point")
@@ -178,3 +178,26 @@ M.data.2 %>%  .[, .N, by = list(Year, Survey, Site_N, Point)] %>% .[ N >1,]
 
 
 write_xlsx(M.data.2, "./data/clean/for analysis_V1.xlsx")
+
+#know your data------------------------------------------
+M.data.1 %>%
+  .[, Altitude_c := cut(Altitude, breaks=seq(0,4000,500), include.lowest = T, ordered_result = T)] %>%
+  .[, julian.D:=ordered(julian.D)] %>% 
+  .[,.N,by =list(Year, Survey, TypeName.1, Altitude_c, julian.D, County)] %>% 
+  
+  melt(id.vars= c("Year", "Survey","N"), 
+       measure.vars=c("TypeName.1", "Altitude_c", "julian.D","County")) %>% 
+  dcast(variable+value~Year+Survey  , value.var="N",sum) %>% View()
+
+M.data.1 %>%
+  .[Macaca_sur %in% 1,] %>% 
+  .[, Altitude_c := cut(Altitude, breaks=seq(0,4000,500), include.lowest = T, ordered_result = T)] %>%
+  .[, julian.D:=ordered(julian.D)] %>% 
+  .[,.N,by =list(Year, Survey, TypeName.1, Altitude_c, julian.D, County)] %>% 
+  
+  melt(id.vars= c("Year", "Survey","N"), 
+       measure.vars=c("TypeName.1", "Altitude_c", "julian.D","County")) %>% 
+  dcast(variable+value~Year+Survey  , value.var="N",sum) %>% View()
+
+
+

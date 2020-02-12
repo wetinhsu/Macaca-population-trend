@@ -48,7 +48,8 @@ xy.17<- read_excel("./data/raw/BBSpointXY/BBSpoint2017_管理者端.xlsx",
   .[, X :=as.numeric(X)] %>% 
   .[, Y :=as.numeric(Y)] %>% 
   .[, X := round(X, 5)] %>% 
-  .[, Y := round(Y, 5)] 
+  .[, Y := round(Y, 5)] %>% 
+  .[ County %in% "桃園縣", County := "桃園市"]
 
 xy.14<- read_excel("./data/raw/BBSpointXY/2014樣點表.xls",
                    sheet= "BBS樣點表(完整版)",
@@ -62,7 +63,8 @@ xy.14<- read_excel("./data/raw/BBSpointXY/2014樣點表.xls",
   .[, X :=as.numeric(X)] %>% 
   .[, Y :=as.numeric(Y)] %>% 
   .[, X := round(X, 5)] %>% 
-  .[, Y := round(Y, 5)] 
+  .[, Y := round(Y, 5)] %>% 
+  .[ County %in% "桃園縣", County := "桃園市"]
 #------------------------
 #2015
 
@@ -165,7 +167,7 @@ S15 <-
    .[!duplicated(.)] 
  
  
- S16 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% View #check N<=2
+ S16 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% .[N>2,] #check N<=2
 
  
  S16.2<- 
@@ -199,7 +201,7 @@ S15 <-
  
  
  
- rbind(S16,S16.2) %>% setDT %>%.[, length(Survey), by =  c("Year", "Site_N", "Point")] %>% View
+ rbind(S16,S16.2) %>% setDT %>%.[, length(Survey), by =  c("Year", "Site_N", "Point")] %>% .[V1>2,]
  
  S16 <- rbind(S16,S16.2)%>% 
    left_join(xy.19, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
@@ -265,7 +267,7 @@ S15 <-
    .[!duplicated(.)]
  
 
-  S17 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% View  #check N<=2 
+  S17 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% .[N>2,]  #check N<=2 
 
   S17 %<>% 
     left_join(xy.19, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
@@ -330,7 +332,7 @@ S15 <-
     .[!duplicated(.)]
   
   
-  S18 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% View  #check N<=2 
+  S18 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% .[N>2,]  #check N<=2 
 
   
   S18 %<>% 
@@ -392,7 +394,7 @@ S15 <-
     .[, Minute := as.numeric(minute(Time))] %>%
     .[, c("DD", "DATE", "Time") := NULL] %>%
     .[!duplicated(.)]
-  S19 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% View  #check N<=2 
+  S19 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% .[N>2,]  #check N<=2 
   
   S19 %<>% 
     left_join(xy.19, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
