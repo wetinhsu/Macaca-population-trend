@@ -171,6 +171,11 @@ M.data.2 <-
 
 M.data.1 %>%  .[!(julian.D > 60 & julian.D <= 180), ]  %>% 
   dcast(Year + Survey ~ julian.D, value.var = "Point")
+
+M.data.3 <-
+M.data.1 %>% 
+  .[!(DATE < as.IDate(paste(Year, 3, 1, sep = "/"))  |
+      DATE > as.IDate(paste(Year, 6, 30, sep = "/"))),]
   
 
 

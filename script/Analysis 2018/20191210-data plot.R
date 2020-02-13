@@ -55,11 +55,11 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   setDT %>%
   
-  .[, .(N = .N, m = sum(Macaca_sur)), by = list(Region2,County,Year)] %>%
+  .[, .(N = .N, m = sum(Macaca_sur)), by = list(Region2,County,Year,Survey)] %>%
   .[fread(("./data/clean/gis/county area-2.csv"), col.names =c("County", "Area", "perimeter")), on = "County"] %>% 
   .[, perimeter := NULL] %>%
   .[!(County %in% c("金門縣","澎湖縣", "連江縣")),] %>%
-  dcast(Region2+County+ Area~ Year, value.var = c("N","m")) )
+  dcast(Region2+County+ Area~ Year+Survey, value.var = c("N","m")) )
 
 
 (output.3<- M.data %>% 

@@ -113,4 +113,8 @@ summary(m2)
 
 Anova(m2)
 
-
+#-----
+m3 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 +  Region2 + (1|Site_N), 
+            family = binomial, data = df[df$julian.D>75,],
+            control = glmerControl(optimizer = "bobyqa"))
+Anova(m3)

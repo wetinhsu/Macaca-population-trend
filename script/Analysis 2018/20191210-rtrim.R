@@ -15,11 +15,11 @@ library(readxl)
 
 M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
                      sheet=1) %>% setDT %>% 
-  .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
+  #.[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
   .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
   .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
-  .[TypeName %like% "闊葉", TypeName.n := "broad-leaved"] %>% 
-  .[TypeName %like% "針葉", TypeName.n := "coniferous"] %>% 
+  .[TypeName %like% "闊葉樹林型", TypeName.n := "broad-leaved"] %>% 
+  .[TypeName %like% "針葉樹林型", TypeName.n := "coniferous"] %>% 
   .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)] 
   
 
@@ -37,7 +37,7 @@ M.data$Site_N %<>% as.factor
 M.data$Region2 %<>% as.factor
 
 
-county.area <- read.csv("./data/clean/gis/county area.csv", header = T) %>% 
+county.area <- read.csv("./data/clean/gis/county area-2.csv", header = T) %>% 
   setDT %>% 
   setnames(.,c("County", "Area", "perimeter")) %>% 
   .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
@@ -200,7 +200,7 @@ p <- ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) +
   geom_point(colour='#f3e4c2', size = 8, shape = 21, stroke = 2, fill='#ef4926') +
   expand_limits(y = 0) +
   scale_x_continuous(breaks = 2015:2019)+
-  scale_y_continuous(breaks = c(100, 5000,10000))+
+  #scale_y_continuous(breaks = c(100, 5000,10000))+
   # coord_cartesian(ylim=c(0,150)) +
   #theme with white background
   
