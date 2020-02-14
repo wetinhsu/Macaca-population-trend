@@ -169,8 +169,16 @@ M.data.1 %<>%
 M.data.2 <-
   M.data.1 %>%  .[julian.D > 60 & julian.D <= 180, ] 
 
-M.data.1 %>%  .[!(julian.D > 60 & julian.D <= 180), ]  %>% 
-  dcast(Year + Survey ~ julian.D, value.var = "Point")
+M.data.1 %>%  .[!(julian.D > 60 & julian.D <= 180), ]  %>%  
+  .[, Macaca_sur := as.numeric(Macaca_sur)] %>% 
+  .[, .(N.point = .N, m = sum(Macaca_sur, na.rm=T)), by = list( Year, Survey, julian.D)] %>% 
+  .[, N.point := as.numeric(N.point)] %>% 
+  melt(id.vars = c("Year", "Survey", "julian.D")) %>% 
+  dcast(Year + Survey+ variable  ~ julian.D , value.var = c("value"))
+  
+  
+   
+  
 
 M.data.3 <-
 M.data.1 %>% 

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="all_20191224-Sheet1">
+        <SrcDataSource relativeToVRT="1">all_20191224.xlsx</SrcDataSource>
+        <!--Header=True-->
+        <SrcSql dialect="sqlite">SELECT * FROM 'Sheet1' LIMIT 5351 OFFSET 1</SrcSql>
+        <Field name="樣區編號" src="Field1" type="String"/>
+        <Field name="樣點代號" src="Field2" type="String"/>
+        <Field name="縣市" src="Field3" type="String"/>
+        <Field name="樣區名稱" src="Field4" type="String"/>
+        <Field name="樣區樣點編號" src="Field5" type="String"/>
+        <Field name="X.67" src="Field6" type="String"/>
+        <Field name="Y.67" src="Field7" type="String"/>
+        <Field name="X_經度(度分秒)" src="Field10" type="String"/>
+        <Field name="Y_緯度(度分秒)" src="Field11" type="String"/>
+        <Field name="X_經度" src="Field12" type="String"/>
+        <Field name="Y_緯度" src="Field13" type="String"/>
+        <Field name="備註" src="Field14" type="String"/>
+        <Field name="環境特徵描述" src="Field15" type="String"/>
+        <Field name="Field16" src="Field16" type="String"/>
+        <Field name="Field17" src="Field17" type="String"/>
+        <Field name="Field18" src="Field18" type="String"/>
+        <Field name="Field19" src="Field19" type="String"/>
+        <Field name="Field20" src="Field20" type="String"/>
+        <Field name="Field21" src="Field21" type="String"/>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>EPSG:3826</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="Field8" y="Field9"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>
