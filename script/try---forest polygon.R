@@ -102,8 +102,11 @@ st.dis<- st_nn(st.all, nc.1, k = 1, returnDist = TRUE) %>% do.call(cbind,.)
 Sys.time()
 
 cc <-
-  nc %>%
+  nc.1 %>%
   st_buffer(dist=0)%>%
+  filter(TypeName %in% c( "針葉樹林型", 
+                        "竹針混淆林", "竹針闊混淆林", "竹闊混淆林",
+                        "針闊葉樹混","針闊葉樹混淆")) %>% 
   group_by(TypeName) %>%
   summarise(area = sum(Area_ha))
 
