@@ -179,7 +179,7 @@ M.data %>%
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   .[, Altitude_f := cut(Altitude,
                         breaks = c(seq(0,4000,500)),
-                        labels = c(seq(0,3500,500)),
+                        labels = c(seq(0,3800,500)),
                         include.lowest = T)] %>% 
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
   .[, Encounter_rate := V1/N]
@@ -190,13 +190,49 @@ Alt.d2 <-
 
 
 ggplot(Alt.d, aes( Altitude_f, Encounter_rate)) +
-  geom_boxplot() +
+  geom_point() +
   geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.067, label=V1), vjust=-2, color="black", size=3.5)+
   geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=-0, color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
   theme_bw() + xlab("Altitude")
 
+#----
+
+Alt.d <- 
+  M.data %>% 
+  #.[Year < 2019,] %>% 
+  .[!(TypeName.1 %in% "非森林"),] %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+  .[, Altitude_f := cut(Altitude,
+                        breaks = c(seq(0,4000,100)),
+                        labels = c(seq(0,3900,100)),
+                        include.lowest = T)] %>% 
+  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
+  .[, Encounter_rate := V1/N]
+
+Alt.d2 <-
+  Alt.d %>% copy %>% 
+  .[, .(N = sum(V1), V1 =sum(N)), by = list(Altitude_f)]
+
+
+ggplot(Alt.d, aes( as.numeric(Altitude_f), Encounter_rate)) +
+  geom_point() +
+  geom_smooth( method = loess)+
+  #geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.067, label=V1), vjust=-2, color="black", size=3.5)+
+  #geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=-0, color="red", size=3.5)+
+  #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
+  #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
+  theme_bw() + xlab("Altitude")
+
+
+
+
+
+
+
+
+#----
 Rgn.d <- 
 M.data %>% 
   #.[Year < 2019,] %>% 
