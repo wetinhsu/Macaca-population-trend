@@ -70,27 +70,6 @@ m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 +  Regi
 summary(m1)
 
 
-#anova table==============================================
-Anova(m1)
-
-
-summary(glht(m1, linfct = mcp(TypeName.1 = "Tukey")))
-summary(glht(m1, linfct = mcp(Region2 = "Tukey")))
-
-summary(glht(m1, linfct = c("Year.re = 0",
-                            "Altitude.1 = 0",
-                            "julian.D.1 = 0"))) 
-par(mai=c(1,1.5,1,1))
-glht(m1, linfct = mcp(Region2 = "Tukey")) %>% plot
-
-par(mai=c(1,1,1.2,1))
-plot(cld(glht(m1, linfct = mcp(Region2 = "Tukey"))), axes=F)
-axis(2)
-axis(1,at=1:6,labels = c("中彰投","雲嘉南","花蓮", "台東",  "北部","高屏"))
-box()
-
-
-
 #AICc==============================================
 options(na.action = "na.fail")
 d1<- dredge(
@@ -107,6 +86,37 @@ importance(d1)
 sw(model.avg(d1, subset = delta < 2))
 
 #---------------------
+m2 <- glmer(Macaca_sur ~ Altitude.1 + Year.re  +  julian.D.1 +  Region2 + (1|Site_N), 
+            family = binomial, data = df,
+            control = glmerControl(optimizer = "bobyqa"))
+
+
+d2<- dredge(m2, trace = T)
+
+importance(d2)
+
+
+#anova table==============================================
+Anova(m2)
+
+
+summary(glht(m2, linfct = mcp(TypeName.1 = "Tukey")))
+summary(glht(m2, linfct = mcp(Region2 = "Tukey")))
+
+summary(glht(m2, linfct = c("Year.re = 0",
+                            "Altitude.1 = 0",
+                            "julian.D.1 = 0"))) 
+par(mai=c(1,1.5,1,1))
+glht(m2, linfct = mcp(Region2 = "Tukey")) %>% plot
+
+par(mai=c(1,1,1.2,1))
+plot(cld(glht(m2, linfct = mcp(Region2 = "Tukey"))), axes=F)
+axis(2)
+axis(1,at=1:6,labels = c("中彰投","雲嘉南","花蓮", "台東",  "北部","高屏"))
+box()
+
+
+
 
 allFit(glmer(Macaca_sur ~ Altitude + Year.re + julian.D +  Region2 + (1|Site_N), 
              family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
@@ -114,16 +124,13 @@ allFit(glmer(Macaca_sur ~ Altitude + Year.re + julian.D +  Region2 + (1|Site_N),
 allFit(glmer(Macaca_sur ~  Altitude.1 + Year.re + julian.D.1 +  Region2 + (1|Site_N), 
              family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
 
-m2 <- glmer(Macaca_sur ~ Altitude.1 + Year.re  +  julian.D.1 +  Region2 + (1|Site_N), 
-            family = binomial, data = df,
-            control = glmerControl(optimizer = "bobyqa"))
 
 summary(m2)
 
 Anova(m2)
 
 #-----
-m3 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 +  Region2 + (1|Site_N), 
+m3 <- glmer(Macaca_sur ~  Altitude.1 + Year.re + julian.D.1 +  Region2 + (1|Site_N), 
             family = binomial, data = df[df$julian.D>75,],
             control = glmerControl(optimizer = "bobyqa"))
 Anova(m3)
@@ -132,20 +139,12 @@ Anova(m3)
 
 #-------------------------------------------
 
-allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + I(Altitude^2) + julian.D +  Region2 + (1|Site_N), 
-             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
-
-
-
-df$Altitude.1 <-  scale(df$Altitude,scale =T)
-df$julian.D.1 <-  scale(df$julian.D,scale =T)
-
-m3 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + I(Altitude.1^2) + Altitude.1 + julian.D.1 +  Region2 + (1|Site_N), 
+m4 <- glmer(Macaca_sur ~ I(Altitude.1^2) + Altitude.1 + Year.re + julian.D.1 +  Region2 + (1|Site_N), 
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 
 
 
-summary(m3)
-Anova(m3)
+summary(m4)
+Anova(m4)
 

@@ -190,7 +190,7 @@ Alt.d2 <-
 
 
 ggplot(Alt.d, aes( Altitude_f, Encounter_rate)) +
-  geom_point() +
+  geom_boxplot() +
   geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.067, label=V1), vjust=-2, color="black", size=3.5)+
   geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=-0, color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
@@ -209,24 +209,36 @@ Alt.d <-
                         labels = c(seq(0,3900,100)),
                         include.lowest = T)] %>% 
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
-  .[, Encounter_rate := V1/N]
+  .[, Encounter_rate := V1/N] %>% 
+  .[, Altitude_f :=  as.character(Altitude_f)]%>% 
+  .[, Altitude_f :=  as.numeric(Altitude_f)]
 
 Alt.d2 <-
   Alt.d %>% copy %>% 
   .[, .(N = sum(V1), V1 =sum(N)), by = list(Altitude_f)]
 
 
-ggplot(Alt.d, aes( as.numeric(Altitude_f), Encounter_rate)) +
+ggplot(Alt.d, aes( Altitude_f, Encounter_rate)) +
   geom_point() +
-  geom_smooth( method = loess)+
+  #geom_smooth(method = "lm", formula = y~ poly(x,2) )+
+  geom_smooth(method = "loess", formula = y~ x  )+
+  #geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.067, label=V1), vjust=-2, color="black", size=3.5)+
+  #geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=-0, color="red", size=3.5)+
+  #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
+  #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
+  theme_bw() + xlab("Altitude")+
+  scale_x_continuous(breaks = seq(0,4000,500))
+
+
+ggplot(M.data, aes( Altitude, Macaca_sur)) +
+  geom_point() +
+  geom_smooth(method = "loess")+
+  #geom_smooth( method = "loess")+
   #geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.067, label=V1), vjust=-2, color="black", size=3.5)+
   #geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=-0, color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
   theme_bw() + xlab("Altitude")
-
-
-
 
 
 
