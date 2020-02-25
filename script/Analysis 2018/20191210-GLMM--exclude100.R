@@ -21,7 +21,6 @@ M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
   .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)] 
 
 
-
 M.data$Year %<>% as.numeric
 M.data$Survey %<>% as.numeric
 M.data$Point %<>% as.numeric
@@ -100,7 +99,7 @@ importance(d2)
 Anova(m2)
 
 
-summary(glht(m2, linfct = mcp(TypeName.1 = "Tukey")))
+
 summary(glht(m2, linfct = mcp(Region2 = "Tukey")))
 
 summary(glht(m2, linfct = c("Year.re = 0",
@@ -118,16 +117,51 @@ box()
 
 
 
-allFit(glmer(Macaca_sur ~ Altitude + Year.re + julian.D +  Region2 + (1|Site_N), 
-             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
-
-allFit(glmer(Macaca_sur ~  Altitude.1 + Year.re + julian.D.1 +  Region2 + (1|Site_N), 
-             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
-
-
 summary(m2)
 
+
 Anova(m2)
+
+new.data <-  expand.grid(
+  Region2=unique(df$Region2),
+  Year=2015:2019,
+  julian.D=seq(60,180,10),
+  Altitude=seq(0,3800,100)) %>% setDT %>% 
+  .[, Year.re := Year - min(Year) + 1] %>% 
+  .[, Altitude.1 :=  scale(Altitude,scale =T)] %>% 
+  .[, julian.D.1 :=  scale(julian.D,scale =T)] 
+
+pp <- 
+  cbind(new.data,
+        PREDICT = predict(m2,new.data,re.form= ~0, type = c( "response"))
+  )
+
+
+plot(pp$Region2, pp$PREDICT)
+plot(pp$Year, pp$PREDICT)
+plot(pp$julian.D, pp$PREDICT)
+plot(pp$Altitude, pp$PREDICT)
+points(pp[pp$Region2 =="East2",]$Altitude, pp[pp$Region2 =="East2",]$PREDICT,col=2)
+points(pp[pp$Region2 =="East1",]$Altitude, pp[pp$Region2 =="East1",]$PREDICT,col=3)
+points(pp[pp$Region2 =="Center2",]$Altitude, pp[pp$Region2 =="Center2",]$PREDICT,col=6)
+points(pp[pp$Region2 =="Center1",]$Altitude, pp[pp$Region2 =="Center1",]$PREDICT,col=5)
+points(pp[pp$Region2 =="North",]$Altitude, pp[pp$Region2 =="North",]$PREDICT,col=4)
+
+
+
+
+pp2 <- 
+cbind(unique(df),
+      PREDICT = predict(m2,unique(df),re.form= ~(1|Site_N), type = c( "response"))
+) 
+
+plot(pp2$Region2, pp2$PREDICT)
+plot(pp2$Year, pp2$PREDICT)
+plot(pp2$julian.D, pp2$PREDICT)
+plot(pp2$Altitude, pp2$PREDICT)
+
+
+
 
 #-----
 m3 <- glmer(Macaca_sur ~  Altitude.1 + Year.re + julian.D.1 +  Region2 + (1|Site_N), 
