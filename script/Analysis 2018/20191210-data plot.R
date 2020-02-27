@@ -182,53 +182,34 @@ M.data %>%
                         labels = c(seq(0,3800,500)),
                         include.lowest = T)] %>% 
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
-  .[, Encounter_rate := V1/N]
+  .[, Encounter_rate := V1/N] 
+
 
 Alt.d2 <-
   Alt.d %>% copy %>% 
   .[, .(N = sum(V1), V1 =sum(N)), by = list(Altitude_f)]
 
 
-ggplot(Alt.d, aes( Altitude_f, Encounter_rate)) +
-  geom_boxplot() +
-  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.067, label=V1), vjust=-2, color="black", size=3.5)+
-  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=-0, color="red", size=3.5)+
-  #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
-  #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
+ggplot(Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
+  geom_boxplot(width=0.4) +
+  geom_smooth(data =Alt.d,aes(x=Altitude_f, y = Encounter_rate) ,method = "loess")+
+  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=V1), vjust=1.5, color="black", size=3.5)+
+  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=0, color="red", size=3.5)+
+  annotate("text",x=1, y=0.065,label="猴群數", vjust=0,  color="red", size=3.5)+
+  annotate("text",x=1, y=0.065,label="資料筆數", vjust=1.5, color="black", size=3.5)+
   theme_bw() + xlab("Altitude")
 
-#----
-
-Alt.d <- 
-  M.data %>% 
-  #.[Year < 2019,] %>% 
-  .[!(TypeName.1 %in% "非森林"),] %>% 
-  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
-  .[, Altitude_f := cut(Altitude,
-                        breaks = c(seq(0,4000,100)),
-                        labels = c(seq(0,3900,100)),
-                        include.lowest = T)] %>% 
-  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
-  .[, Encounter_rate := V1/N] %>% 
-  .[, Altitude_f :=  as.character(Altitude_f)]%>% 
-  .[, Altitude_f :=  as.numeric(Altitude_f)]
-
-Alt.d2 <-
-  Alt.d %>% copy %>% 
-  .[, .(N = sum(V1), V1 =sum(N)), by = list(Altitude_f)]
 
 
-ggplot(Alt.d, aes( Altitude_f, Encounter_rate)) +
-  geom_point() +
-  #geom_smooth(method = "lm", formula = y~ poly(x,2) )+
-  geom_smooth(method = "loess", formula = y~ x  )+
-  #geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.067, label=V1), vjust=-2, color="black", size=3.5)+
-  #geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=-0, color="red", size=3.5)+
-  #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
-  #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
+ggplot(Alt.d, aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate)) +
+  #geom_boxplot(aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate,group=Altitude_f)) +
+  geom_point(aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate,group=Altitude_f)) +
+  geom_smooth(method = "loess")+
   theme_bw() + xlab("Altitude")+
-  scale_x_continuous(breaks = seq(0,4000,500))
+  annotate("text",x=2500, y=0.065,label=paste0("smooth(method = loess)"), vjust=0,  color="red", size=5)+
+  scale_x_continuous(breaks = seq(0,3500,500))
 
+#----
 
 ggplot(M.data, aes( Altitude, Macaca_sur)) +
   geom_point() +
@@ -239,9 +220,6 @@ ggplot(M.data, aes( Altitude, Macaca_sur)) +
   #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
   #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
   theme_bw() + xlab("Altitude")
-
-
-
 
 
 #----
@@ -259,11 +237,12 @@ Rgn.d2 <-
   .[, .(N = sum(V1), V1 =sum(N)), by = list(Region2)]
 
 
-ggplot(Rgn.d, aes( Region2, Encounter_rate))+geom_boxplot() +
-  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.100, label=V1), vjust=-2, color="black", size=3.5)+
-  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.115, label=N), vjust=-0, color="red", size=3.5)+
-  #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
-  #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
+ggplot(Rgn.d, aes( Region2, Encounter_rate))+
+  geom_boxplot(width=0.4 )+
+  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.115, label=V1), vjust=1.5, color="black", size=3.5)+
+  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.115, label=N), vjust=0, color="red", size=3.5)+
+  annotate("text",x=1, y=0.095,label="猴群數", vjust=0,  color="red", size=3.5)+
+  annotate("text",x=1, y=0.095,label="資料筆數", vjust=1.5, color="black", size=3.5)+
   theme_bw()+
   scale_x_discrete("Region", labels = c("North" = "北部",
                                          "Center1" = "中彰投",
@@ -288,13 +267,13 @@ Jd.d2 <-
   .[, .(N = sum(V1), V1 =sum(N)), by = list(julian.D_f)]
 
 ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
-  geom_boxplot() +
+  geom_boxplot(width=0.4) +
   geom_text(data=Jd.d2, aes(x=julian.D_f, y = 0.053, label=V1), vjust=-2, color="black", size=3.5)+
   geom_text(data=Jd.d2, aes(x=julian.D_f, y = 0.060, label=N), vjust=-0, color="red", size=3.5)+
-  #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
-  #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
-  theme_bw() + 
-  xlab("Julian day")
+  annotate("text",x=1, y=0.045,label="猴群數", vjust=0,  color="red", size=3.5)+
+  annotate("text",x=1, y=0.045,label="資料筆數", vjust=1.5, color="black", size=3.5)+
+  theme_bw() + scale_x_discrete("Julian day")+
+  theme(axis.text.x = element_text(angle = 270, vjust = 0))
 
 
 
@@ -314,11 +293,11 @@ Type.d2 <-
 
   
   ggplot(Type.d, aes(TypeName.1, Encounter_rate))+
-    geom_boxplot() +
-    geom_text(data=Type.d2, aes(x=TypeName.1, y = 0.040, label=V1), vjust=-2, color="black", size=3.5)+
-    geom_text(data=Type.d2, aes(x=TypeName.1, y = 0.045, label=N), vjust=-0.5, color="red", size=3.5)+
-    #geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
-    #geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
+    geom_boxplot(width=0.4) +
+    geom_text(data=Type.d2, aes(x=TypeName.1, y = 0.050, label=V1), vjust=-2, color="black", size=3.5)+
+    geom_text(data=Type.d2, aes(x=TypeName.1, y = 0.055, label=N), vjust=-0.5, color="red", size=3.5)+
+    annotate("text",x=1, y=0.045,label="猴群數", vjust=0,  color="red", size=3.5)+
+    annotate("text",x=1, y=0.045,label="資料筆數", vjust=1.5, color="black", size=3.5)+
     theme_bw() + 
     xlab("Forest type")
   
