@@ -125,7 +125,7 @@ Anova(m2)
 new.data <-  expand.grid(
   Region2=unique(df$Region2),
   Year=2015:2019,
-  julian.D=seq(60,180,10),
+  julian.D=seq(60,180,5),
   Altitude=seq(0,3800,100)) %>% setDT %>% 
   .[, Year.re := Year - min(Year) + 1] %>% 
   .[, Altitude.1 :=  scale(Altitude,scale =T)] %>% 
@@ -181,4 +181,16 @@ m4 <- glmer(Macaca_sur ~ I(Altitude.1^2) + Altitude.1 + Year.re + julian.D.1 +  
 
 summary(m4)
 Anova(m4)
+
+
+pp3 <- 
+  cbind(new.data,
+        PREDICT = predict(m4,new.data,re.form= ~0, type = c( "response"))
+  )
+
+
+plot(pp3$Region2, pp3$PREDICT)
+plot(pp3$Year, pp3$PREDICT)
+plot(pp3$julian.D, pp3$PREDICT)
+plot(pp3$Altitude, pp3$PREDICT)
 

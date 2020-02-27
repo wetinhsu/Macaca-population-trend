@@ -210,6 +210,45 @@ ggplot(Alt.d, aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate))
   scale_x_continuous(breaks = seq(0,3500,500))
 
 #----
+Alt.d <- 
+  M.data %>% 
+  #.[Year < 2019,] %>% 
+  .[!(TypeName.1 %in% "非森林"),] %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+  .[, Altitude_f := cut(Altitude,
+                        breaks = c(seq(0,1000,100),seq(1500,4000,500)),
+                        labels = c(seq(0,1000,100),seq(1500,3500,500)),
+                        include.lowest = T)] %>% 
+  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
+  .[, Encounter_rate := V1/N] 
+
+
+Alt.d3 <-
+  Alt.d %>%  
+  .[, .(Encounter_rate = mean(V1/N)), by = list(Altitude_f)]
+
+
+ggplot(Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
+  geom_boxplot(width=0.4) +
+  geom_smooth(data =Alt.d,aes(x=Altitude_f, y = Encounter_rate) ,method = "loess")+
+  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=V1), vjust=1.5, color="black", size=3.5)+
+  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=0, color="red", size=3.5)+
+  annotate("text",x=1, y=0.065,label="猴群數", vjust=0,  color="red", size=3.5)+
+  annotate("text",x=1, y=0.065,label="資料筆數", vjust=1.5, color="black", size=3.5)+
+  theme_bw() + xlab("Altitude")
+
+
+
+ggplot(Alt.d, aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate)) +
+  geom_boxplot(aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate,group=Altitude_f)) +
+  #geom_point(aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate,group=Altitude_f)) +
+  geom_smooth(method = "loess")+
+  #geom_line(data =Alt.d3,aes(x=as.numeric(as.character(Altitude_f)), y = Encounter_rate))+
+  theme_bw() + xlab("Altitude")+
+  annotate("text",x=2500, y=0.065,label=paste0("smooth(method = loess)"), vjust=0,  color="red", size=5)+
+  scale_x_continuous(breaks = seq(0,3500,500))
+
+
 
 ggplot(M.data, aes( Altitude, Macaca_sur)) +
   geom_point() +
