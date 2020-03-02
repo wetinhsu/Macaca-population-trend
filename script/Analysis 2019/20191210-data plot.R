@@ -228,15 +228,6 @@ Alt.d3 <-
   .[, .(Encounter_rate = mean(V1/N)), by = list(Altitude_f)]
 
 
-ggplot(Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
-  geom_boxplot(width=0.4) +
-  geom_smooth(data =Alt.d,aes(x=Altitude_f, y = Encounter_rate) ,method = "loess")+
-  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=V1), vjust=1.5, color="black", size=3.5)+
-  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.075, label=N), vjust=0, color="red", size=3.5)+
-  annotate("text",x=1, y=0.065,label="猴群數", vjust=0,  color="red", size=3.5)+
-  annotate("text",x=1, y=0.065,label="資料筆數", vjust=1.5, color="black", size=3.5)+
-  theme_bw() + xlab("Altitude")
-
 
 
 ggplot(Alt.d, aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate)) +
@@ -245,7 +236,7 @@ ggplot(Alt.d, aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate))
   geom_smooth(method = "loess")+
   #geom_line(data =Alt.d3,aes(x=as.numeric(as.character(Altitude_f)), y = Encounter_rate))+
   theme_bw() + xlab("Altitude")+
-  annotate("text",x=2500, y=0.065,label=paste0("smooth(method = loess)"), vjust=0,  color="red", size=5)+
+  annotate("text",x=2500, y=0.08,label=paste0("smooth(method = loess)"), vjust=0,  color="red", size=5)+
   scale_x_continuous(breaks = seq(0,3500,500))
 
 
