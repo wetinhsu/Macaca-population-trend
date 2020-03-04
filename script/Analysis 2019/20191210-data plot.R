@@ -216,8 +216,8 @@ Alt.d <-
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   .[, Altitude_f := cut(Altitude,
-                        breaks = c(seq(0,1000,100),seq(1500,4000,500)),
-                        labels = c(seq(0,1000,100),seq(1500,3500,500)),
+                        breaks = c(seq(0,1000,200),seq(1500,4000,500)),
+                        labels = c(seq(0,1000,200),seq(1500,3500,500)),
                         include.lowest = T)] %>% 
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
   .[, Encounter_rate := V1/N] 
@@ -240,6 +240,32 @@ ggplot(Alt.d, aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate))
   scale_x_continuous(breaks = seq(0,3500,500))
 
 
+
+Alt.d <- 
+  M.data %>% 
+  #.[Year < 2019,] %>% 
+  .[!(TypeName.1 %in% "非森林"),] %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+  .[, Altitude_f := cut(Altitude,
+                        breaks = c(seq(0,4000,250)),
+                        labels = c(seq(0,3750,250)),
+                        include.lowest = T)] %>% 
+  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
+  .[, Encounter_rate := V1/N] 
+
+
+Alt.d3 <-
+  Alt.d %>%  
+  .[, .(Encounter_rate = mean(V1/N)), by = list(Altitude_f)]
+
+
+
+ggplot(Alt.d3, aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate)) +
+  geom_bar( stat ="identity", fill = gray(0.8), col = "black") + 
+  theme_bw()
+
+
+hist(M.data[M.data$Macaca_sur==1,]$Altitude,freq = F)
 
 ggplot(M.data, aes( Altitude, Macaca_sur)) +
   geom_point() +
