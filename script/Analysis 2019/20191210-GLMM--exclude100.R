@@ -97,7 +97,7 @@ importance(d2)
 
 #anova table==============================================
 Anova(m2)
-
+summary(m2)
 
 
 summary(glht(m2, linfct = mcp(Region2 = "Tukey")))
