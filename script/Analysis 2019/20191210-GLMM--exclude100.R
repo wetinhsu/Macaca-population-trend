@@ -115,51 +115,13 @@ axis(1,at=1:6,labels = c("中彰投","雲嘉南","花蓮", "台東",  "北部","
 box()
 
 
-
-
-summary(m2)
-
-
-Anova(m2)
-
-new.data <-  expand.grid(
-  Region2=unique(df$Region2),
-  Year=2015:2019,
-  julian.D=seq(60,180,5),
-  Altitude=seq(0,3800,100)) %>% setDT %>% 
-  .[, Year.re := Year - min(Year) + 1] %>% 
-  .[, Altitude.1 :=  scale(Altitude,scale =T)] %>% 
-  .[, julian.D.1 :=  scale(julian.D,scale =T)] 
-
-pp <- 
-  cbind(new.data,
-        PREDICT = predict(m2,new.data,re.form= ~0, type = c( "response"))
-  )
-
-
-plot(pp$Region2, pp$PREDICT)
-plot(pp$Year, pp$PREDICT)
-plot(pp$julian.D, pp$PREDICT)
-plot(pp$Altitude, pp$PREDICT)
-points(pp[pp$Region2 =="East2",]$Altitude, pp[pp$Region2 =="East2",]$PREDICT,col=2)
-points(pp[pp$Region2 =="East1",]$Altitude, pp[pp$Region2 =="East1",]$PREDICT,col=3)
-points(pp[pp$Region2 =="Center2",]$Altitude, pp[pp$Region2 =="Center2",]$PREDICT,col=6)
-points(pp[pp$Region2 =="Center1",]$Altitude, pp[pp$Region2 =="Center1",]$PREDICT,col=5)
-points(pp[pp$Region2 =="North",]$Altitude, pp[pp$Region2 =="North",]$PREDICT,col=4)
-
-
-
-
-pp2 <- 
-cbind(unique(df),
-      PREDICT = predict(m2,unique(df),re.form= ~(1|Site_N), type = c( "response"))
-) 
-
-plot(pp2$Region2, pp2$PREDICT)
-plot(pp2$Year, pp2$PREDICT)
-plot(pp2$julian.D, pp2$PREDICT)
-plot(pp2$Altitude, pp2$PREDICT)
-
+qqnorm(resid(m1))
+qqline(resid(m1))
+plot(m1, resid(.) ~ fitted(.))
+plot(m1, resid(.)~ as.numeric(Year))
+plot(m1, resid(.)~ as.numeric(Altitude.1))
+plot(m1, resid(.)~ as.numeric(julian.D.1))
+plot(m1, resid(.)~ as.numeric(Region2))
 
 
 
@@ -183,14 +145,27 @@ summary(m4)
 Anova(m4)
 
 
-pp3 <- 
+new.data <-  expand.grid(
+  Region2=unique(df$Region2),
+  Year=mean(2015:2019),
+  julian.D=mean(df$julian.D),
+  Altitude=seq(0,3800,10)) %>% setDT %>% 
+  .[, Year.re := Year - min(Year) + 1] %>% 
+  .[, Altitude.1 :=  scale(Altitude,scale =T)] %>% 
+  .[, julian.D.1 :=  0] 
+
+pp <- 
   cbind(new.data,
         PREDICT = predict(m4,new.data,re.form= ~0, type = c( "response"))
   )
 
+ggplot(data=pp, aes(x=Altitude, y=PREDICT, group = Region2))+
+  geom_line(data=pp,aes(col=Region2))
 
-plot(pp3$Region2, pp3$PREDICT)
-plot(pp3$Year, pp3$PREDICT)
-plot(pp3$julian.D, pp3$PREDICT)
-plot(pp3$Altitude, pp3$PREDICT)
+  geom_line(data=mean.pp,aes(x=Altitude,y=PREDICT,col="black"))
+  
 
+
+mean.pp<- aggregate(PREDICT~Altitude,pp,mean)
+
+plot(mean.pp)
