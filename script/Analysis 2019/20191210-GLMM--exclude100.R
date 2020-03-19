@@ -160,10 +160,14 @@ pp <-
   )
 
 ggplot(data=pp, aes(x=Altitude, y=PREDICT, group = Region2))+
-  geom_line(data=pp,aes(col=Region2))
+  geom_line(aes(col=Region2))+ 
+  theme_bw()+
+  labs(y = "Predict")+
+  scale_colour_discrete("Region",
+                        labels = c("中彰投", "雲嘉南",
+                                   "花蓮", "臺東", "北部","高屏"))
 
-  geom_line(data=mean.pp,aes(x=Altitude,y=PREDICT,col="black"))
-  
+
 
 
 mean.pp<- aggregate(PREDICT~Altitude,pp,mean)
