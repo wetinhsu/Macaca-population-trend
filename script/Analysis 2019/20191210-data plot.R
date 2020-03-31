@@ -178,8 +178,8 @@ M.data %>%
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   .[, Altitude_f := cut(Altitude,
-                        breaks = c(seq(0,4000,250)),
-                        labels = c(seq(0,3750,250)),
+                        breaks = c(seq(0,4000,500)),
+                        labels = c(seq(0,3500,500)),
                         include.lowest = T)] %>% 
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
   .[, Encounter_rate := V1/N] 
@@ -270,6 +270,10 @@ ggplot(Rgn.d, aes( Region2, Encounter_rate))+
                                          "East1" = "花蓮",
                                          "East2" = "台東"))
 
+
+
+
+
 Jd.d <- 
 M.data %>% 
  # .[Year < 2019,] %>% 
@@ -320,7 +324,130 @@ Type.d2 <-
     theme_bw() + 
     xlab("Forest type")
   
-
+  
+  p1 <- 
+    M.data %>% 
+    #.[Year < 2019,] %>% 
+    .[!(TypeName.1 %in% "非森林"),] %>% 
+    .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+    .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey)] %>% 
+    .[, Encounter_rate := V1/N] %>% 
+    .[, .(V1 = sum(V1),
+          N = sum(N),
+          Encounter_rate = mean(Encounter_rate)), by= list(Year)] %>% 
+    
+    ggplot(., aes( Year, Encounter_rate)) +
+    geom_text(aes(label=V1), vjust=-2, color="red", size=3.5)+
+    geom_text(aes(label=N), vjust=-0.5, color="black", size=3.5)+
+    geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
+    geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
+    geom_point()+geom_line() +
+    ylim(0.010,0.025)+
+    theme_bw() + 
+    xlab("Year")
+  
+  
+  
+  p2 <- 
+    Alt.d %>% 
+    .[, .(Mean = mean(Encounter_rate),
+          Se = sd(Encounter_rate)/ sqrt(10)),
+      by = Altitude_f] %>% 
+    ggplot(.,aes(x= as.numeric(as.character(Altitude_f)), y = Mean))+
+    geom_bar( stat ="identity",
+              fill = gray(0.8), col = "black") + 
+    geom_errorbar(aes(ymin = Mean-Se, ymax = Mean+Se),
+                  position = "dodge", width = 100)+
+    annotate("text",x=500, y=0.04,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
+    theme_bw() + 
+    scale_x_continuous("Altitude", breaks = seq(0,4000,500),
+                       labels = seq(0,4000,500))+
+    scale_y_continuous("Encounter_rate")
+  
+  p2.5 <- 
+    M.data %>% 
+    #.[Year < 2019,] %>% 
+    .[!(TypeName.1 %in% "非森林"),] %>% 
+    .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+    .[, Altitude_f := cut(Altitude,
+                          breaks = c(seq(0,4000,250)),
+                          labels = c(seq(0,3750,250)),
+                          include.lowest = T)] %>% 
+    .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
+    .[, Encounter_rate := V1/N] %>% 
+    .[, .(Mean = mean(Encounter_rate),
+          Se = sd(Encounter_rate)/ sqrt(10)),
+      by = Altitude_f] %>% 
+    ggplot(.,aes(x= as.numeric(as.character(Altitude_f)), y = Mean))+
+    geom_bar( stat ="identity",
+              fill = gray(0.8), col = "black") + 
+    geom_errorbar(aes(ymin = Mean-Se, ymax = Mean+Se),
+                  position = "dodge", width = 100)+
+    annotate("text",x=500, y=0.04,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
+    theme_bw() + 
+    scale_x_continuous("Altitude", breaks = seq(0,4000,500),
+                       labels = seq(0,4000,500))+
+    scale_y_continuous("Encounter_rate")
+  
+  
+  
+  p3 <- 
+    Rgn.d %>% 
+    .[, .(Mean = mean(Encounter_rate),
+          Se = sd(Encounter_rate)/ sqrt(10)),
+      by = Region2] %>% 
+    ggplot(.,aes(x= as.character(Region2), y = Mean))+
+    geom_bar( stat ="identity",
+              fill = gray(0.8), col = "black") + 
+    geom_errorbar(aes(ymin = Mean-Se, ymax = Mean+Se),
+                  position = "dodge", width = 0.5)+
+    annotate("text",x=2, y=0.06,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
+    theme_bw() + 
+    scale_x_discrete("Region", labels = c("North" = "北部",
+                                          "Center1" = "中彰投",
+                                          "Center2" = "雲嘉南",
+                                          "South" = "高屏",
+                                          "East1" = "花蓮",
+                                          "East2" = "台東"))+
+    scale_y_continuous("Encounter_rate")
+  
+  
+  p4 <- 
+    Jd.d %>% 
+    .[, .(Mean = mean(Encounter_rate),
+          Se = sd(Encounter_rate)/ sqrt(10)),
+      by = julian.D_f] %>% 
+    ggplot(.,aes(x= julian.D_f, y = Mean))+
+    geom_bar( stat ="identity",
+              fill = gray(0.8), col = "black") + 
+    geom_errorbar(aes(ymin = Mean-Se, ymax = Mean+Se),
+                  position = "dodge", width = 0.5)+
+    annotate("text",x=2, y=0.025,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
+    theme_bw() +
+    scale_x_discrete("Julian day")+
+    theme(axis.text.x = element_text(angle = 270, vjust = 0, size = 8))+
+    scale_y_continuous("Encounter_rate")
+  
+ 
+  p5 <- 
+    Type.d %>% 
+    .[, .(Mean = mean(Encounter_rate),
+          Se = sd(Encounter_rate)/ sqrt(10)),
+      by = TypeName.1] %>% 
+    ggplot(.,aes(x= as.character(TypeName.1), y = Mean))+
+    geom_bar( stat ="identity",
+              fill = gray(0.8), col = "black") + 
+    geom_errorbar(aes(ymin = Mean-Se, ymax = Mean+Se),
+                  position = "dodge", width = 0.5)+
+    annotate("text",x=2, y=0.03,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
+    theme_bw() + 
+    scale_x_discrete("Forest type")+
+    scale_y_continuous("Encounter_rate")
+  
+  
+  library(gridExtra)
+  grid.arrange(p1, p5, p2, p2.5,p3, p4,  ncol = 2, nrow = 3)  
+  
 
 
 M.data %>%setDT %>% 
