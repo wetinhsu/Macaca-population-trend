@@ -61,12 +61,25 @@ replicate(5000, mean(sample(bb$AB, replace = TRUE))) %>% mean
 21536.41/(0.1*0.1*pi)
 
 
+plot(5000,0.3,xlim = c(1005,1500), ylim = c(0.01,0.02),type = "n")
+tmp.M <- c()
+Down <- c()
+Up <- c()
 
-tmp <- replicate(2, mean(sample(bb$AB, replace = TRUE))) 
 
-Down <- quantile(tmp,probs = c(0.025)) %>% as.numeric()
+for(i in seq(1005,1500,5)){
+tmp <- replicate(i, mean(sample(bb$AB, replace = TRUE))) 
 
-Up <- quantile(tmp,probs = c(0.975)) %>% as.numeric()
+tmp.M <- mean(tmp) %>% c(tmp.M, .)
+Down <- quantile(tmp,probs = c(0.025)) %>% as.numeric() %>% c(Down, .)
+Up <- quantile(tmp,probs = c(0.975)) %>% as.numeric() %>% c(Up, .)
 
-ggplot()+geom_errorbar(aes(x=2, ymin = Down, ymax=Up), width=0.3)
+}
+#ggplot()+geom_errorbar(aes(x=2, ymin = Down, ymax=Up), width=0.3)
+
+points(c(seq(1005,1500,5)),tmp.M,pch=".",type = "l")
+points(c(seq(1005,1500,5)), Up, pch=".", col="blue",type = "l")
+points(c(seq(1005,1500,5)),Down, pch=".", col="blue",type = "l")
+
+
 
