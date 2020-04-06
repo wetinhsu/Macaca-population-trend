@@ -43,14 +43,12 @@ M.data$Distance %<>% as.numeric
 M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
 
 (output.1<- M.data %>% 
-  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   setDT %>%
   .[, .(N = .N, m = sum(Macaca_sur)), by = list(TypeName.1,TypeName)])
 
 (output.2<- M.data %>% 
-  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   setDT %>%
@@ -110,16 +108,15 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
 
 
 (output.6<- M.data %>%    
-  .[,.(ll=length(Macaca_sur), M = sum(Macaca_sur,na.rm=T)),
+  .[,.(N=.N, M = sum(Macaca_sur,na.rm=T)),
     by = list(Year, Survey, TypeName.1)]%>%
-    .[, ll:= as.numeric(ll)] %>% 
     .[, M:= as.numeric(M)] %>% 
+    .[, N:= as.numeric(N)] %>% 
     melt(id.vars = c("Year" ,"Survey" ,"TypeName.1")) %>% 
-  dcast(.,TypeName.1 + variable ~ Year + Survey, value.var = c("value")))
+    reshape2::dcast(., Year + Survey+ variable ~TypeName.1 , value.var = c("value")))
 
 
 (output.7<- M.data %>% 
-  #.[Year < 2019,] %>% 
   #.[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
   .[Macaca_sur %in% 1, .N, list(TypeName.1, Macaca_dist)] %>% 
@@ -151,22 +148,22 @@ M.data %>%  dcast( julian.D ~ Year + Survey, value.var = "Point", length) %>% Vi
 
 #--------------------------
 M.data %>% 
-  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey)] %>% 
   .[, Encounter_rate := V1/N] %>% 
   .[, .(V1 = sum(V1),
         N = sum(N),
-        Encounter_rate = mean(Encounter_rate)), by= list(Year)] %>% 
+        Encounter_rate = mean(Encounter_rate),
+        Se = sd(Encounter_rate)/sqrt(length(Encounter_rate))), by= list(Year)] %>% 
   
   ggplot(., aes( Year, Encounter_rate)) +
-  geom_text(aes(label=V1), vjust=-2, color="red", size=3.5)+
-  geom_text(aes(label=N), vjust=-0.5, color="black", size=3.5)+
-  geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
-  geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
   geom_point()+geom_line() +
-  ylim(0.010,0.025)+
+  geom_errorbar(aes(ymin = (Encounter_rate - Se),
+                    ymax = (Encounter_rate + Se)),
+                 width = 0.1) +
+  annotate("text",x=2015.5, y=0.03,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
+  ylim(0,0.03)+
   theme_bw() + 
   xlab("Year")
 
@@ -174,29 +171,19 @@ M.data %>%
 
 Alt.d <- 
 M.data %>% 
-  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   .[, Altitude_f := cut(Altitude,
                         breaks = c(seq(0,4000,500)),
-                        labels = c(seq(0,3500,500)),
+                        labels = c(seq(250,3750,500)),
                         include.lowest = T)] %>% 
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
   .[, Encounter_rate := V1/N] 
 
 
-Alt.d2 <-
-  Alt.d %>% copy %>% 
-  .[, .(N = sum(V1), V1 =sum(N)), by = list(Altitude_f)]
-
-
 ggplot(Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
   geom_boxplot(width=0.8) +
   geom_smooth(data =Alt.d,aes(x=Altitude_f, y = Encounter_rate) ,method = "loess")+
-  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.12, label=V1), vjust=1.5, color="black", size=3.5)+
-  geom_text(data=Alt.d2, aes(x=Altitude_f, y = 0.12, label=N), vjust=0, color="red", size=3.5)+
-  annotate("text",x=2, y=0.1,label="猴群數", vjust=0,  color="red", size=3.5)+
-  annotate("text",x=2, y=0.1,label="資料筆數", vjust=1.5, color="black", size=3.5)+
   theme_bw() + xlab("Altitude")
 
 
@@ -204,7 +191,6 @@ ggplot(Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
 
 Alt.d <- 
   M.data %>% 
-  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   .[, Altitude_f := cut(Altitude,
@@ -244,24 +230,14 @@ ggplot(Alt.d3, aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate.
 #----
 Rgn.d <- 
 M.data %>% 
-  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
   .[, Region2 := ordered(Region2, c("North","Center1", "Center2", "South","East1", "East2" ))] %>% 
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Region2)] %>% 
   .[, Encounter_rate := V1/N] 
 
-Rgn.d2 <-
-  Rgn.d %>% copy %>% 
-  .[, .(N = sum(V1), V1 =sum(N)), by = list(Region2)]
-
-
 ggplot(Rgn.d, aes( Region2, Encounter_rate))+
   geom_boxplot(width=0.4 )+
-  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.115, label=V1), vjust=1.5, color="black", size=3.5)+
-  geom_text(data=Rgn.d2, aes(x=Region2, y = 0.115, label=N), vjust=0, color="red", size=3.5)+
-  annotate("text",x=1, y=0.095,label="猴群數", vjust=0,  color="red", size=3.5)+
-  annotate("text",x=1, y=0.095,label="資料筆數", vjust=1.5, color="black", size=3.5)+
   theme_bw()+
   scale_x_discrete("Region", labels = c("North" = "北部",
                                          "Center1" = "中彰投",
@@ -276,7 +252,6 @@ ggplot(Rgn.d, aes( Region2, Encounter_rate))+
 
 Jd.d <- 
 M.data %>% 
- # .[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
   .[, julian.D_f := cut(julian.D,
@@ -285,16 +260,9 @@ M.data %>%
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, julian.D_f)] %>% 
   .[, Encounter_rate := V1/N]   
 
-Jd.d2 <-
-  Jd.d %>% copy %>% 
-  .[, .(N = sum(V1), V1 =sum(N)), by = list(julian.D_f)]
 
 ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
   geom_boxplot(width=0.4) +
-  geom_text(data=Jd.d2, aes(x=julian.D_f, y = 0.053, label=V1), vjust=-2, color="black", size=3.5)+
-  geom_text(data=Jd.d2, aes(x=julian.D_f, y = 0.060, label=N), vjust=-0, color="red", size=3.5)+
-  annotate("text",x=1, y=0.045,label="猴群數", vjust=0,  color="red", size=3.5)+
-  annotate("text",x=1, y=0.045,label="資料筆數", vjust=1.5, color="black", size=3.5)+
   theme_bw() + scale_x_discrete("Julian day")+
   theme(axis.text.x = element_text(angle = 270, vjust = 0))
 
@@ -303,155 +271,21 @@ ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
 
 Type.d <- 
 M.data %>% 
-  #.[Year < 2019,] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
   .[, TypeName.1:= ordered(TypeName.1, c("闊葉林", "針葉林", "混淆林", "竹林"))] %>% 
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, TypeName.1)]   %>% 
   .[, Encounter_rate := V1/N]     
 
-Type.d2 <-
-  Type.d %>% copy %>% 
-  .[, .(N = sum(V1), V1 =sum(N)), by = list(TypeName.1)] 
 
-  
   ggplot(Type.d, aes(TypeName.1, Encounter_rate))+
     geom_boxplot(width=0.4) +
-    geom_text(data=Type.d2, aes(x=TypeName.1, y = 0.050, label=V1), vjust=-2, color="black", size=3.5)+
-    geom_text(data=Type.d2, aes(x=TypeName.1, y = 0.055, label=N), vjust=-0.5, color="red", size=3.5)+
-    annotate("text",x=1, y=0.045,label="猴群數", vjust=0,  color="red", size=3.5)+
-    annotate("text",x=1, y=0.045,label="資料筆數", vjust=1.5, color="black", size=3.5)+
     theme_bw() + 
     xlab("Forest type")
   
-  
-  p1 <- 
-    M.data %>% 
-    #.[Year < 2019,] %>% 
-    .[!(TypeName.1 %in% "非森林"),] %>% 
-    .[is.na(Macaca_sur), Macaca_sur := 0] %>%
-    .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey)] %>% 
-    .[, Encounter_rate := V1/N] %>% 
-    .[, .(V1 = sum(V1),
-          N = sum(N),
-          Encounter_rate = mean(Encounter_rate)), by= list(Year)] %>% 
-    
-    ggplot(., aes( Year, Encounter_rate)) +
-    geom_text(aes(label=V1), vjust=-2, color="red", size=3.5)+
-    geom_text(aes(label=N), vjust=-0.5, color="black", size=3.5)+
-    geom_text(aes(x=2015.5, y=0.024,label="猴群數"),  color="red", size=3.5)+
-    geom_text(aes(x=2015.5, y=0.023,label="資料筆數"), color="black", size=3.5)+
-    geom_point()+geom_line() +
-    ylim(0.010,0.025)+
-    theme_bw() + 
-    xlab("Year")
-  
-  
-  
-  p2 <- 
-    Alt.d %>% 
-    .[, .(Mean = mean(Encounter_rate),
-          Se = sd(Encounter_rate)/ sqrt(10)),
-      by = Altitude_f] %>% 
-    ggplot(.,aes(x= as.numeric(as.character(Altitude_f)), y = Mean))+
-    geom_bar( stat ="identity",
-              fill = gray(0.8), col = "black") + 
-    geom_errorbar(aes(ymin = Mean-Se, ymax = Mean+Se),
-                  position = "dodge", width = 100)+
-    annotate("text",x=500, y=0.04,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
-    theme_bw() + 
-    scale_x_continuous("Altitude", breaks = seq(0,4000,500),
-                       labels = seq(0,4000,500))+
-    scale_y_continuous("Encounter_rate")
-  
-  p2.5 <- 
-    M.data %>% 
-    #.[Year < 2019,] %>% 
-    .[!(TypeName.1 %in% "非森林"),] %>% 
-    .[is.na(Macaca_sur), Macaca_sur := 0] %>%
-    .[, Altitude_f := cut(Altitude,
-                          breaks = c(seq(0,4000,250)),
-                          labels = c(seq(0,3750,250)),
-                          include.lowest = T)] %>% 
-    .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
-    .[, Encounter_rate := V1/N] %>% 
-    .[, .(Mean = mean(Encounter_rate),
-          Se = sd(Encounter_rate)/ sqrt(10)),
-      by = Altitude_f] %>% 
-    ggplot(.,aes(x= as.numeric(as.character(Altitude_f)), y = Mean))+
-    geom_bar( stat ="identity",
-              fill = gray(0.8), col = "black") + 
-    geom_errorbar(aes(ymin = Mean-Se, ymax = Mean+Se),
-                  position = "dodge", width = 100)+
-    annotate("text",x=500, y=0.04,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
-    theme_bw() + 
-    scale_x_continuous("Altitude", breaks = seq(0,4000,500),
-                       labels = seq(0,4000,500))+
-    scale_y_continuous("Encounter_rate")
-  
-  
-  
-  p3 <- 
-    Rgn.d %>% 
-    .[, .(Mean = mean(Encounter_rate),
-          Se = sd(Encounter_rate)/ sqrt(10)),
-      by = Region2] %>% 
-    ggplot(.,aes(x= as.character(Region2), y = Mean))+
-    geom_bar( stat ="identity",
-              fill = gray(0.8), col = "black") + 
-    geom_errorbar(aes(ymin = Mean-Se, ymax = Mean+Se),
-                  position = "dodge", width = 0.5)+
-    annotate("text",x=2, y=0.06,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
-    theme_bw() + 
-    scale_x_discrete("Region", labels = c("North" = "北部",
-                                          "Center1" = "中彰投",
-                                          "Center2" = "雲嘉南",
-                                          "South" = "高屏",
-                                          "East1" = "花蓮",
-                                          "East2" = "台東"))+
-    scale_y_continuous("Encounter_rate")
-  
-  
-  p4 <- 
-    Jd.d %>% 
-    .[, .(Mean = mean(Encounter_rate),
-          Se = sd(Encounter_rate)/ sqrt(10)),
-      by = julian.D_f] %>% 
-    ggplot(.,aes(x= julian.D_f, y = Mean))+
-    geom_bar( stat ="identity",
-              fill = gray(0.8), col = "black") + 
-    geom_errorbar(aes(ymin = Mean-Se, ymax = Mean+Se),
-                  position = "dodge", width = 0.5)+
-    annotate("text",x=2, y=0.025,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
-    theme_bw() +
-    scale_x_discrete("Julian day")+
-    theme(axis.text.x = element_text(angle = 270, vjust = 0, size = 8))+
-    scale_y_continuous("Encounter_rate")
-  
  
-  p5 <- 
-    Type.d %>% 
-    .[, .(Mean = mean(Encounter_rate),
-          Se = sd(Encounter_rate)/ sqrt(10)),
-      by = TypeName.1] %>% 
-    ggplot(.,aes(x= as.character(TypeName.1), y = Mean))+
-    geom_bar( stat ="identity",
-              fill = gray(0.8), col = "black") + 
-    geom_errorbar(aes(ymin = Mean-Se, ymax = Mean+Se),
-                  position = "dodge", width = 0.5)+
-    annotate("text",x=2, y=0.03,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
-    theme_bw() + 
-    scale_x_discrete("Forest type")+
-    scale_y_continuous("Encounter_rate")
-  
-  
-  library(gridExtra)
-  grid.arrange(p1, p5, p2, p2.5,p3, p4,  ncol = 2, nrow = 3)  
-  
-
 
 M.data %>%setDT %>% 
-  #.[Year < 2019,] %>% 
   .[Macaca_sur %in% 1,DD := cut(Distance, breaks = seq(0,100,10),
                                 ordered_result = T,
                                 include.lowest = T)] %>% 
@@ -462,39 +296,3 @@ M.data %>%setDT %>%
   theme_bw()+
   xlab("Distance")+
   ylab("Count")
-
-  
-M.data %>% 
-  #.[Year < 2019,] %>% 
-  .[!(TypeName.1 %in% "非森林"),] %>% 
-  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
-  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Region2)] %>% 
-  .[, Encounter_rate := V1/N] %>% 
-  .[, .(V1 = sum(V1),
-        N = sum(N),
-        Encounter_rate = mean(Encounter_rate)), by= list(Year, Region2)] %>% 
-  
-  ggplot(., aes( Year, Encounter_rate, group = Region2, col= Region2))+
-  geom_point() +
-  geom_line()+ 
-  theme_bw()+ 
-  xlab("Year")
-
-
-M.data %>% 
-  #.[Year < 2019,] %>% 
-  .[!(TypeName.1 %in% "非森林"),] %>% 
-  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
-  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, TypeName.1)] %>% 
-  .[, Encounter_rate := V1/N] %>% 
-  .[, .(V1 = sum(V1),
-        N = sum(N),
-        Encounter_rate = mean(Encounter_rate)), by= list(Year,TypeName.1)] %>% 
-  
-  ggplot(., aes( Year, Encounter_rate, group = TypeName.1,col= TypeName.1))+
-  geom_point() +
-  geom_line()+ 
-  theme_bw()+ 
-  xlab("Year")
-
-

@@ -62,62 +62,11 @@ replicate(5000, mean(sample(bb$AB, replace = TRUE))) %>% mean
 
 
 
-replicate(5000, mean(sample(bb$A, replace = TRUE))) %>%
-  quantile(.,probs = c(0.025, 0.975))
+tmp <- replicate(2, mean(sample(bb$AB, replace = TRUE))) 
 
-replicate(5000, mean(sample(bb$A, replace = TRUE))) %>% mean
+Down <- quantile(tmp,probs = c(0.025)) %>% as.numeric()
 
-21536.41/(0.025*0.025*pi)
+Up <- quantile(tmp,probs = c(0.975)) %>% as.numeric()
 
-
-
-
-#level-------------------------------
-##<25
-aa<- df %>% setDT %>% 
-  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
-  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]  %>% 
-  .[, .(Mean = mean(A, na.rm=T),
-        SD = sd(A, na.rm=T)/sqrt(length(A)),
-        n = .N), 
-    by = list(TypeName.1, Region)] %>%
-  .[, N:= sum(n)]
-
-mean(aa$Mean)%>% round(.,7)
-(var.25 <- sum(aa$N*(aa$N-aa$n)*(aa$SD)^2/aa$n, na.rm=T)/(unique(aa$N)^2))
-var.25^0.5 %>% round(.,7)
-
-mean(aa$Mean)-(var.25^0.5*1.28)%>% round(.,7)
-mean(aa$Mean)+(var.25^0.5*1.28)%>% round(.,7)  #80%CI=se*1.28
-
-mean(aa$Mean)-(var.25^0.5*1.96)%>% round(.,7)
-mean(aa$Mean)+(var.25^0.5*1.96)%>% round(.,7)
-
-
-21536.41/(0.025*0.025*pi)
-
-
-##<100
-bb<- df %>% setDT %>% 
-  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
-  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]  %>% 
-  .[, .(Mean = mean(AB, na.rm=T),
-        SD = sd(AB, na.rm=T)/sqrt(length(AB)),
-        n = .N), 
-    by = list(TypeName.1, Region)] %>%
-  .[, N:= sum(n)]
-
-mean(bb$Mean)%>% round(.,7)
-(var.100 <- sum(bb$N*(bb$N-bb$n)*(bb$SD)^2/bb$n, na.rm=T)/(unique(bb$N)^2))
-var.100^0.5%>% round(.,7)
-
-mean(bb$Mean)-var.100^0.5*1.28%>% round(.,7)
-mean(bb$Mean)+var.100^0.5*1.28%>% round(.,7)
-
-mean(bb$Mean)-var.100^0.5*1.96%>% round(.,7)
-mean(bb$Mean)+var.100^0.5*1.96%>% round(.,7)
-
-
-21536.41/(0.1*0.1*pi)
-
+ggplot()+geom_errorbar(aes(x=2, ymin = Down, ymax=Up), width=0.3)
 

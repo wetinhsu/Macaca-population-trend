@@ -77,7 +77,7 @@ TypeName <- apply(st.dis2,1,which.min) %>% nc.b$TypeName[.] %>% as.character
 distance<- apply(st.dis2,1,min)
 
 st.all$TypeName <- TypeName
-st.all$distance <- distance
+st.all$Distance <- distance
 
 #--------------------------------
 #combind distance to point data

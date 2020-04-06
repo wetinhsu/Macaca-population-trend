@@ -15,7 +15,7 @@ M.data <- read_excel("./data/clean/full_combind_data_V1.xlsx") %>%
 
 
 M.data %<>%  
-  dcast.data.table(.,Year + Site_N ~ Survey, value.var = "Macaca_sur") %>%  
+  dcast.data.table(.,Year + Site_N ~ Survey, length, value.var = "Macaca_sur") %>%  
   #計算第1旅次及第2旅次調查的樣點數
   .[`1` %in% 0,] %>%  #找出有第2旅次沒第1旅次的樣區
   .[M.data, on = c("Year", "Site_N")] %>%
@@ -167,50 +167,20 @@ M.data.1 %<>%
   
 
 M.data.2 <-
-  M.data.1 %>%  .[julian.D > 60 & julian.D <= 180, ] 
+  M.data.1 %>%  .[julian.D > 52 & julian.D <= 188, ]  #刪除調查季(包含緩衝期)以外的資料
 
-M.data.1 %>%  .[!(julian.D > 60 & julian.D <= 180), ]  %>%  
+(M.data.1 %>%  .[!(julian.D > 52 & julian.D <= 188), ]  %>%  #看一下誰被刪掉
   .[, Macaca_sur := as.numeric(Macaca_sur)] %>% 
   .[, .(N.point = .N, m = sum(Macaca_sur, na.rm=T)), by = list( Year, Survey, julian.D)] %>% 
   .[, N.point := as.numeric(N.point)] %>% 
   melt(id.vars = c("Year", "Survey", "julian.D")) %>% 
-  dcast(Year + Survey+ variable  ~ julian.D , value.var = c("value"))
+  dcast(Year + Survey+ variable  ~ julian.D , value.var = c("value")))
   
   
    
-  
-
-M.data.3 <-
-M.data.1 %>% 
-  .[!(DATE < as.IDate(paste(Year, 3, 1, sep = "/"))  |
-      DATE > as.IDate(paste(Year, 6, 30, sep = "/"))),]
-  
-
-
+#確認一下每一個樣點的資料筆數
 M.data.2 %>%  .[, .N, by = list(Year, Survey, Site_N, Point)] %>% .[ N >1,]
 
 
 write_xlsx(M.data.2, "./data/clean/for analysis_V1.xlsx")
-
-#know your data------------------------------------------
-M.data.1 %>%
-  .[, Altitude_c := cut(Altitude, breaks=seq(0,4000,500), include.lowest = T, ordered_result = T)] %>%
-  .[, julian.D:=ordered(julian.D)] %>% 
-  .[,.N,by =list(Year, Survey, TypeName.1, Altitude_c, julian.D, County)] %>% 
-  
-  melt(id.vars= c("Year", "Survey","N"), 
-       measure.vars=c("TypeName.1", "Altitude_c", "julian.D","County")) %>% 
-  dcast(variable+value~Year+Survey  , value.var="N",sum) %>% View()
-
-M.data.1 %>%
-  .[Macaca_sur %in% 1,] %>% 
-  .[, Altitude_c := cut(Altitude, breaks=seq(0,4000,500), include.lowest = T, ordered_result = T)] %>%
-  .[, julian.D:=ordered(julian.D)] %>% 
-  .[,.N,by =list(Year, Survey, TypeName.1, Altitude_c, julian.D, County)] %>% 
-  
-  melt(id.vars= c("Year", "Survey","N"), 
-       measure.vars=c("TypeName.1", "Altitude_c", "julian.D","County")) %>% 
-  dcast(variable+value~Year+Survey  , value.var="N",sum) %>% View()
-
-
 
