@@ -48,21 +48,35 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
   setDT %>%
   .[, .(N = .N, m = sum(Macaca_sur)), by = list(TypeName.1,TypeName)])
 
+
+
 (output.2<- M.data %>% 
-  .[!(TypeName.1 %in% "非森林"),] %>% 
-  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
-  setDT %>%
+    filter(!TypeName.1 %in% "非森林") %>% 
+    mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur)) %>%
+    group_by(Region2,County,Year,Survey) %>% 
+    summarise(N = n(), m = sum(Macaca_sur)) %>% 
+    left_join(.,
+      fread(("./data/clean/gis/county area-2.csv"), col.names =c("County", "Area", "perimeter")),
+      by = "County") %>% 
+    select(-perimeter) %>% 
+    filter(!County %in% c("金門縣","澎湖縣", "連江縣")) %>% 
+    group_by(Region2,Year,Survey) %>% 
+    summarise(area = sum(Area),
+              N = sum(N),
+              m = sum(m),
+              E = sum(m)/sum(N))  %>% 
+    group_by(Region2) %>% 
+    mutate(E_mean = mean(E) %>% round(., 3), 
+           E_sd = sd(E)/sqrt(10) %>% round(., 3)) %>% 
+    select(-E) %>% 
+    reshape2::melt(id.vars=c("Region2", "Year", "Survey","area","E_mean","E_sd"))%>% 
+    reshape2::dcast(Region2+ area + E_mean+ E_sd+variable~ Year+Survey, value.var = c("value")) %>% 
+    arrange(Region2, desc(variable)) %>% 
+    select(Region2, area, variable,
+           `2015_1`, `2015_2`, `2016_1`, `2016_2`, `2017_1`, `2017_2`, `2018_1`, `2018_2`, `2019_1`, `2019_2`,
+           E_mean, E_sd))
   
-  .[, .(N = .N, m = sum(Macaca_sur)), by = list(Region2,County,Year,Survey)] %>%
-  .[fread(("./data/clean/gis/county area-2.csv"), col.names =c("County", "Area", "perimeter")), on = "County"] %>% 
-  .[, perimeter := NULL] %>%
-  .[!(County %in% c("金門縣","澎湖縣", "連江縣")),] %>%
-  .[, .(area = sum(Area), N= sum(N), m=sum(m)), by = list(Region2,Year, Survey )] %>% 
-    .[, m:= as.numeric(m)] %>%  
-    .[, N:= as.numeric(N)] %>% 
-    melt(id.vars=c("Region2", "Year", "Survey","area"))%>% 
-  dcast(Region2+ area + variable~ Year+Survey, value.var = c("value")) %>% 
-    .[ order(Region2 ,variable),])
+
 
 
 
@@ -108,12 +122,13 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
 
 
 (output.6<- M.data %>%    
-  .[,.(N=.N, M = sum(Macaca_sur,na.rm=T)),
+  .[,.(N=.N, m = sum(Macaca_sur,na.rm=T)),
     by = list(Year, Survey, TypeName.1)]%>%
-    .[, M:= as.numeric(M)] %>% 
+    .[, m:= as.numeric(m)] %>% 
     .[, N:= as.numeric(N)] %>% 
     melt(id.vars = c("Year" ,"Survey" ,"TypeName.1")) %>% 
-    reshape2::dcast(., Year + Survey+ variable ~TypeName.1 , value.var = c("value")))
+    dcast(., Year + Survey+ variable ~TypeName.1 , value.var = c("value")) %>% 
+    .[order(Year, Survey, -variable)])
 
 
 (output.7<- M.data %>% 
@@ -124,7 +139,7 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
 
 write_xlsx(list(
   TypeName_point = output.1,
-  County_point= output.2,
+  Region_point= output.2,
 
   group_County = output.4,
   single_County = output.5,
@@ -144,7 +159,14 @@ M.data %>% .[, Altitude_c := cut(Altitude, breaks=seq(0,4000,500), include.lowes
 M.data %>%  dcast( julian.D ~ Year + Survey, value.var = "Point", length) %>% View()
 
   
-  
+M.data %>%
+  filter(!TypeName.1 %in% "非森林") %>% 
+  mutate(Altitude_f = cut(Altitude,
+                           breaks = c(seq(0,4000,500)),
+                           labels = c(seq(250,3750,500)),
+                           include.lowest = T)) %>% 
+  group_by(Altitude_f) %>% 
+  summarise(N = n())
 
 #--------------------------
 M.data %>% 
