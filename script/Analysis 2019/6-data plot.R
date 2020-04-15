@@ -78,6 +78,26 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
   
 
 
+(output.2<- M.data %>% 
+    filter(!TypeName.1 %in% "非森林") %>% 
+    mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur)) %>%
+    group_by(Region2,County,Year,Survey) %>% 
+    summarise(N = n(), m = sum(Macaca_sur)) %>% 
+    left_join(.,
+              fread(("./data/clean/gis/county area-2.csv"), col.names =c("County", "Area", "perimeter")),
+              by = "County") %>% 
+    select(-perimeter,Area) %>% 
+    filter(!County %in% c("金門縣","澎湖縣", "連江縣")) %>% 
+    group_by(Region2,Year,Survey) %>% 
+    summarise(
+              N = sum(N),
+              m = sum(m))  %>% 
+
+    gather(key = "variable", value="value", N,m) %>% 
+    spread(Region2,value)  
+    )
+    
+
 
 
 #-----------------------------------
@@ -180,14 +200,31 @@ M.data %>%
         Se = sd(Encounter_rate)/sqrt(length(Encounter_rate))), by= list(Year)] %>% 
   
   ggplot(., aes( Year, Encounter_rate)) +
-  geom_point()+geom_line() +
+  geom_point(size = 5)+
+  geom_line(size = 1) +
   geom_errorbar(aes(ymin = (Encounter_rate - Se),
                     ymax = (Encounter_rate + Se)),
                  width = 0.1) +
-  annotate("text",x=2015.5, y=0.03,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
+  annotate("text",x=2015.5, y=0.03,label=paste0("mean ± se"),
+           vjust=0,  color="red", size=8,family="serif")+
   ylim(0,0.03)+
   theme_bw() + 
-  xlab("Year")
+  xlab("Year") +
+  theme(
+    text = element_text(family="serif"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 18,colour = "black"),
+    axis.title = element_text(size = 23,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+      )
 
 
 
@@ -204,52 +241,29 @@ M.data %>%
 
 
 ggplot(Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
-  geom_boxplot(width=0.8) +
+  geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
+               outlier.size = 3) +
   geom_smooth(data =Alt.d,aes(x=Altitude_f, y = Encounter_rate) ,method = "loess")+
-  theme_bw() + xlab("Altitude")
-
-
-#----
-
-Alt.d <- 
-  M.data %>% 
-  .[!(TypeName.1 %in% "非森林"),] %>% 
-  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
-  .[, Altitude_f := cut(Altitude,
-                        breaks = c(seq(0,4000,250)),
-                        labels = c(seq(0,3750,250)),
-                        include.lowest = T)] %>% 
-  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
-  .[, Encounter_rate := V1/N] 
-
-
-Alt.d3 <-
-  Alt.d %>%  
-  .[, .(Encounter_rate.m = mean(V1/N),
-        sd =sd(V1/N),
-        n = .N), by = list(Altitude_f)] %>% 
-  .[, CI :=  sd/sqrt(n)]
-  
+  labs(x = "Altitude") +
+  theme_bw() +
+  theme(
+    text = element_text(family="serif"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 18,colour = "black"),
+    axis.title = element_text(size = 23,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
 
 
 
-ggplot(Alt.d3, aes( x= as.numeric(as.character(Altitude_f)), y = Encounter_rate.m)) +
-  geom_bar( stat ="identity",width = 250,
-            fill = gray(0.8), col = "black") + 
-  geom_errorbar(aes(ymin = (Encounter_rate.m - CI),
-                    ymax = (Encounter_rate.m + CI)),
-                  position = "dodge", width = 100) +
-  annotate("text",x=100, y=0.046,label=paste0("mean ± se"), vjust=0,  color="red", size=5)+
-  theme_bw() + 
-  scale_x_continuous("Altitude", breaks = seq(-125,3750,250),
-                     labels = seq(0,3750,250))+
-  scale_y_continuous("Encounter_rate")
-
-
-
-
-
-#----
 Rgn.d <- 
 M.data %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
@@ -259,14 +273,30 @@ M.data %>%
   .[, Encounter_rate := V1/N] 
 
 ggplot(Rgn.d, aes( Region2, Encounter_rate))+
-  geom_boxplot(width=0.4 )+
+  geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
+               outlier.size = 3)+
   theme_bw()+
   scale_x_discrete("Region", labels = c("North" = "北部",
                                          "Center1" = "中彰投",
                                          "Center2" = "雲嘉南",
                                          "South" = "高屏",
                                          "East1" = "花蓮",
-                                         "East2" = "台東"))
+                                         "East2" = "台東"))+
+  theme(
+    text = element_text(family="serif"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 18,colour = "black"),
+    axis.title = element_text(size = 23,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
 
 
 
@@ -284,9 +314,31 @@ M.data %>%
 
 
 ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
-  geom_boxplot(width=0.4) +
-  theme_bw() + scale_x_discrete("Julian day")+
-  theme(axis.text.x = element_text(angle = 270, vjust = 0))
+  geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
+               outlier.size = 3) +
+  theme_bw() + 
+  scale_x_discrete("Julian day",
+                   labels = paste0(
+                     "(",c(53,seq(60,180,15)),
+                     ",",c(seq(60,180,15),188),
+                     "]"
+                   ))+
+  theme(
+    text = element_text(family="serif"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 18,colour = "black"),
+    axis.text.x = element_text(angle = 315, hjust = -0.10),
+    axis.title = element_text(size = 23,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
 
 
 
@@ -301,9 +353,25 @@ M.data %>%
 
 
   ggplot(Type.d, aes(TypeName.1, Encounter_rate))+
-    geom_boxplot(width=0.4) +
+    geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
+                 outlier.size = 3) +
     theme_bw() + 
-    xlab("Forest type")
+    xlab("Forest type")+
+    theme(
+      text = element_text(family="serif"),
+      aspect.ratio = 1,
+      panel.border = element_rect(size = 1.5,fill = NA),
+      axis.line = element_line(size = 1, colour = "black"),
+      axis.ticks = element_line(size = 1),
+      axis.text = element_text(size = 18,colour = "black"),
+      axis.title = element_text(size = 23,colour = "black",
+                                vjust = -2, hjust = 0.5),
+      axis.title.x.bottom = element_text(vjust = -2),
+      axis.title.y.left = element_text(vjust = 2),
+      axis.ticks.length = unit(.25, "cm"),
+      panel.grid = element_blank(),
+      plot.margin = margin(30,30,20,20)
+    )
   
  
 
