@@ -73,7 +73,7 @@ library(raster)
 
 
 str_name<-'D:/R/test/不分幅_全台及澎湖/dem_20m.tif' 
-imported_raster=raster(str_name )
+imported_raster=raster(str_name)
 
 
 imported_raster@crs
@@ -81,6 +81,11 @@ imported_raster@crs
 contour(imported_raster, add=TRUE)
 filledContour(imported_raster)
 
+x <- rasterToContour(imported_raster)
+x1 <- st_as_sf(x)
+st_transform(x1,4326)
+
+plot(x1)
 
 s <- stack(imported_raster)
 
@@ -96,5 +101,5 @@ plot(imported_raster)
 
 
 #-----------------------
-Reference
-https://geocompr.robinlovelace.net/geometric-operations.html
+#Reference
+#https://geocompr.robinlovelace.net/geometric-operations.html
