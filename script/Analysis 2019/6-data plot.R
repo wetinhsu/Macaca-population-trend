@@ -8,7 +8,6 @@ library(purrr)
 library(dplyr)
 library(writexl)
 library(ggplot2)
-library(lattice)
 #library(reshape2)
 
 #Original data---- 
@@ -45,7 +44,6 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
 (output.1<- M.data %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
-  setDT %>%
   .[, .(N = .N, m = sum(Macaca_sur)), by = list(TypeName.1,TypeName)])
 
 
@@ -81,20 +79,18 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
 (output.2<- M.data %>% 
     filter(!TypeName.1 %in% "非森林") %>% 
     mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur)) %>%
-    group_by(Region2,County,Year,Survey) %>% 
-    summarise(N = n(), m = sum(Macaca_sur)) %>% 
-    left_join(.,
-              fread(("./data/clean/gis/county area-2.csv"), col.names =c("County", "Area", "perimeter")),
-              by = "County") %>% 
-    select(-perimeter,Area) %>% 
-    filter(!County %in% c("金門縣","澎湖縣", "連江縣")) %>% 
     group_by(Region2,Year,Survey) %>% 
-    summarise(
-              N = sum(N),
-              m = sum(m))  %>% 
+    summarise(N = n(),
+              m = sum(Macaca_sur)) %>% 
+    gather(key = "variable", value="value",  N,m) %>% 
+    spread(Region2,value) 
 
-    gather(key = "variable", value="value", N,m) %>% 
-    spread(Region2,value)  
+    
+    
+
+
+    
+    
     )
     
 
@@ -178,7 +174,7 @@ M.data %>% .[, Altitude_c := cut(Altitude, breaks=seq(0,4000,500), include.lowes
   dcast( Altitude_c ~ Year + Survey, value.var = "Point", length) 
 M.data %>%  dcast( julian.D ~ Year + Survey, value.var = "Point", length) %>% View()
 
-  
+#------------------  
 M.data %>%
   filter(!TypeName.1 %in% "非森林") %>% 
   mutate(Altitude_f = cut(Altitude,
