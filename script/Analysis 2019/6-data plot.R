@@ -41,6 +41,8 @@ M.data$Distance %<>% as.numeric
 
 M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
 
+#-----------------------------------
+
 (output.1<- M.data %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
@@ -64,8 +66,8 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
               m = sum(m),
               E = sum(m)/sum(N))  %>% 
     group_by(Region2) %>% 
-    mutate(E_mean = mean(E) %>% round(., 3), 
-           E_sd = sd(E)/sqrt(10) %>% round(., 3)) %>% 
+    mutate(E_mean = mean(E) , 
+           E_sd = sd(E) ) %>% 
     select(-E) %>% 
     reshape2::melt(id.vars=c("Region2", "Year", "Survey","area","E_mean","E_sd"))%>% 
     reshape2::dcast(Region2+ area + E_mean+ E_sd+variable~ Year+Survey, value.var = c("value")) %>% 
@@ -76,27 +78,22 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
   
 
 
-(output.2<- M.data %>% 
-    filter(!TypeName.1 %in% "非森林") %>% 
-    mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur)) %>%
-    group_by(Region2,Year,Survey) %>% 
-    summarise(N = n(),
-              m = sum(Macaca_sur)) %>% 
-    gather(key = "variable", value="value",  N,m) %>% 
-    spread(Region2,value) 
+(output.2<- 
+    M.data %>% setDT %>%   
+    .[!(TypeName.1 %in% "非森林"),] %>%
+    .[,.(N=.N, 
+         m = sum(Macaca_sur,na.rm=T),
+         E = sum(Macaca_sur,na.rm=T)/.N),
+      by = list(Year, Survey, Region2)]%>%
+  .[, m:= as.numeric(m)] %>% 
+  .[, N:= as.numeric(N)] %>% 
+  .[, E:= as.numeric(E)] %>% 
+  melt(id.vars = c("Year" ,"Survey" ,"Region2")) %>% 
+  dcast(., Year + Survey+ variable ~Region2 , value.var = c("value")) %>% 
+  .[order(-variable,Year, Survey),]
+)
+  
 
-    
-    
-
-
-    
-    
-    )
-    
-
-
-
-#-----------------------------------
 
 (output.4<- M.data %>%  
   .[Macaca_sur %in% 1,] %>%
@@ -138,13 +135,16 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
 
 
 (output.6<- M.data %>%    
-  .[,.(N=.N, m = sum(Macaca_sur,na.rm=T)),
+  .[,.(N=.N,
+       m = sum(Macaca_sur,na.rm=T),
+       E = sum(Macaca_sur,na.rm=T)/.N),
     by = list(Year, Survey, TypeName.1)]%>%
     .[, m:= as.numeric(m)] %>% 
     .[, N:= as.numeric(N)] %>% 
+    .[, E:= as.numeric(E)] %>% 
     melt(id.vars = c("Year" ,"Survey" ,"TypeName.1")) %>% 
-    dcast(., Year + Survey+ variable ~TypeName.1 , value.var = c("value")) %>% 
-    .[order(Year, Survey, -variable)])
+    dcast(., TypeName.1+ variable ~ Year + Survey, value.var = c("value")) 
+)
 
 
 (output.7<- M.data %>% 

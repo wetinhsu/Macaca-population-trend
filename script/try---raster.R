@@ -47,7 +47,8 @@ nc.b <-
 #county
 path2 <- "D:/R/test/COUNTY_MOI_1081121"
 
-TW <- st_read(paste0(path2,"/","COUNTY_MOI_1081121.shp")) 
+TW <- st_read(paste0(path2,"/","COUNTY_MOI_1081121.shp")) %>% 
+  filter(!COUNTYNAME %in% c("連江縣", "澎湖縣","金門縣")  )
 st_transform(TW,4326)
 
 
@@ -62,10 +63,9 @@ ggplot()+
 
 
 ggplot()+
-  #geom_sf(data = nc.b, aes(fill = TypeName.1, color = TypeName.1))+
-  geom_sf(data = TW)+
-  coord_sf(xlim = c(119.5, 122.5), ylim = c(21.5, 25.5))+
-  theme_linedraw()
+  geom_sf(data = TW, alpha = 0)+
+  geom_sf(data = nc.b, aes(fill = TypeName.1, color = TypeName.1), alpha = 0.2)+
+  coord_sf(xlim = c(119.5, 122.5), ylim = c(21.5, 25.5))
   
 
 #-------------
