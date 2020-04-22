@@ -65,7 +65,9 @@ ggplot()+
 ggplot()+
   geom_sf(data = TW, alpha = 0)+
   geom_sf(data = nc.b, aes(fill = TypeName.1, color = TypeName.1), alpha = 0.2)+
-  coord_sf(xlim = c(119.5, 122.5), ylim = c(21.5, 25.5))
+  
+  geom_sf(data = TW, alpha = 0)+
+  coord_sf(xlim = c(119.5, 122.5), ylim = c(21.5, 25.5), expand = FALSE)
   
 
 #-------------

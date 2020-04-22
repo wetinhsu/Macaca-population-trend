@@ -110,8 +110,8 @@ df <-
   .[!(N %in% 0),] %>% 
   .[, N := NULL] %>% 
   .[, Altitude_f := cut(Altitude,
-                        breaks = c(seq(0,4000,500)),
-                        labels = c(seq(250,3750,500)),
+                        breaks = c(0,1000,2500,4000),
+                        labels = c("A","B","C"),
                         include.lowest = T)] %>%
   .[, Altitude_f := factor(Altitude_f)] %>%
   .[, Region2 := factor(Region2)] %>% 
@@ -119,43 +119,12 @@ df <-
   setDF
 
 #--
-ggplot.bbs <- function(x, vernacularName){
-  p <- ggplot(x, aes(x=time, y=imputed)) + 
-    geom_errorbar(aes(ymin=imputed-se_imp, ymax=imputed+se_imp), width=.1, colour = '#f3e4c2', size = .5) +
-    geom_line(colour = '#f3e4c2', size = 2, linetype = 1) +
-    geom_point(colour='#f3e4c2', size=8, shape=21, stroke = 2, fill='#ef4926') +
-    ggtitle(vernacularName) +
-    expand_limits(y=0) +
-    scale_x_continuous(breaks = x$time)+
-    scale_y_continuous()+
-    # coord_cartesian(ylim=c(0,150)) +
-    #theme with white background
-    
-    theme_bw() +
-    #eliminates background, gridlines, and chart border
-    theme(
-      plot.background = element_blank(),
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      panel.border = element_blank(),
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank(),
-      axis.text.x = element_text(angle = 30, hjust = 1),
-      text = element_text(size=30),
-      axis.line.x = element_line(color="black", size = .1),
-      axis.line.y = element_line(color="black", size = .1)) +
-    geom_hline(yintercept=100, colour = "grey", linetype = 3)
-  
-}
-
-#---
-
 
 m1 <- trim(
            number ~ SP + Year + Region2 + Altitude_f,
            weights = "weight",df,
            model =  2,
-           #changepoints = "all",
+           changepoints = "2018",
            overdisp = F,
            serialcor = F, 
            autodelete = T, 
@@ -170,6 +139,7 @@ index(m1, "imputed", covars = T) %>% plot
 
 overall(m1,"imputed") %T>% plot
 
+index(m1, covars = F) %>% plot(., pct=T)
 index(m1, covars = T) %>% plot(., covar = "Altitude_f")
 
 plot(overall(m1, "imputed"), axes = F)
@@ -198,7 +168,8 @@ idx <- index(m1, "imputed", covars = T)  %>% setDT %>%
   .[,list(covariate, category, time, imputed = imputed*100, se_imp = se_imp*100)] 
 
 
-p <- ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) + 
+
+  ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) + 
   geom_errorbar(aes(ymin=imputed-se_imp, ymax=imputed+se_imp), width=.1, colour = '#f3e4c2', size = .9) +
   geom_line(colour = '#f3e4c2', size = 2, linetype = 1) +
   geom_point(colour='#f3e4c2', size = 8, shape = 21, stroke = 2, fill='#ef4926') +
@@ -208,7 +179,7 @@ p <- ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) +
   # coord_cartesian(ylim=c(0,150)) +
   #theme with white background
   
-  theme_bw() +
+  
   #eliminates background, gridlines, and chart border
   theme(
     plot.background = element_blank(),
@@ -223,6 +194,8 @@ p <- ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) +
     axis.line.y = element_line(color="black", size = .1)) +
   geom_hline(yintercept=100, colour = "grey", linetype = 3)
 
-plot(p)
 
+  df %>% 
+    reshape2::dcast(SP ~ Year, value.var = c("number")) %>% 
+    View()
 
