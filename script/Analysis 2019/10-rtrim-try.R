@@ -124,7 +124,7 @@ m1 <- trim(
            number ~ SP + Year + Region2 + Altitude_f,
            weights = "weight",df,
            model =  2,
-           changepoints = "2018",
+           changepoints = "all",
            overdisp = F,
            serialcor = F, 
            autodelete = T, 

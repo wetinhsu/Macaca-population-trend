@@ -76,47 +76,55 @@ nc.b <-
 
 #---------------------
 
-S.all_M<- S.all[Macaca_sur %in% 1,]  #monkey data
+S.all_M<- S.all[Macaca_sur %in% 1,] %>%
+  .[,list(Year, X, Y)]%>%
+  unique() %>% 
+  setDF  #monkey data
 
 ggplot()+
-  geom_sf(data = TW, alpha = 0)+
+  geom_sf(data = TW,  alpha = 0)+
   geom_sf(data = nc.b, aes(fill = TypeName.1, color = TypeName.1))+
-  geom_sf(data = TW, alpha = 0)+
+
+  geom_sf(data = TW, alpha = 0, lwd = 0)+
   geom_point(data = S.all_M,
-             aes(x=X, y = Y),col = "black",
-             shape = factor(S.all_M$Year),
-             size = 3)+
+             aes(x = X, y = Y), shape = 16, size = 3, color = "red", alpha = 0.7)+
+  
+  
   coord_sf(xlim = c(119.5, 122.5), ylim = c(21.5, 25.5), expand = FALSE)+
+  
+  scale_x_continuous(breaks = c(120:122))+
+  scale_y_continuous(breaks = c(22:25))+
+  
   annotation_north_arrow(location = "tl",
                          which_north = "grid",
+                         height = unit(1.0, "cm"), width = unit(1.0, "cm"),
                          style = north_arrow_orienteering())+
+
   
-  scale_fill_manual(values = c("yellow", "darkgreen", "orange", "lightgreen"),
-                    name = "Type of Forest",
-                    breaks = c("闊葉林", "針葉林", "竹林", "混淆林"),
-                    labels = c("闊葉林", "針葉林", "竹林", "混淆林"))+
-  scale_colour_manual(values = c("yellow", "darkgreen", "orange", "lightgreen"),
-                      name = "Type of Forest",
-                      breaks = c("闊葉林", "針葉林", "竹林", "混淆林"),
-                      labels = c("闊葉林", "針葉林", "竹林", "混淆林"))+
-  scale_shape_manual(values = 1:5,
-                      name = "Year",
-                      breaks = 2015:2019,
-                      labels = 2015:2019)+
+  scale_fill_manual(values = c(`闊葉林` = "#90EE90",
+                               `針葉林` = "#1D8641",
+                               `竹林` = "#EBD720",
+                               `混淆林` = "#FF7F00"),
+                    title = "Type of Forest")+
+
   
   theme_bw()+
   theme(
+    panel.border = element_rect(size = 1.5),
+    
     plot.background = element_blank(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     
     axis.title = element_blank(),
-    text = element_text(size=20),
-    axis.line.x = element_line(color="black", size = .1),
-    axis.line.y = element_line(color="black", size = .1),
-    
-    legend.justification=c(1,0),
-    legend.position=c(1,0)
+    axis.line.x = element_line(color = "black", size = .2),
+    axis.line.y = element_line(color = "black", size = .2),
+    axis.ticks.length = unit(0.25,"cm"),
+    axis.text = element_text(size = 15, hjust = .5, vjust = .5),
+
+    legend.justification = c(1,0),
+    legend.position = c(1,0),
+    legend.text = element_text(size = 15)
     ) 
 
 
