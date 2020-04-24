@@ -153,8 +153,27 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
   .[Macaca_sur %in% 1, .N, list(TypeName.1, Macaca_dist)] %>% 
   dcast(., TypeName.1~Macaca_dist, value.var = "N"))
 
+(output.8<-M.data %>% 
+  .[!(TypeName.1 %in% "非森林"),] %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+  .[, .(m = sum(Macaca_sur),.N), by= list(Year, Survey)] %>% 
+  .[, Encounter_rate := m/N] %>% 
+  .[, .(Sum.m = sum(m),
+        Mean.m = mean(m),
+        Se.m = sd(m)/sqrt(length(m)),
+        
+        Sum.N = sum(N),
+        Mean.N = mean(N),
+        Se.N = sd(N)/sqrt(length(N)),
+    
+        Encounter_rate = mean(Encounter_rate),
+        Se = sd(Encounter_rate)/sqrt(length(Encounter_rate))), by= list(Year)]
+)
+
+
 write_xlsx(list(
   TypeName_point = output.1,
+  Year_point= output.8,
   Region_point= output.2,
 
   group_County = output.4,
@@ -163,7 +182,8 @@ write_xlsx(list(
   single_County_only_forest = output.5.1,
   
   Forest_Macaca = output.6,
-  Macaca_dist = output.7),
+  Macaca_dist = output.7
+  ),
   paste0("./result/tables_",format(Sys.Date(),"%y%m%d"),".xlsx"))
 
 #know your data------------------------------------------
@@ -185,6 +205,7 @@ M.data %>%
   summarise(N = n())
 
 #--------------------------
+ 
 M.data %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>%
@@ -195,7 +216,7 @@ M.data %>%
         Encounter_rate = mean(Encounter_rate),
         Se = sd(Encounter_rate)/sqrt(length(Encounter_rate))), by= list(Year)] %>% 
   
-  ggplot(., aes( Year, Encounter_rate)) +
+  ggplot(. , aes( Year, Encounter_rate)) +
   geom_point(size = 5)+
   geom_line(size = 1) +
   geom_errorbar(aes(ymin = (Encounter_rate - Se),

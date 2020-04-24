@@ -53,10 +53,10 @@ bb<- df %>% setDT %>%
   .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)] 
 
 
-replicate(5000, mean(sample(bb$AB, replace = TRUE))) %>%
+replicate(10000, mean(sample(bb$AB, replace = TRUE))) %>%
   quantile(.,probs = c(0.025, 0.975)) 
 
-replicate(5000, mean(sample(bb$AB, replace = TRUE))) %>% mean
+replicate(10000, mean(sample(bb$AB, replace = TRUE))) %>% mean
 
 21536.41/(0.1*0.1*pi)
 

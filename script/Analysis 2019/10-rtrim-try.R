@@ -134,13 +134,13 @@ m1 <- trim(
 summary(m1)
 wald(m1)
 totals(m1, "imputed", obs =F) %>% plot
-index(m1, "imputed", covars = F) %>% plot
+index(m1, "imputed", covars = F) %>% plot(., pct =T)
 index(m1, "imputed", covars = T) %>% plot
 
 overall(m1,"imputed") %T>% plot
 
-index(m1, covars = F) %>% plot(., pct=T)
-index(m1, covars = T) %>% plot(., covar = "Altitude_f")
+index(m1, covars = F) %>% plot(., pct=F)
+
 
 plot(overall(m1, "imputed"), axes = F)
 axis(1, at = 2015:2019, cex.axis=1.5)
@@ -152,47 +152,40 @@ heatmap(m1, "imputed", cex.axis=1.5)
 title( "imputed" )
 
 
-index(m1, "imputed", covars = F) %>% plot(., pct = T, main = "imputed")
-
-index(m1, "imputed", covars = T) %>% 
-  plot(., pct = T, main = "imputed",
-       axes = F,
-       xaxs="i", cex.lab = 1.3)
-axis(1, at = 2015:2019, cex.axis=1.5)
-axis(2, cex.axis=1)
-box()
-
-
 
 idx <- index(m1, "imputed", covars = T)  %>% setDT %>%
-  .[,list(covariate, category, time, imputed = imputed*100, se_imp = se_imp*100)] 
+  .[,list(covariate, category, time, imputed = imputed, se_imp = se_imp)] 
 
 
 
-  ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) + 
-  geom_errorbar(aes(ymin=imputed-se_imp, ymax=imputed+se_imp), width=.1, colour = '#f3e4c2', size = .9) +
-  geom_line(colour = '#f3e4c2', size = 2, linetype = 1) +
-  geom_point(colour='#f3e4c2', size = 8, shape = 21, stroke = 2, fill='#ef4926') +
-  expand_limits(y = 0) +
-  scale_x_continuous(breaks = 2015:2019)+
-  #scale_y_continuous(breaks = c(100, 5000,10000))+
-  # coord_cartesian(ylim=c(0,150)) +
+  ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) +
+#    geom_errorbar(aes(ymin=imputed-se_imp, ymax=imputed+se_imp), width=.1, color = gray(0.7), size = .09) +
+    geom_line(colour = 'black', size = 1, linetype = 5) +
+    geom_point(colour='black', size = 5, shape = 21, fill='red',stroke = 2) +
+    geom_hline(yintercept=1, colour = "grey", linetype = 3)+
+    expand_limits(y = 0) +
+    scale_x_continuous(breaks = 2015:2019)+
+    scale_y_continuous(breaks = c(-1000,1,1000,2000,3000))+
+    coord_cartesian(ylim=c(-1500,3000)) +
+    labs(x= "Year", y = "Index") + 
   #theme with white background
+    theme_bw()+
   
-  
-  #eliminates background, gridlines, and chart border
-  theme(
-    plot.background = element_blank(),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    panel.border = element_blank(),
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank(),
-    axis.text.x = element_text(angle = 30, hjust = 1),
-    text = element_text(size=30),
+    #eliminates background, gridlines, and chart border
+    theme(
+      plot.margin = margin(30,30,20,20),
+      plot.background = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+#    panel.border = element_blank(),
+    
+    axis.title = element_blank(),
+#    axis.text.x = element_text(angle = 0, hjust = 1),
+    text = element_text(size=20, color = "black"),
     axis.line.x = element_line(color="black", size = .1),
-    axis.line.y = element_line(color="black", size = .1)) +
-  geom_hline(yintercept=100, colour = "grey", linetype = 3)
+    axis.line.y = element_line(color="black", size = .1)
+) 
+
 
 
   df %>% 

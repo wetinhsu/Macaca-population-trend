@@ -71,7 +71,8 @@ nc.b <-
   filter(!TypeName %in% c("待成林地", "裸露地", "陰影")) %>% 
   mutate(TypeName.1 = ifelse(TypeName %in% "闊葉樹林型", "闊葉林",
                              ifelse(TypeName %in% "針葉樹林型", "針葉林",
-                                    ifelse(TypeName %in% "竹林", "竹林", "混淆林"))))
+                                    ifelse(TypeName %in% "竹林", "竹林", "混淆林")))) %>% 
+  arrange(match(TypeName.1, c("闊葉林","針葉林","竹林", "混淆林")))
 
 
 #---------------------
@@ -83,11 +84,11 @@ S.all_M<- S.all[Macaca_sur %in% 1,] %>%
 
 ggplot()+
   geom_sf(data = TW,  alpha = 0)+
-  geom_sf(data = nc.b, aes(fill = TypeName.1, color = TypeName.1))+
+  geom_sf(data = nc.b, aes(fill = TypeName.1, color = TypeName.1))+ 
 
-  geom_sf(data = TW, alpha = 0, lwd = 0)+
+  geom_sf(data = TW, alpha = 0)+
   geom_point(data = S.all_M,
-             aes(x = X, y = Y), shape = 16, size = 3, color = "red", alpha = 0.7)+
+             aes(x = X, y = Y), shape = 21, size = 2, color = "black", fill ="red" , alpha = 0.7)+
   
   
   coord_sf(xlim = c(119.5, 122.5), ylim = c(21.5, 25.5), expand = FALSE)+
@@ -101,15 +102,22 @@ ggplot()+
                          style = north_arrow_orienteering())+
 
   
-  scale_fill_manual(values = c(`闊葉林` = "#90EE90",
+  scale_fill_manual(values = c(`闊葉林` = "#98FB98",
                                `針葉林` = "#1D8641",
-                               `竹林` = "#EBD720",
+                               `竹林` = "#E6D933",
                                `混淆林` = "#FF7F00"),
-                    title = "Type of Forest")+
-
+                    name = "Type of Forest")+
+  scale_colour_manual(values = c(`闊葉林` = "#98FB98",
+                               `針葉林` = "#1D8641",
+                               `竹林` = "#E6D933",
+                               `混淆林` = "#FF7F00"),
+                    name = "Type of Forest")+
+  
   
   theme_bw()+
   theme(
+    plot.margin = margin(30,30,20,20),
+    text = element_text(family="serif"),
     panel.border = element_rect(size = 1.5),
     
     plot.background = element_blank(),
@@ -123,7 +131,7 @@ ggplot()+
     axis.text = element_text(size = 15, hjust = .5, vjust = .5),
 
     legend.justification = c(1,0),
-    legend.position = c(1,0),
+    legend.position = c(0.9,0.05),
     legend.text = element_text(size = 15)
     ) 
 
