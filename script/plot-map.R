@@ -71,8 +71,7 @@ nc.b <-
   filter(!TypeName %in% c("待成林地", "裸露地", "陰影")) %>% 
   mutate(TypeName.1 = ifelse(TypeName %in% "闊葉樹林型", "闊葉林",
                              ifelse(TypeName %in% "針葉樹林型", "針葉林",
-                                    ifelse(TypeName %in% "竹林", "竹林", "混淆林")))) %>% 
-  arrange(match(TypeName.1, c("闊葉林","針葉林","竹林", "混淆林")))
+                                    ifelse(TypeName %in% "竹林", "竹林", "混淆林"))))
 
 
 #---------------------
@@ -102,37 +101,42 @@ ggplot()+
                          style = north_arrow_orienteering())+
 
   
-  scale_fill_manual(values = c(`闊葉林` = "#98FB98",
-                               `針葉林` = "#1D8641",
-                               `竹林` = "#E6D933",
-                               `混淆林` = "#FF7F00"),
+  scale_fill_manual(values = c("#E6D933",
+                               "#1D8641",
+                               "#FF7F00",
+                               "#98FB98"),
+                    breaks = c('闊葉林', '針葉林', '竹林', '混淆林'),
+                    labels = c("Broadleaf", "Coniferous", "Bamboo", "Mixed"),
                     name = "Type of Forest")+
-  scale_colour_manual(values = c(`闊葉林` = "#98FB98",
-                               `針葉林` = "#1D8641",
-                               `竹林` = "#E6D933",
-                               `混淆林` = "#FF7F00"),
-                    name = "Type of Forest")+
+  scale_colour_manual(values = c("#E6D933",
+                                 "#1D8641",
+                                 "#FF7F00",
+                                 "#98FB98"),
+                      breaks = c('闊葉林', '針葉林', '竹林', '混淆林'),
+                      labels = c("Broadleaf", "Coniferous", "Bamboo", "Mixed"),
+                    name = "Forest")+
   
   
   theme_bw()+
   theme(
-    plot.margin = margin(30,30,20,20),
+    plot.margin = margin(20,20,10,10),
     text = element_text(family="serif"),
-    panel.border = element_rect(size = 1.5),
+    panel.border = element_rect(size = 0),
     
     plot.background = element_blank(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     
     axis.title = element_blank(),
-    axis.line.x = element_line(color = "black", size = .2),
-    axis.line.y = element_line(color = "black", size = .2),
+#    axis.line.x = element_line(color = "black", size = .2),
+#    axis.line.y = element_line(color = "black", size = .2),
     axis.ticks.length = unit(0.25,"cm"),
-    axis.text = element_text(size = 15, hjust = .5, vjust = .5),
+    axis.text = element_text(size = 15, color = "black", 
+                             hjust = .5, vjust = .5),
 
     legend.justification = c(1,0),
     legend.position = c(0.9,0.05),
-    legend.text = element_text(size = 15)
+    legend.text = element_text(size = 12)
     ) 
 
 
