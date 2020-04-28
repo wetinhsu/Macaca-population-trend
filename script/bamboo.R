@@ -19,7 +19,7 @@ path <- "D:/R/test/第四次森林資源調查全島森林林型分布圖"
 nc <- st_read(paste0(path,"/","全島森林林型分布圖.shp"),
               crs="+init=epsg:3826") %>% 
   filter(!TypeName %in% c("待成林地", "裸露地", "陰影")) 
-  
+
 
 
 # distance closest Broadleaf---------------------
@@ -71,24 +71,19 @@ Area <- nc[TypeName,] %>%  #竹林面積
 
 #---------------------------
 df <- 
-S.all_M%>% 
+  S.all_M%>% 
   st_drop_geometry %>% 
   add_column(., Area = Area$Area_ha,
              Dist_Broadleaf = distance,
-             Type_nearear = TypeName4,
+             Type_near2nd = TypeName4,
              Dist_other = distance4)
 
-df %>% 
-  group_by(Site_N,
-           Point,
-           TypeName,
-           Distance,
-           Area,
-           Dist_Broadleaf,
-           Type_nearear,
-           Dist_other) %>% 
-  summarise(N = n()) %>% 
-  ungroup() %>% 
-  arrange(Type_nearear) %>% 
-  View()
+ggplot(df, aes(x = Type_near2nd))+
+  geom_bar()
 
+
+ggplot(df, aes(x = Dist_other, group = Type_near2nd))+
+  geom_histogram(aes(fill = Type_near2nd),
+                 color = gray(.5), bins = 20, position="dodge")+
+  stat_bin(binwidth=20, geom="text", aes(label=..count..),
+           position="dodge" ) 

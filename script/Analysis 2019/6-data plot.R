@@ -194,6 +194,20 @@ M.data %>% .[, Altitude_c := cut(Altitude, breaks=seq(0,4000,500), include.lowes
   dcast( Altitude_c ~ Year + Survey, value.var = "Point", length) 
 M.data %>%  dcast( julian.D ~ Year + Survey, value.var = "Point", length) %>% View()
 
+
+M.data %>% setDT %>%   
+  .[!(TypeName.1 %in% "非森林"),] %>%
+  .[,.(N=.N,
+       m = sum(Macaca_sur,na.rm=T),
+       E = sum(Macaca_sur,na.rm=T)/.N),
+    by = list(Year, Survey, County)]%>%
+  .[, m:= as.numeric(m)] %>% 
+  .[, N:= as.numeric(N)] %>% 
+  .[, E:= as.numeric(E)] %>% 
+  melt(id.vars = c("Year" ,"Survey" ,"County")) %>% 
+  dcast(., County+ variable ~ Year + Survey, value.var = c("value")) %>% 
+  write_xlsx(.,"./result/Couty_E_20200428.xlsx")
+
 #------------------  
 M.data %>%
   filter(!TypeName.1 %in% "非森林") %>% 
