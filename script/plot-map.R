@@ -111,7 +111,7 @@ ggplot()+
              alpha = 0.7)+
   
   scale_shape_manual(values = c("A" = 21, "B" = 21),
-                     labels = c("Monkey troop", "Samplig point"),
+                     labels = c("Monkey troop", "Sampling point"),
                      name = "",
                      guide = guide_legend(order = 1,
                                           override.aes = list( fill = c("red", "#9EC6FF"),
@@ -126,10 +126,15 @@ ggplot()+
                                "竹林" = "#FFFF99", #黃
                                "混淆林" = "#FF9966"),#橘
                     
-                    labels = c("闊葉林" = "Broadleaf",
-                               "針葉林" = "Coniferous",
-                               "竹林" = "Bamboo",
-                               "混淆林" = "Mixed"),
+                    breaks = c("闊葉林", 
+                               "針葉林",
+                               "竹林",
+                               "混淆林"),
+                    
+                    labels = c("Broadleaf",
+                               "Coniferous",
+                               "Bamboo",
+                               "Mixed"),
                     name = "Forest Type",
                     guide = guide_legend(order = 2))+
   
