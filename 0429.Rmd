@@ -1,0 +1,125 @@
+---
+title: "Untitled"
+output: html_document
+---
+---
+title: "R Notebook"
+output: html_notebook
+---
+# 台灣獼猴
+
+
+```{r ,include=FALSE}
+library(data.table)
+library(magrittr)
+library(readxl)
+library(tidyr)
+library(purrr)
+library(dplyr)
+library(writexl)
+library(ggplot2)
+
+getwd()
+```
+
+
+```{r, include=FALSE}
+M.data <- read_excel("./data/clean/for analysis_V1.xlsx",sheet=1) %>% 
+  mutate(TypeName.1 = ordered( TypeName.1, 
+                            c("闊葉林",
+                              "針葉林",
+                              "混淆林",
+                              "竹林",
+                              "非森林"))) %>% 
+  mutate(County = ordered( County, 
+                            c("宜蘭縣","基隆市","台北市","臺北市",
+                              "新北市","台北縣","臺北縣",
+                              "桃園縣","桃園市","新竹市",
+                              "新竹縣","苗栗縣",
+                              "台中市","臺中市","台中縣","臺中縣",
+                              "彰化縣","南投縣","南投市",
+                              "雲林縣","嘉義縣","嘉義市",
+                              "台南市","臺南市","台南縣","臺南縣",
+                              "高雄縣","高雄市",
+                              "屏東縣", "花蓮縣",
+                              "台東縣","臺東縣"))) %>% 
+  
+  mutate(Year = as.numeric(Year)) %>% 
+  mutate(Survey = as.numeric(Survey)) %>% 
+  mutate(Point = as.numeric(Point)) %>% 
+  mutate(Macaca_sur = as.numeric(Macaca_sur)) %>% 
+  mutate(Month = as.numeric(Month)) %>% 
+  mutate(Day = as.numeric(Day)) %>% 
+  mutate(Distance = as.numeric(Distance))
+```
+
+
+
+
+
+```{r}
+summary(M.data)
+```
+
+- 123
+```{r echo=FALSE}
+M.data %>% 
+  filter(!TypeName.1 %in% "非森林") %>% 
+  mutate(Macaca_sur = ifelse(is.na(Macaca_sur),
+                             0, Macaca_sur)) %>% 
+  group_by(TypeName.1,TypeName) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur))
+```
+
+
+
+```{r include=FALSE}
+
+county <- read.csv("./data/clean/gis/county area-2.csv") %>% 
+  set_colnames(., c("County",
+                    "Area",
+                    "perimeter")) %>% 
+  mutate(County = ordered( County, 
+                            c("宜蘭縣","基隆市","台北市","臺北市",
+                              "新北市","台北縣","臺北縣",
+                              "桃園縣","桃園市","新竹市",
+                              "新竹縣","苗栗縣",
+                              "台中市","臺中市","台中縣","臺中縣",
+                              "彰化縣","南投縣","南投市",
+                              "雲林縣","嘉義縣","嘉義市",
+                              "台南市","臺南市","台南縣","臺南縣",
+                              "高雄縣","高雄市",
+                              "屏東縣", "花蓮縣",
+                              "台東縣","臺東縣")))
+```
+
+
+
+```{r echo=FALSE}
+ M.data %>% 
+    filter(!TypeName.1 %in% "非森林") %>% 
+    mutate(Macaca_sur = ifelse(
+      is.na(Macaca_sur), 0, Macaca_sur)) %>%
+    group_by(Region2, County, Year, Survey) %>% 
+    summarise(N = n(), m = sum(Macaca_sur)) %>% 
+    left_join(.,county, by = "County") %>% 
+    select(-perimeter) %>% 
+    filter(!County %in% c("金門縣","澎湖縣", "連江縣")) %>% 
+    group_by(Region2,Year,Survey) %>% 
+    summarise(area = sum(Area),
+              N = sum(N),
+              m = sum(m),
+              E = sum(m)/sum(N))  %>% 
+    group_by(Region2) %>% 
+    mutate(E_mean = mean(E) , 
+           E_sd = sd(E) ) %>% 
+    select(-E) %>% 
+    reshape2::melt(id.vars=c("Region2", "Year", "Survey","area","E_mean","E_sd"))%>% 
+    reshape2::dcast(Region2+ area + E_mean+ E_sd+variable~ Year+Survey, value.var = c("value")) %>% 
+    arrange(Region2, desc(variable)) %>% 
+    select(Region2, area, variable,
+           `2015_1`, `2015_2`, `2016_1`, `2016_2`, `2017_1`, `2017_2`, `2018_1`, `2018_2`, `2019_1`, `2019_2`,
+           E_mean, E_sd)
+```
+
