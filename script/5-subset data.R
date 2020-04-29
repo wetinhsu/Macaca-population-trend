@@ -167,9 +167,10 @@ M.data.1 %<>%
   
 
 M.data.2 <-
-  M.data.1 %>%  .[julian.D > 52 & julian.D <= 188, ]  #刪除調查季(包含緩衝期)以外的資料
+  M.data.1 %>%  
+  .[Month >= 3 & Month <= 6, ]  #刪除調查季(包含緩衝期)以外的資料
 
-(M.data.1 %>%  .[!(julian.D > 52 & julian.D <= 188), ]  %>%  #看一下誰被刪掉
+(M.data.1 %>%  .[Month < 3 | Month > 6, ]  %>%  #看一下誰被刪掉
   .[, Macaca_sur := as.numeric(Macaca_sur)] %>% 
   .[, .(N.point = .N, m = sum(Macaca_sur, na.rm=T)), by = list( Year, Survey, julian.D)] %>% 
   .[, N.point := as.numeric(N.point)] %>% 

@@ -89,8 +89,8 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
   .[, N:= as.numeric(N)] %>% 
   .[, E:= as.numeric(E)] %>% 
   melt(id.vars = c("Year" ,"Survey" ,"Region2")) %>% 
-  dcast(., Year + Survey+ variable ~Region2 , value.var = c("value")) %>% 
-  .[order(-variable,Year, Survey),]
+  dcast(., Region2+ variable ~ Year + Survey, value.var = c("value")) 
+
 )
   
 
@@ -170,12 +170,25 @@ M.data %>%.[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
         Se = sd(Encounter_rate)/sqrt(length(Encounter_rate))), by= list(Year)]
 )
 
+output.9<-
+  M.data %>% setDT %>%   
+  .[!(TypeName.1 %in% "非森林"),] %>%
+  .[,.(N=.N,
+       m = sum(Macaca_sur,na.rm=T),
+       E = sum(Macaca_sur,na.rm=T)/.N),
+    by = list(Year, Survey, County)]%>%
+  .[, m:= as.numeric(m)] %>% 
+  .[, N:= as.numeric(N)] %>% 
+  .[, E:= as.numeric(E)] %>% 
+  melt(id.vars = c("Year" ,"Survey" ,"County")) %>% 
+  dcast(., County+ variable ~ Year + Survey, value.var = c("value")) 
 
 write_xlsx(list(
   TypeName_point = output.1,
   Year_point= output.8,
   Region_point= output.2,
-
+  County_point= output.9,
+  
   group_County = output.4,
   single_County = output.5,
   group_County_only_forest = output.4.1,
@@ -183,6 +196,7 @@ write_xlsx(list(
   
   Forest_Macaca = output.6,
   Macaca_dist = output.7
+  
   ),
   paste0("./result/tables_",format(Sys.Date(),"%y%m%d"),".xlsx"))
 
@@ -195,18 +209,7 @@ M.data %>% .[, Altitude_c := cut(Altitude, breaks=seq(0,4000,500), include.lowes
 M.data %>%  dcast( julian.D ~ Year + Survey, value.var = "Point", length) %>% View()
 
 
-M.data %>% setDT %>%   
-  .[!(TypeName.1 %in% "非森林"),] %>%
-  .[,.(N=.N,
-       m = sum(Macaca_sur,na.rm=T),
-       E = sum(Macaca_sur,na.rm=T)/.N),
-    by = list(Year, Survey, County)]%>%
-  .[, m:= as.numeric(m)] %>% 
-  .[, N:= as.numeric(N)] %>% 
-  .[, E:= as.numeric(E)] %>% 
-  melt(id.vars = c("Year" ,"Survey" ,"County")) %>% 
-  dcast(., County+ variable ~ Year + Survey, value.var = c("value")) %>% 
-  write_xlsx(.,"./result/Couty_E_20200428.xlsx")
+
 
 #------------------  
 M.data %>%
@@ -231,13 +234,13 @@ M.data %>%
         Se = sd(Encounter_rate)/sqrt(length(Encounter_rate))), by= list(Year)] %>% 
   
   ggplot(. , aes( Year, Encounter_rate)) +
-  geom_point(size = 5)+
+  geom_point(size = 4)+
   geom_line(size = 1) +
   geom_errorbar(aes(ymin = (Encounter_rate - Se),
                     ymax = (Encounter_rate + Se)),
-                 width = 0.1) +
-  annotate("text",x=2015.5, y=0.03,label=paste0("mean ± se"),
-           vjust=0,  color="red", size=8,family="serif")+
+                 width = 0.1,size = 1) +
+#  annotate("text",x=2015.5, y=0.03,label=paste0("mean ± se"),
+#           vjust=0,  color="red", size=8,family="serif")+
   ylim(0,0.03)+
   theme_bw() + 
   xlab("Year") +
@@ -274,7 +277,6 @@ M.data %>%
 ggplot(Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
                outlier.size = 3) +
-  geom_smooth(data =Alt.d,aes(x=Altitude_f, y = Encounter_rate) ,method = "loess")+
   labs(x = "Altitude") +
   theme_bw() +
   theme(
@@ -292,6 +294,46 @@ ggplot(Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
     panel.grid = element_blank(),
     plot.margin = margin(30,30,20,20)
   )
+
+#only 闊葉林
+
+
+Alt.d.B <- 
+  M.data %>% 
+  #.[!(TypeName.1 %in% "非森林"),] %>% 
+  .[TypeName.1 %in% "闊葉林",] %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>%
+  .[, Altitude_f := cut(Altitude,
+                        breaks = c(seq(0,4000,500)),
+                        labels = c(seq(250,3750,500)),
+                        include.lowest = T)] %>% 
+  .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Altitude_f)] %>% 
+#  .[, Altitude_f:= ordered(Altitude_f)] %>% 
+  .[, Encounter_rate := V1/N] 
+
+
+ggplot(Alt.d.B, aes( x=Altitude_f, y = Encounter_rate)) +
+  geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
+               outlier.size = 3) +
+  
+  labs(x = "Altitude") +
+  theme_bw() +
+  theme(
+    text = element_text(family="serif"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 18,colour = "black"),
+    axis.title = element_text(size = 23,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+
 
 
 
@@ -338,7 +380,7 @@ M.data %>%
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
   .[, julian.D_f := cut(julian.D,
-                        breaks = c(seq(0,210,15)),
+                        breaks = c(seq(60,210,15)),
                         include.lowest = T)] %>% 
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, julian.D_f)] %>% 
   .[, Encounter_rate := V1/N]   
@@ -349,11 +391,11 @@ ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
                outlier.size = 3) +
   theme_bw() + 
   scale_x_discrete("Julian day",
-                   labels = paste0(
-                     "(",c(53,seq(60,180,15)),
-                     ",",c(seq(60,180,15),188),
+                   labels = c("[60,75]",paste0(
+                     "(",c(seq(75,180,15)),
+                     ",",c(seq(90,180,15),182),
                      "]"
-                   ))+
+                   )))+
   theme(
     text = element_text(family="serif"),
     aspect.ratio = 1,

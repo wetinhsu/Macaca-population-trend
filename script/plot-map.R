@@ -81,76 +81,94 @@ S.all_M<- S.all[Macaca_sur %in% 1,] %>%
   unique() %>% 
   setDF  #monkey data
 
+S.all_P<- S.all%>%
+  .[!(TypeName.1%in% "非森林"),] %>% 
+  .[,list(X, Y)]%>%
+  
+  unique() %>% 
+  setDF  #Point data
+
 
 #plot --------------------------------------------------------------------
 
 
 ggplot()+
 
-  geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA)+ 
+  geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
   
   geom_sf(data = TW, fill = NA, color = gray(.5))+
+  
+  geom_point(data = S.all_P,
+             aes(x = X, y = Y,  shape = "B"),
+             fill = "#9EC6FF",
+             size = 2,
+             alpha = 1)+
   
   geom_point(data = S.all_M,
              aes(x = X, y = Y,  shape = "A"),
              fill ="red",
              size = 2,
-             color = "black",
              alpha = 0.7)+
   
-  scale_shape_manual(values = c("A" = 21),
-                     labels = "Monkey troop",
+  scale_shape_manual(values = c("A" = 21, "B" = 21),
+                     labels = c("Monkey troop", "Samplig point"),
                      name = "",
                      guide = guide_legend(order = 1,
+                                          override.aes = list( fill = c("red", "#9EC6FF"),
+                                                               size = c(3, 3)),
                                           title.theme = element_blank(),
                                           label.theme = element_text(family="serif",
                                                                      face = "bold",
                                                                      size = 13)))+
   
-  scale_fill_manual(values = c("#E6D933",
-                               "#1D8641",
-                               "#FF7F00",
-                               "#98FB98"),
-                    breaks = c('闊葉林',
-                               '針葉林',
-                               '竹林',
-                               '混淆林'),
-                    labels = c("Broadleaf",
-                               "Coniferous",
-                               "Bamboo",
-                               "Mixed"),
+  scale_fill_manual(values = c("闊葉林" = "#99CC99", 
+                               "針葉林" = "#009966", #深綠
+                               "竹林" = "#FFFF99", #黃
+                               "混淆林" = "#FF9966"),#橘
+                    
+                    labels = c("闊葉林" = "Broadleaf",
+                               "針葉林" = "Coniferous",
+                               "竹林" = "Bamboo",
+                               "混淆林" = "Mixed"),
                     name = "Forest Type",
                     guide = guide_legend(order = 2))+
   
   
   coord_sf(crs = 4326, 
-           xlim = c(119.5, 122.5), ylim = c(21.5, 25.5),
+           xlim = c(119.5, 122.5), ylim = c(21.5, 25.45),
            expand = FALSE)+
   
   scale_x_continuous(breaks = 120:122)+
   scale_y_continuous(breaks = 22:25)+
   
-  annotation_north_arrow(location = "bl",
+  annotation_north_arrow(location = "tl",
                          which_north = "grid",
                          height = unit(1.0, "cm"),
                          width = unit(1.0, "cm"),
+                         pad_x = unit(1.5, "cm"),
+                         pad_y = unit(1.5, "cm"),
                          style = north_arrow_orienteering())+
+  annotation_scale(location = "bl",
+                   pad_x = unit(1.5, "cm"),
+                   pad_y = unit(1.2, "cm"),
+                   style = "ticks") +
   
   theme_bw()+
   theme(
-    aspect.ratio = 1.55,
-    plot.margin = margin(5,5,5,5),
+    aspect.ratio = 1.35,
     text = element_text(family="serif"),
-    panel.border = element_rect(size = 1),
-    
+
     plot.background = element_blank(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     
     axis.title = element_blank(),
-    axis.ticks.length = unit(0.25,"cm"),
-    axis.text = element_text(size = 12, color = gray(.2), 
-                             hjust = .5, vjust = .5),
+    panel.border = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text = element_blank(),
+    plot.margin = margin(0,0,0,0),
+    
+    
     
     legend.justification = c(1,0),
     legend.position = c(0.95,0.05),
@@ -161,7 +179,7 @@ ggplot()+
 
 
 
-ggsave("MAP_3.png",
+ggsave("MAP_5.png",
            path = "./result",
            width = 15,
            height = 19,
