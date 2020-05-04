@@ -184,7 +184,7 @@ ggplot()+
 
 
 
-ggsave("MAP_5.png",
+ggsave("MAP_6.png",
            path = "./result",
            width = 15,
            height = 19,
