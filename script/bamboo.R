@@ -132,7 +132,13 @@ TypeName6 <- apply(st.dis6,1,which.min) %>% nc.d$TypeName[.] %>% as.character
 distance6<- apply(st.dis6,1,min)
 
 
-summary(as.factor(TypeName5))
+df2 <- 
+S.all_M%>% 
+  st_drop_geometry %>% 
+  add_column(.,
+             Dist_Broadleaf = distance,
+             Type_near2nd = TypeName6,
+             Dist_other = distance6)
 
 #---------------------------
 df <- 
