@@ -81,9 +81,9 @@ S.all_M<- S.all[Macaca_sur %in% 1,] %>%
   unique() %>% 
   setDF  #monkey data
 
-S.all_P<- S.all%>%
-  .[!(TypeName.1%in% "非森林"),] %>% 
-  .[,list(X, Y)]%>%
+S.all_P<- S.all %>%
+  .[!(TypeName.1 %in% "非森林"),] %>% 
+  .[,list(X, Y)] %>%
   
   unique() %>% 
   setDF  #Point data
@@ -100,9 +100,8 @@ ggplot()+
   
   geom_point(data = S.all_P,
              aes(x = X, y = Y,  shape = "B"),
-             fill = "#9EC6FF",
-             size = 2,
-             alpha = 1)+
+             color = "#72A8F8",
+             size = 2)+
   
   geom_point(data = S.all_M,
              aes(x = X, y = Y,  shape = "A"),
@@ -110,11 +109,12 @@ ggplot()+
              size = 2,
              alpha = 0.7)+
   
-  scale_shape_manual(values = c("A" = 21, "B" = 21),
+  scale_shape_manual(values = c("A" = 21, "B" = 16),
                      labels = c("Monkey troop", "Sampling point"),
-                     name = "",
+                     name = "Survey in the Forest",
                      guide = guide_legend(order = 1,
-                                          override.aes = list( fill = c("red", "#9EC6FF"),
+                                          override.aes = list( fill = c("red", NA),
+                                                               color = c("black", "#72A8F8"),
                                                                size = c(3, 3)),
                                           title.theme = element_blank(),
                                           label.theme = element_text(family="serif",
@@ -184,7 +184,7 @@ ggplot()+
 
 
 
-ggsave("MAP_6.png",
+ggsave("MAP_7.png",
            path = "./result",
            width = 15,
            height = 19,

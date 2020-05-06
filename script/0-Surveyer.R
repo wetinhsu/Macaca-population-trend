@@ -98,7 +98,7 @@ Surveyer.18<-
       setDT %>%
       .[時段 %in% c("A", "B","a","b","NA"),] %>%
       #.[!(時段 %in% "Supplementary"),] %>%
-      .[調查旅次編號 %in% c(1,2)] %>%
+      .[調查旅次編號 %in% c(1, 2)] %>%
       #.[ 分析 %in% "Y",] %>%
       .[, list(年, 樣區編號, 樣點編號, 調查旅次編號, 調查者)] %>%
       setnames(.,  c("Year", "Site_N", "Point",  "Survey", "Surveyer")) %>%
@@ -138,7 +138,7 @@ Surveyer.19 <-
   
   separate(.,Surveyer,
            into = paste0("Surveyer","_",0:10),
-           sep = c("[:punct:]"), extra = "drop", fill = "right") %>% 
+           sep = "、", extra = "drop", fill = "right") %>% 
   
   reshape2::melt(.,id.vars = c("Year", "Site_N", "Point",  "Survey"),
                  variable.name = "Surveyer", value.name = "Name",) %>% 
@@ -146,3 +146,5 @@ Surveyer.19 <-
   select(-Point) %>% 
   unique(.) %>%
   arrange(Year, Site_N, Survey) 
+
+
