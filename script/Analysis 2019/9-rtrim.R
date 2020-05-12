@@ -21,22 +21,22 @@ M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
   .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
   .[TypeName %like% "闊葉樹林型", TypeName.n := "broad-leaved"] %>% 
   .[TypeName %like% "針葉樹林型", TypeName.n := "coniferous"] %>% 
-  .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)] 
+  .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)]  %>% 
+  
+  .[, Year := as.numeric(Year)] %>% 
+  .[, Survey := as.numeric(Survey)] %>% 
+  .[, Point := as.numeric(Point)] %>% 
+  .[, Macaca_sur := as.numeric(Macaca_sur)] %>% 
+  .[, Month := as.numeric(Month)] %>% 
+  .[, Day := as.numeric(Day)] %>% 
+  .[, Distance := as.numeric(Distance)] %>% 
+  .[, julian.D := as.numeric(julian.D)] %>% 
+  .[, Region := as.factor(Region)] %>% 
+  .[, TypeName.1 := as.factor(TypeName.1)] %>% 
+  .[, Site_N := as.factor(Site_N)] %>% 
+  .[, Region2 := as.factor(Region2)] 
 
-
-M.data$Year %<>% as.numeric
-M.data$Survey %<>% as.numeric
-M.data$Point %<>% as.numeric
-M.data$Macaca_sur %<>% as.numeric
-M.data$Month %<>% as.numeric
-M.data$Day %<>% as.numeric
-M.data$Distance %<>% as.numeric
-M.data$julian.D %<>% as.numeric
-M.data$Region %<>% as.factor
-M.data$TypeName.1 %<>% as.factor
-M.data$Site_N %<>% as.factor
-M.data$Region2 %<>% as.factor
-
+#----------------------------
 
 county.area <- read.csv("./data/clean/gis/county area-2.csv", header = T) %>% 
   setDT %>% 

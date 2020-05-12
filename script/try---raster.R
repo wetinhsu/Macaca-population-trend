@@ -101,6 +101,8 @@ ggplot() +
 
 plot(imported_raster)
 
+contour(imported_raster, levels = c(50), drawlabels =F)
+
 
 #-----------------------
 #Reference

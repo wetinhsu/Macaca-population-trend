@@ -45,7 +45,16 @@ TW <- TW %>%
                                         ifelse(COUNTYNAME %in% South,"South",
                                                ifelse(COUNTYNAME %in% East1,"East1",
                                                       ifelse(COUNTYNAME %in% East2,"East2",NA)))))))
-         
+
+#----------------
+path3 <- "./data/clean/gis"
+EL50 <- st_read(paste0(path3,"/","elev50.shp"),
+                crs="+init=epsg:3826") %>% 
+  st_combine() %>% 
+  st_as_sf()
+
+summary(EL50)
+ggplot(EL50)+geom_sf()
 
 #----------------
 #read forest spatial data, merge polgons by TypeName, area by TypeName
@@ -71,6 +80,13 @@ nc.a<-
            st_sf(TypeName= x, geom = st_sfc(tmp), crs = 3826)
          }) %>% 
   do.call(rbind,.)
+
+
+Sys.time()
+forest_50<- 
+st_intersection(nc.a, EL50) 
+Sys.time()
+
 
 
 Sys.time()

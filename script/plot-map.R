@@ -8,23 +8,10 @@ library(sf)
 library(ggspatial)
 #-------------
 
-#read point data
-
-S.all<- 
-  read_xlsx("./data/clean/for analysis_V1.xlsx") %>%setDT  %>% 
-  .[, Year := as.character(Year)]
-
-#transform to spatial data
-st.all<- 
-  S.all %>% 
-  .[! County %in% c("連江縣", "澎湖縣","金門縣"),] %>% 
-  .[, list(x=X, y=Y, X, Y)] %>% 
-  unique %>% 
-  .[, NO := 1 : nrow(.)] %>% 
-  .[, X := as.numeric(X)] %>% 
-  .[, Y := as.numeric(Y)] 
-
-
+EL50 <- st_read("./data/clean/gis/elev50.shp",
+                crs="+init=epsg:3826")          
+summary(EL50)
+ggplot(EL50)+geom_sf()
 
 #-----------------------------------------------------
 #county
@@ -75,18 +62,26 @@ nc.b <-
 
 
 #---------------------
+#read point data
 
-S.all_M<- S.all[Macaca_sur %in% 1,] %>%
-  .[,list(Year, X, Y)]%>%
-  unique() %>% 
-  setDF  #monkey data
+S.all<- 
+  read_xlsx("./data/clean/for analysis_V1.xlsx") %>%setDT  %>% 
+  .[, Year := as.character(Year)]
 
-S.all_P<- S.all %>%
-  .[!(TypeName.1 %in% "非森林"),] %>% 
-  .[,list(X, Y)] %>%
-  
-  unique() %>% 
-  setDF  #Point data
+
+
+S.all_M<- S.all %>% 
+  filter(Macaca_sur %in% 1) %>%
+  filter(analysis %in% "Y") %>% 
+  filter(!TypeName.1 %in% "非森林") %>% 
+  select("X", "Y")%>%
+  unique()  #monkey data
+
+S.all_P<- S.all %>% 
+  filter(analysis %in% "Y") %>% 
+  filter(!TypeName.1 %in% "非森林") %>% 
+  select("X", "Y")%>%
+  unique()  #Point data
 
 
 #plot --------------------------------------------------------------------
@@ -97,6 +92,8 @@ ggplot()+
   geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
   
   geom_sf(data = TW, fill = NA, color = gray(.5))+
+  
+#  geom_sf(data = EL50, fill = NA, color = "#ADADAD", size = 1, lty = 1)+ 
   
   geom_point(data = S.all_P,
              aes(x = X, y = Y,  shape = "B"),
@@ -184,19 +181,10 @@ ggplot()+
 
 
 
-ggsave("MAP_7.png",
+ggsave("MAP_8.png",
            path = "./result",
            width = 15,
            height = 19,
            units = "cm")
-
-ggplot()+
-  geom_point(data = S.all,aes(x=Altitude, y = Y))+
-  geom_point(data = S.all[Macaca_sur %in% 1,],aes(x=Altitude, y = Y),col = 'red')
-
-ggplot()+
-  geom_point(data = S.all,aes(x=X, y = Altitude))+
-  geom_point(data = S.all[Macaca_sur %in% 1,],aes(x=X, y = Altitude),col = 'red')
-
 
 
