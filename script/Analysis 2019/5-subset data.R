@@ -1,4 +1,4 @@
-#---- load library
+#load library---- 
 
 library(data.table)
 library(magrittr)
@@ -59,13 +59,13 @@ M.abc <- M.2 %>%
   .[, Distance := as.numeric(Distance)]  
 
 (remove.data <- 
-  M.abc %>%  
-  .[  Distance<300,] %>% #猴群距離<300m者的第2筆，可能為重複記錄，故刪除猴群記錄
-  .[, Site_N := substr(Base_point,1,6)] %>%
-  .[, Point := substr(Base_point,8,8)] %>% 
-  .[, Point:= as.numeric(Point)] %>% 
-  .[, .(Point=max(Point)), by = list(Year, Survey, Site_N)] %>% 
-  setDT)
+    M.abc %>%  
+    .[  Distance<300,] %>% #猴群距離<300m者的第2筆，可能為重複記錄，故刪除猴群記錄
+    .[, Site_N := substr(Base_point,1,6)] %>%
+    .[, Point := substr(Base_point,8,8)] %>% 
+    .[, Point:= as.numeric(Point)] %>% 
+    .[, .(Point=max(Point)), by = list(Year, Survey, Site_N)] %>% 
+    setDT)
 
 
 
@@ -109,7 +109,7 @@ M.data.1 <-
                     "A08-05", "A08-06", "A08-07", "A08-08", "A08-09")),] 
 
 # for analysis2015-2019
- 
+
 M.data.1 %<>%
   setDT %>% 
   .[Macaca_dist %in% "C", Macaca_sur := NA] %>% #exculde >100m
@@ -164,21 +164,25 @@ M.data.1 %<>%
                      "屏東縣"), Region2 := "South"]%>%
   .[County %in% list("花蓮縣"), Region2 := "East1"] %>%
   .[County %in% list("台東縣","臺東縣"), Region2 := "East2"]  
-  
+
 
 M.data.2 <-
   M.data.1 %>%  
-  .[Month >= 3 & Month <= 6, ]  #刪除調查季(包含緩衝期)以外的資料
+  .[Month >= 3 & Month <= 6, ] %>%   #刪除調查季(包含緩衝期)以外的資料
+  .[, analysis := "N"] %>% 
+  .[Altitude >= 50, analysis := "Y"] #刪除海拔未滿50公尺的樣點
+
+
 
 (M.data.1 %>%  .[Month < 3 | Month > 6, ]  %>%  #看一下誰被刪掉
-  .[, Macaca_sur := as.numeric(Macaca_sur)] %>% 
-  .[, .(N.point = .N, m = sum(Macaca_sur, na.rm=T)), by = list( Year, Survey, julian.D)] %>% 
-  .[, N.point := as.numeric(N.point)] %>% 
-  melt(id.vars = c("Year", "Survey", "julian.D")) %>% 
-  dcast(Year + Survey+ variable  ~ julian.D , value.var = c("value")))
-  
-  
-   
+    .[, Macaca_sur := as.numeric(Macaca_sur)] %>% 
+    .[, .(N.point = .N, m = sum(Macaca_sur, na.rm=T)), by = list( Year, Survey, julian.D)] %>% 
+    .[, N.point := as.numeric(N.point)] %>% 
+    melt(id.vars = c("Year", "Survey", "julian.D")) %>% 
+    dcast(Year + Survey+ variable  ~ julian.D , value.var = c("value")))
+
+
+
 #確認一下每一個樣點的資料筆數
 M.data.2 %>%  .[, .N, by = list(Year, Survey, Site_N, Point)] %>% .[ N >1,]
 

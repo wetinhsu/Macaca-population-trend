@@ -12,6 +12,7 @@ library(readxl)
 
 M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
                      sheet=1) %>% setDT %>% 
+  .[analysis %in% "Y",] %>% 
   .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
   .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
   .[TypeName %like% "闊葉", TypeName.n := "broad-leaved"] %>% 
@@ -68,12 +69,12 @@ Up <- c()
 
 
 for(i in seq(1005,1500,5)){
-tmp <- replicate(i, mean(sample(bb$AB, replace = TRUE))) 
-
-tmp.M <- mean(tmp) %>% c(tmp.M, .)
-Down <- quantile(tmp,probs = c(0.025)) %>% as.numeric() %>% c(Down, .)
-Up <- quantile(tmp,probs = c(0.975)) %>% as.numeric() %>% c(Up, .)
-
+  tmp <- replicate(i, mean(sample(bb$AB, replace = TRUE))) 
+  
+  tmp.M <- mean(tmp) %>% c(tmp.M, .)
+  Down <- quantile(tmp,probs = c(0.025)) %>% as.numeric() %>% c(Down, .)
+  Up <- quantile(tmp,probs = c(0.975)) %>% as.numeric() %>% c(Up, .)
+  
 }
 #ggplot()+geom_errorbar(aes(x=2, ymin = Down, ymax=Up), width=0.3)
 

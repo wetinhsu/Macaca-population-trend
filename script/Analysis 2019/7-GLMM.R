@@ -12,8 +12,9 @@ library(MuMIn)
 #Original data---- 
 
 M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
-                       sheet=1) %>% setDT %>% 
+                     sheet=1) %>% setDT %>% 
   #.[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
+  .[analysis %in% "Y",] %>% 
   .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
   .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
   .[TypeName %like% "闊葉樹林型", TypeName.n := "broad-leaved"] %>% 
@@ -65,7 +66,7 @@ m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 +  Regi
             control = glmerControl(optimizer = "bobyqa"))
 
 
-
+Anova(m1)
 summary(m1)
 
 
@@ -89,10 +90,6 @@ m2 <- glmer(Macaca_sur ~ Altitude.1 + Year.re  +  julian.D.1 +  Region2 + (1|Sit
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 
-
-d2<- dredge(m2, trace = T)
-
-importance(d2)
 
 
 #anova table==============================================
