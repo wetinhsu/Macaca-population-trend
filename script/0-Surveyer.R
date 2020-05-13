@@ -18,7 +18,7 @@ Surveyer.15 <-
       #.[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
       .[!(時段 %in% "Supplementary"),] %>%
       .[調查旅次編號 %in% c(1,2)] %>%
-      .[ 分析 %in% "Y", list(年, 樣區編號, 樣點編號, 調查旅次編號, 調查者)] %>%
+      .[ !分析 %in% "N", list(年, 樣區編號, 樣點編號, 調查旅次編號, 調查者)] %>%
       setnames(., c("Year", "Site_N", "Point",  "Survey", "Surveyer")) %>%
       .[!duplicated(.)]  
   } ) %>% 
@@ -45,7 +45,7 @@ Surveyer.16 <-
       #.[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
       .[!(時段 %in% "Supplementary"),] %>%
       .[調查旅次編號 %in% c(1,2)] %>%
-      .[ 分析 %in% "Y", list(年, 樣區編號, 樣點編號, 調查旅次編號, 調查者)] %>%
+      .[ !分析 %in% "N", list(年, 樣區編號, 樣點編號, 調查旅次編號, 調查者)] %>%
       setnames(., c("Year", "Site_N", "Point",  "Survey", "Surveyer")) %>%
       .[!duplicated(.)]  
   } ) %>% 
@@ -72,7 +72,7 @@ Surveyer.17 <-
       #.[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
       .[!(時段 %in% "Supplementary"),] %>%
       .[調查旅次編號 %in% c(1,2)] %>%
-      .[ 分析 %in% "Y", list(年, 樣區編號, 樣點編號, 調查旅次編號, 調查者)] %>%
+      .[ !分析 %in% "N", list(年, 樣區編號, 樣點編號, 調查旅次編號, 調查者)] %>%
       setnames(., c("Year", "Site_N", "Point",  "Survey", "Surveyer")) %>%
       .[!duplicated(.)]  
   } ) %>% 
@@ -91,55 +91,24 @@ Surveyer.17 <-
 
 #2018
 
-Surveyer.18<- 
-  lapply(paste0("./data/raw/"), function(x){
-    list.files(x, pattern = "BBSdata_2018", full.names = T) %>%  
-      read_xlsx(., sheet = "birddata", cell_cols("D:AF")) %>% 
-      setDT %>%
-      .[時段 %in% c("A", "B","a","b","NA"),] %>%
-      #.[!(時段 %in% "Supplementary"),] %>%
-      .[調查旅次編號 %in% c(1, 2)] %>%
-      #.[ 分析 %in% "Y",] %>%
-      .[, list(年, 樣區編號, 樣點編號, 調查旅次編號, 調查者)] %>%
-      setnames(.,  c("Year", "Site_N", "Point",  "Survey", "Surveyer")) %>%
-      .[!duplicated(.)]  
-  } ) %>% 
-  do.call(rbind, .) %>% 
-  
-  separate(.,Surveyer,
-           into = paste0("Surveyer","_",0:10),
-           sep = c("[:punct:]"), extra = "drop", fill = "right") %>% 
 
-  reshape2::melt(.,id.vars = c("Year", "Site_N", "Point",  "Survey"),
-                 variable.name = "Surveyer", value.name = "Name",) %>% 
-  filter(!is.na(Name)) %>% 
-  select(-Point) %>% 
-  unique(.) %>%
-  arrange(Year, Site_N, Survey) 
-
-
-
-
-#2019
-Surveyer.19 <- 
-  lapply(paste0("./data/raw/"), function(x){
-    list.files(x, pattern = "BBSdata_2019", full.names = T) %>%  
-      read_xlsx(., sheet = "birddata", cell_cols("D:AF")) %>% 
+Surveyer.18 <- 
+  lapply(paste0("./data/raw/BBSdata/", 2018), function(x){
+    list.files(x, pattern = "BBSdata_", full.names = T) %>%  
+      read_xlsx(., sheet = "birddata", cell_cols("B:AF")) %>% 
       setDT %>%
       #.[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
       .[!(時段 %in% "Supplementary"),] %>%
       .[調查旅次編號 %in% c(1,2)] %>%
-      #.[ 分析 %in% "Y",] %>% 
-      .[, list(年, 樣區編號, 樣點編號, 調查旅次編號, 調查者)] %>%
-      setnames(.,  c("Year", "Site_N", "Point",  "Survey", "Surveyer")) %>%
+      .[ !分析 %in% "N", list(年, 樣區編號, 樣點編號, 調查旅次編號, 調查者)] %>%
+      setnames(., c("Year", "Site_N", "Point",  "Survey", "Surveyer")) %>%
       .[!duplicated(.)]  
   } ) %>% 
-  do.call(rbind, .)%>% 
+  do.call(rbind, .)%>%
   
   separate(.,Surveyer,
            into = paste0("Surveyer","_",0:10),
-           sep = "、", extra = "drop", fill = "right") %>% 
-  
+           sep ="、", extra = "drop", fill = "right") %>% 
   reshape2::melt(.,id.vars = c("Year", "Site_N", "Point",  "Survey"),
                  variable.name = "Surveyer", value.name = "Name",) %>% 
   filter(!is.na(Name)) %>% 
@@ -147,4 +116,41 @@ Surveyer.19 <-
   unique(.) %>%
   arrange(Year, Site_N, Survey) 
 
+
+
+#2019
+
+Surveyer.19 <- 
+  lapply(paste0("./data/raw/BBSdata/", 2019), function(x){
+    list.files(x, pattern = "BBSdata_", full.names = T) %>%  
+      read_xlsx(., sheet = "birddata", cell_cols("B:AF")) %>% 
+      setDT %>%
+      #.[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
+      .[!(時段 %in% "Supplementary"),] %>%
+      .[調查旅次編號 %in% c(1,2)] %>%
+      .[ !分析 %in% "N", list(年, 樣區編號, 樣點編號, 調查旅次編號, 調查者)] %>%
+      setnames(., c("Year", "Site_N", "Point",  "Survey", "Surveyer")) %>%
+      .[!duplicated(.)]  
+  } ) %>% 
+  do.call(rbind, .)%>%
+  
+  separate(.,Surveyer,
+           into = paste0("Surveyer","_",0:10),
+           sep ="、", extra = "drop", fill = "right") %>% 
+  reshape2::melt(.,id.vars = c("Year", "Site_N", "Point",  "Survey"),
+                 variable.name = "Surveyer", value.name = "Name",) %>% 
+  filter(!is.na(Name)) %>% 
+  select(-Point) %>% 
+  unique(.) %>%
+  arrange(Year, Site_N, Survey) 
+
+#------------------
+Name.list <- 
+rbind(Surveyer.15,
+      Surveyer.16,
+      Surveyer.17,
+      Surveyer.18,
+      Surveyer.19) %>% 
+  select(Site_N,Name) %>% 
+  unique(.)
 
