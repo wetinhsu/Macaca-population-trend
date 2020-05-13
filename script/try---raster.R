@@ -92,17 +92,20 @@ plot(x1)
 s <- stack(imported_raster)
 
 
-map.p <- rasterToPoints(imported_raster)
-df <- data.frame(map.p)
-colnames(df) <- c("Longitude", "Latitude", "MAP")
-
-ggplot() +
-  geom_sf(s) 
-
 plot(imported_raster)
 
-contour(imported_raster, levels = c(50), drawlabels =F)
 
+fun <- function(x) { x[x<50] <- NA; return(x) }
+
+Sys.time()
+rc2 <- calc(imported_raster, fun) 
+
+Sys.time()
+rc3 <- rc2%>% 
+  rasterToPolygons(.) %>% 
+  st_combine %>% 
+  st_as_sf(.)
+Sys.time()
 
 #-----------------------
 #Reference
