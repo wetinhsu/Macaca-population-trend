@@ -56,6 +56,9 @@ EL50 <- st_read(paste0(path3,"/","elev50.shp"),
 summary(EL50)
 ggplot(EL50)+geom_sf()
 
+
+
+
 #----------------
 #read forest spatial data, merge polgons by TypeName, area by TypeName
 
@@ -84,7 +87,9 @@ nc.a<-
 
 Sys.time()
 forest_50<- 
-st_intersection(nc.a, EL50) 
+  nc.a %>% 
+  filter(TypeName %in% "竹林") %>% 
+st_intersection(., EL50) 
 Sys.time()
 
 
