@@ -59,7 +59,7 @@ replicate(10000, mean(sample(bb$AB, replace = TRUE))) %>%
 
 replicate(10000, mean(sample(bb$AB, replace = TRUE))) %>% mean
 
-21536.41/(0.1*0.1*pi)
+21028.14/(0.1*0.1*pi)
 
 
 plot(5000,0.3,xlim = c(1005,1500), ylim = c(0.01,0.02),type = "n")

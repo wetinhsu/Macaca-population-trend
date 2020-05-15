@@ -48,10 +48,11 @@ TW <- TW %>%
 
 #----------------
 path3 <- "./data/clean/gis"
-EL50 <- st_read(paste0(path3,"/","elev50.shp"),
-                crs="+init=epsg:3826") %>% 
+EL50 <- st_read(paste0(path3,"/","elev50.shp")) %>% 
+  st_transform(.,3826) %>% 
   st_combine() %>% 
-  st_as_sf()
+  st_as_sf() %>% 
+  st_buffer(dist = 0)
 
 summary(EL50)
 ggplot(EL50)+geom_sf()
@@ -64,8 +65,8 @@ ggplot(EL50)+geom_sf()
 
 path <- "D:/R/test/第四次森林資源調查全島森林林型分布圖"
 
-nc <- st_read(paste0(path,"/","全島森林林型分布圖.shp"),
-              crs="+init=epsg:3826") %>% 
+nc <- st_read(paste0(path,"/","全島森林林型分布圖.shp")) %>% 
+  st_transform(.,3826) %>% 
   arrange(TypeName, st_geometry_type(geometry), FunctionTy,Function)
 
 
@@ -86,15 +87,6 @@ nc.a<-
 
 
 Sys.time()
-forest_50<- 
-  nc.a %>% 
-  filter(TypeName %in% "竹林") %>% 
-st_intersection(., EL50) 
-Sys.time()
-
-
-
-Sys.time()
 test2 <- 
 TW $COUNTYNAME  %>% 
   as.character %>%
@@ -103,6 +95,7 @@ TW $COUNTYNAME  %>%
          function(x){
            TW %>%
              filter(COUNTYNAME %in% x) %>% 
+             st_intersection(EL_50, .)
              st_intersection(nc, .) 
            
          }) %>% 
