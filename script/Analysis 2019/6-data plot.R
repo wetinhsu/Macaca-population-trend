@@ -231,17 +231,17 @@ M.data %>%
                 width = 0.1,size = 1) +
   #  annotate("text",x=2015.5, y=0.03,label=paste0("mean ± se"),
   #           vjust=0,  color="red", size=8,family="serif")+
-  ylim(0,0.03)+
-  theme_bw() + 
-  xlab("Year") +
+  theme_classic() + 
+  scale_y_continuous(limits = c(0,0.03),expand = c(0, 0.002, 0, 0))+
+  labs(x = "Year", y = "Encounter rate (troop/point)" ) +
   theme(
     text = element_text(family="serif"),
     aspect.ratio = 1,
-    panel.border = element_rect(size = 1.5,fill = NA),
+   # panel.border = element_rect(size = 1.5,fill = NA),
     axis.line = element_line(size = 1, colour = "black"),
     axis.ticks = element_line(size = 1),
     axis.text = element_text(size = 18,colour = "black"),
-    axis.title = element_text(size = 23,colour = "black",
+    axis.title = element_text(size = 20,colour = "black",
                               vjust = -2, hjust = 0.5),
     axis.title.x.bottom = element_text(vjust = -2),
     axis.title.y.left = element_text(vjust = 2),
@@ -268,16 +268,17 @@ Alt.d <-
 ggplot(Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
                outlier.size = 3) +
-  labs(x = "Altitude") +
-  theme_bw() +
+  labs(x = "Elevation (m)", y = "Encounter rate (troop/point)") +
+  theme_classic() +
+  scale_y_continuous(limits = c(0,0.08),expand = c(0, 0.002, 0, 0))+
   theme(
     text = element_text(family="serif"),
     aspect.ratio = 1,
-    panel.border = element_rect(size = 1.5,fill = NA),
+ #   panel.border = element_rect(size = 1.5,fill = NA),
     axis.line = element_line(size = 1, colour = "black"),
     axis.ticks = element_line(size = 1),
-    axis.text = element_text(size = 18,colour = "black"),
-    axis.title = element_text(size = 23,colour = "black",
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
                               vjust = -2, hjust = 0.5),
     axis.title.x.bottom = element_text(vjust = -2),
     axis.title.y.left = element_text(vjust = 2),

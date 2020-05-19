@@ -27,8 +27,8 @@ st_transform(TW,4326)
 
 path <- "D:/R/test/第四次森林資源調查全島森林林型分布圖"
 
-nc <- st_read(paste0(path,"/","全島森林林型分布圖.shp"),
-              crs="+init=epsg:3826") %>% 
+nc <- st_read(paste0(path,"/","全島森林林型分布圖.shp")) %>% 
+  st_transform(3826) %>% 
   arrange(TypeName, st_geometry_type(geometry), FunctionTy,Function)
 
 nc.a<-
@@ -108,7 +108,7 @@ ggplot()+
   
   scale_shape_manual(values = c("A" = 21, "B" = 16),
                      labels = c("Monkey troop", "Sampling point"),
-                     name = "Survey in the Forest",
+                     name = NA,
                      guide = guide_legend(order = 1,
                                           override.aes = list( fill = c("red", NA),
                                                                color = c("black", "#72A8F8"),
@@ -116,7 +116,7 @@ ggplot()+
                                           title.theme = element_blank(),
                                           label.theme = element_text(family="serif",
                                                                      face = "bold",
-                                                                     size = 13)))+
+                                                                     size = 12)))+
   
   scale_fill_manual(values = c("闊葉林" = "#99CC99", 
                                "針葉林" = "#009966", #深綠
@@ -128,12 +128,13 @@ ggplot()+
                                "竹林",
                                "混淆林"),
                     
-                    labels = c("Broadleaf",
-                               "Coniferous",
-                               "Bamboo",
-                               "Mixed"),
-                    name = "Forest Type",
-                    guide = guide_legend(order = 2))+
+                    labels = c("Broadleaved forest",
+                               "Conifer forest",
+                               "Bamboo forest",
+                               "Mixed forest"),
+                    name = NA,
+                    guide = guide_legend(order = 2,
+                                         title.theme = element_blank()))+
   
   
   coord_sf(crs = 4326, 
@@ -175,13 +176,12 @@ ggplot()+
     legend.justification = c(1,0),
     legend.position = c(0.95,0.05),
     legend.text = element_text(size = 12),
-    legend.title = element_text(face = "bold", size = 15),
     legend.box.margin = margin(0,0,0,0)
   ) 
 
 
 
-ggsave("MAP_8.png",
+ggsave("MAP_10.png",
            path = "./result",
            width = 15,
            height = 19,

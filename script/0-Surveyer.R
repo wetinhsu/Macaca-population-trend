@@ -151,6 +151,6 @@ rbind(Surveyer.15,
       Surveyer.17,
       Surveyer.18,
       Surveyer.19) %>% 
-  select(Site_N,Name) %>% 
+ # select(Site_N,Name) %>% 
   unique(.)
 

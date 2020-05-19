@@ -122,7 +122,7 @@ df <-
 #--
 
 m1 <- trim(
-  number ~ SP + Year + Region2 + Altitude_f,
+  number ~ SP + Year + Region2 ,
   weights = "weight",df,
   model =  2,
   changepoints = "all",
