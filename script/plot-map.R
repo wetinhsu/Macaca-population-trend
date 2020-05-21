@@ -84,6 +84,7 @@ S.all_P<- S.all %>%
   unique()  #Point data
 
 
+
 #plot --------------------------------------------------------------------
 
 
@@ -91,9 +92,9 @@ ggplot()+
 
   geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
   
-  geom_sf(data = TW, fill = NA, color = gray(.5))+
+  geom_sf(data = TW, fill = NA, color = gray(.5), size = 1)+
   
-#  geom_sf(data = EL50, fill = NA, color = "#ADADAD", size = 1, lty = 1)+ 
+#  geom_sf(data = EL50, fill = NA, color = "#FF9EFF", size = .1, lty = 1)+ 
   
   geom_point(data = S.all_P,
              aes(x = X, y = Y,  shape = "B"),
@@ -181,7 +182,7 @@ ggplot()+
 
 
 
-ggsave("MAP_10.png",
+ggsave("MAP_11.png",
            path = "./result",
            width = 15,
            height = 19,
