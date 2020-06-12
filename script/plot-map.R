@@ -8,25 +8,47 @@ library(sf)
 library(ggspatial)
 #-------------
 
-EL50 <- st_read("./data/clean/gis/elev50.shp",
-                crs="+init=epsg:3826")          
+EL50 <- st_read("./data/clean/gis/elev50.shp") %>% 
+  st_transform(3826)
+
 summary(EL50)
 ggplot(EL50)+geom_sf()
 
 #-----------------------------------------------------
 #county
 path2 <- "D:/R/test/COUNTY_MOI_1081121"
-
+path2 <- "//10.40.1.138/Bird Research/BBSTW/瑋婷_資料暫存(硬碟備份)/圖層(基礎資料)/COUNTY_MOI_1081121"
 TW <- st_read(paste0(path2,"/","COUNTY_MOI_1081121.shp")) %>% 
-  filter(!COUNTYNAME %in% c("連江縣", "澎湖縣","金門縣")  )
+  st_transform(.,3826) %>% 
+  filter(!COUNTYNAME %in% c("連江縣", "澎湖縣","金門縣")  )%>% 
+  mutate(Region = ifelse(COUNTYNAME %in% c("宜蘭縣", "臺北市", "基隆市", "新北市", "新竹市", "新竹縣", "桃園市", "苗栗縣"), "Northern",
+                         ifelse(COUNTYNAME %in% c("臺中市", "彰化縣", "南投縣"), "Central",
+                                ifelse(COUNTYNAME %in% c("雲林縣", "嘉義市", "嘉義縣", "臺南市"), "Southcenterern",
+                                       ifelse(COUNTYNAME %in% c("高雄市", "屏東縣"), "Southern",
+                                              ifelse(COUNTYNAME %in% c("花蓮縣"), "Hualien", "Taitung")))))) 
 st_transform(TW,4326)
 
+Region <- 
+TW$Region %>% 
+  as.character %>%
+  unique %>% 
+  lapply(.,
+         function(x){
+           tmp <- 
+             TW %>%
+             filter(Region %in% x) %>% 
+             st_union() 
+           
+           st_sf(Region= x, geom = st_sfc(tmp), crs = 3826)
+         }) %>% 
+  do.call(rbind,.)
 
+ggplot(Region)+geom_sf()
 #----------------
 #read forest spatial data, merge polgons by TypeName, area by TypeName
 
 path <- "D:/R/test/第四次森林資源調查全島森林林型分布圖"
-
+path <- "//10.40.1.138/Bird Research/BBSTW/瑋婷_資料暫存(硬碟備份)/圖層(基礎資料)/第四次森林資源調查全島森林林型分布圖"
 nc <- st_read(paste0(path,"/","全島森林林型分布圖.shp")) %>% 
   st_transform(3826) %>% 
   arrange(TypeName, st_geometry_type(geometry), FunctionTy,Function)
@@ -90,9 +112,13 @@ S.all_P<- S.all %>%
 
 ggplot()+
 
-  geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
+#  geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
   
-  geom_sf(data = TW, fill = NA, color = gray(.5), size = 1)+
+#  geom_sf(data = TW, fill = NA, color = "#ADADAD", size = .9)+
+  
+  geom_sf(data = Region, fill = NA, aes(color = "#7B7B7B"), size = 1)+
+  geom_label(data = Region, aes(X, Y, label = Region), size = 5, fontface = "bold", 
+             nudge_y = Region$nudge_y) +
   
 #  geom_sf(data = EL50, fill = NA, color = "#FF9EFF", size = .1, lty = 1)+ 
   
@@ -108,7 +134,7 @@ ggplot()+
              alpha = 0.7)+
   
   scale_shape_manual(values = c("A" = 21, "B" = 16),
-                     labels = c("Monkey troop", "Sampling point"),
+                     labels = c("Sampling points with macaque troop", "Sampling point without macaque troop"),
                      name = NA,
                      guide = guide_legend(order = 1,
                                           override.aes = list( fill = c("red", NA),
@@ -118,6 +144,11 @@ ggplot()+
                                           label.theme = element_text(family="serif",
                                                                      face = "bold",
                                                                      size = 12)))+
+  scale_color_manual(values = c("#7B7B7B"),
+                     labels = c("Region boundary"),
+                     name = NA,
+                     guide = guide_legend(order = 2,
+                                          title.theme = element_blank()))+
   
   scale_fill_manual(values = c("闊葉林" = "#99CC99", 
                                "針葉林" = "#009966", #深綠
@@ -134,7 +165,7 @@ ggplot()+
                                "Bamboo forest",
                                "Mixed forest"),
                     name = NA,
-                    guide = guide_legend(order = 2,
+                    guide = guide_legend(order = 3,
                                          title.theme = element_blank()))+
   
   
@@ -177,6 +208,7 @@ ggplot()+
     legend.justification = c(1,0),
     legend.position = c(0.95,0.05),
     legend.text = element_text(size = 12),
+    legend.spacing = unit(0, 'lines'),
     legend.box.margin = margin(0,0,0,0)
   ) 
 
