@@ -6,6 +6,7 @@ library(writexl)
 library(tidyverse)
 library(sf)
 library(ggspatial)
+library(ggrepel)
 #-------------
 
 EL50 <- st_read("./data/clean/gis/elev50.shp") %>% 
@@ -39,7 +40,7 @@ TW$Region %>%
              filter(Region %in% x) %>% 
              st_union() 
            
-           st_sf(Region= x, geom = st_sfc(tmp), crs = 3826)
+           st_sf(Region= x, geometry = st_sfc(tmp), crs = 3826)
          }) %>% 
   do.call(rbind,.)
 
@@ -112,15 +113,28 @@ S.all_P<- S.all %>%
 
 ggplot()+
 
-#  geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
+  geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
   
 #  geom_sf(data = TW, fill = NA, color = "#ADADAD", size = .9)+
   
-  geom_sf(data = Region, fill = NA, aes(color = "#7B7B7B"), size = 1)+
-  geom_label(data = Region, aes(X, Y, label = Region), size = 5, fontface = "bold", 
-             nudge_y = Region$nudge_y) +
+  geom_sf(data = Region, fill = NA, aes(color = "#7B7B7B"), size = .5)+
+  
+  geom_rect(aes(xmin = 121.45, xmax = 121.66, ymin = 21.92, ymax = 22.69), fill = "white")+
+  
+  geom_label_repel(data = Region, aes(label = Region, geometry = geometry),
+                   fill = NA,
+                   size = 5, 
+                   fontface = "bold",
+                   stat = "sf_coordinates",
+                   min.segment.length = 0, 
+                   segment.colour = NA,
+                   label.size = NA,
+                   box.padding = 0,
+                   nudge_x      = c(-0.8,-0.7,-0.9,-0.4,0.4,0.5),
+                   nudge_y      = c(0.1,0.2,-.05,-0.3,-0.2,0)) +
   
 #  geom_sf(data = EL50, fill = NA, color = "#FF9EFF", size = .1, lty = 1)+ 
+  
   
   geom_point(data = S.all_P,
              aes(x = X, y = Y,  shape = "B"),
@@ -134,25 +148,26 @@ ggplot()+
              alpha = 0.7)+
   
   scale_shape_manual(values = c("A" = 21, "B" = 16),
-                     labels = c("Sampling points with macaque troop", "Sampling point without macaque troop"),
+                     labels = c("Sampling points with macaque troop",
+                                "Sampling point without macaque troop"),
                      name = NA,
                      guide = guide_legend(order = 1,
                                           override.aes = list( fill = c("red", NA),
-                                                               color = c("black", "#72A8F8"),
+                                                               color = c("black", "#72A8F8"),#""
                                                                size = c(3, 3)),
                                           title.theme = element_blank(),
                                           label.theme = element_text(family="serif",
                                                                      face = "bold",
                                                                      size = 12)))+
   scale_color_manual(values = c("#7B7B7B"),
-                     labels = c("Region boundary"),
+                     labels = c("Region"),
                      name = NA,
                      guide = guide_legend(order = 2,
                                           title.theme = element_blank()))+
   
   scale_fill_manual(values = c("闊葉林" = "#99CC99", 
                                "針葉林" = "#009966", #深綠
-                               "竹林" = "#FFFF99", #黃
+                               "竹林" = "#FF9999",#"#FFFF99", #黃
                                "混淆林" = "#FF9966"),#橘
                     
                     breaks = c("闊葉林", 
@@ -170,7 +185,7 @@ ggplot()+
   
   
   coord_sf(crs = 4326, 
-           xlim = c(119.5, 122.5), ylim = c(21.5, 25.45),
+           xlim = c(119, 123), ylim = c(21, 25.45),
            expand = FALSE)+
   
   scale_x_continuous(breaks = 120:122)+
@@ -190,7 +205,7 @@ ggplot()+
   
   theme_bw()+
   theme(
-    aspect.ratio = 1.35,
+  #  aspect.ratio = 1.35,
     text = element_text(family="serif"),
 
     plot.background = element_blank(),
@@ -204,17 +219,18 @@ ggplot()+
     plot.margin = margin(0,0,0,0),
     
     
-    
-    legend.justification = c(1,0),
-    legend.position = c(0.95,0.05),
+    legend.background = element_blank(),
+    legend.justification = c(0.7,0.1),
+    legend.position = c(0.85,0.05),
     legend.text = element_text(size = 12),
-    legend.spacing = unit(0, 'lines'),
-    legend.box.margin = margin(0,0,0,0)
+    legend.spacing = unit(0, 'mm'),
+    legend.margin = margin(0,0,0,0),
+    legend.box.background = element_blank()
   ) 
 
 
 
-ggsave("MAP_11.png",
+ggsave("MAP_12.png",
            path = "./result",
            width = 15,
            height = 19,
