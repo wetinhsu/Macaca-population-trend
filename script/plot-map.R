@@ -123,7 +123,7 @@ ggplot()+
   
   geom_label_repel(data = Region, aes(label = Region, geometry = geometry),
                    fill = NA,
-                   size = 5, 
+                   size = 4, 
                    fontface = "bold",
                    stat = "sf_coordinates",
                    min.segment.length = 0, 
@@ -158,7 +158,7 @@ ggplot()+
                                           title.theme = element_blank(),
                                           label.theme = element_text(family="serif",
                                                                      face = "bold",
-                                                                     size = 12)))+
+                                                                     size = 11)))+
   scale_color_manual(values = c("#7B7B7B"),
                      labels = c("Region"),
                      name = NA,
@@ -167,7 +167,7 @@ ggplot()+
   
   scale_fill_manual(values = c("闊葉林" = "#99CC99", 
                                "針葉林" = "#009966", #深綠
-                               "竹林" = "#FF9999",#"#FFFF99", #黃
+                               "竹林" = "#D9006C",#"#FFFF99", #黃
                                "混淆林" = "#FF9966"),#橘
                     
                     breaks = c("闊葉林", 
@@ -188,7 +188,7 @@ ggplot()+
            xlim = c(119, 123), ylim = c(21, 25.45),
            expand = FALSE)+
   
-  scale_x_continuous(breaks = 120:122)+
+  scale_x_continuous(breaks = 120:122.3)+
   scale_y_continuous(breaks = 22:25)+
   
   annotation_north_arrow(location = "tl",
