@@ -139,13 +139,15 @@ ggplot()+
   geom_point(data = S.all_P,
              aes(x = X, y = Y,  shape = "B"),
              color = "#72A8F8",
-             size = 2)+
+             size = 2,
+             show.legend = F)+
   
   geom_point(data = S.all_M,
              aes(x = X, y = Y,  shape = "A"),
              fill ="red",
              size = 2,
-             alpha = 0.7)+
+             alpha = 0.7,
+             show.legend = F)+
   
   scale_shape_manual(values = c("A" = 21, "B" = 16),
                      labels = c("Sampling points with macaque troop",
