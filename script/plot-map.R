@@ -115,9 +115,9 @@ ggplot()+
 
   geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
   
-#  geom_sf(data = TW, fill = NA, color = "#ADADAD", size = .9)+
+  geom_sf(data = TW, fill = NA, aes(color = "#ADADAD"), size = .5)+
   
-  geom_sf(data = Region, fill = NA, aes(color = "#7B7B7B"), size = .5)+
+  geom_sf(data = Region, fill = NA, aes(color = "#7B7B7B"), size = .9)+
   
   geom_rect(aes(xmin = 121.45, xmax = 121.66, ymin = 21.92, ymax = 22.69), fill = "white")+
   
@@ -161,10 +161,14 @@ ggplot()+
                                           label.theme = element_text(family="serif",
                                                                      face = "bold",
                                                                      size = 11)))+
-  scale_color_manual(values = c("#7B7B7B"),
-                     labels = c("Region"),
+  scale_color_manual(values = c('#7B7B7B',
+                                '#ADADAD'),
+
+                     labels = c("Region", "County"),
                      name = NA,
                      guide = guide_legend(order = 2,
+                                          override.aes = list(color = c("#7B7B7B", "#ADADAD"),
+                                                              size = c(0.9, 0.5)),
                                           title.theme = element_blank()))+
   
   scale_fill_manual(values = c("闊葉林" = "#99CC99", 
