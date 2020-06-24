@@ -24,7 +24,7 @@ TW <- st_read(paste0(path2,"/","COUNTY_MOI_1081121.shp")) %>%
   filter(!COUNTYNAME %in% c("連江縣", "澎湖縣","金門縣")  )%>% 
   mutate(Region = ifelse(COUNTYNAME %in% c("宜蘭縣", "臺北市", "基隆市", "新北市", "新竹市", "新竹縣", "桃園市", "苗栗縣"), "Northern",
                          ifelse(COUNTYNAME %in% c("臺中市", "彰化縣", "南投縣"), "Central",
-                                ifelse(COUNTYNAME %in% c("雲林縣", "嘉義市", "嘉義縣", "臺南市"), "Southcenterern",
+                                ifelse(COUNTYNAME %in% c("雲林縣", "嘉義市", "嘉義縣", "臺南市"), "Southwestern",
                                        ifelse(COUNTYNAME %in% c("高雄市", "屏東縣"), "Southern",
                                               ifelse(COUNTYNAME %in% c("花蓮縣"), "Hualien", "Taitung")))))) 
 st_transform(TW,4326)
