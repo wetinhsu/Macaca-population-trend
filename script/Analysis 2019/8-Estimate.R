@@ -84,3 +84,33 @@ points(c(seq(1005,1500,5)),Down, pch=".", col="blue",type = "l")
 
 
 
+#獨立樣本
+df %>% 
+  .[, .(E = sum(Macaca_sur)/length(Macaca_sur)), by = c("Year", "Survey")] %>% 
+  .[ ,list(mean = mean(E)/(0.1*0.1*pi) , sd = sd(E)/sqrt(10)/(0.1*0.1*pi))] 
+  
+0.5-0.04*1.96
+0.5+0.04*1.96
+
+
+#分層抽樣"Year", "Survey",
+
+df %>% 
+  .[, .(E.mean = mean(Macaca_sur),
+        E.var = var(Macaca_sur),
+        n = length(Macaca_sur)), by = c( "Region2")] %>% 
+  .[ , list(MEAN = mean(E.mean),
+            VAR = sum((sum(n)-n)*(E.var/n))/sum(n))] 
+
+
+0.02624293/(0.1*0.1*pi)
+
+0.0001313601-(1.96*(0.01283338^0.5))
+0.0001313601+(1.96*(0.01283338^0.5))
+
+-0.2219063/(0.1*0.1*pi)
+0.222169/(0.1*0.1*pi)
+
+
+
+
