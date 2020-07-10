@@ -265,16 +265,26 @@ Alt.d <-
   .[, Encounter_rate := V1/N] 
 
 
-ggplot(Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
+
+Alt.d.n <-
+  Alt.d %>% 
+  .[,.(mean_N = sum(N)/10, y = quantile(Encounter_rate,0.75)), by = list(Altitude_f)]
+
+ggplot(data = Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
                outlier.size = 3) +
+  geom_text(data = Alt.d.n, aes(y = y+0.0018,label = mean_N),
+            size = 3,
+            hjust = -0.1,
+            position = position_dodge(0.9))+
+  
   labs(x = "Elevation (m)", y = "Encounter rate (troop/point)") +
   theme_classic() +
   scale_y_continuous(limits = c(0,0.08),expand = c(0, 0.002, 0, 0))+
   theme(
     text = element_text(family="serif"),
     aspect.ratio = 1,
- #   panel.border = element_rect(size = 1.5,fill = NA),
+    panel.border = element_rect(size = 1.5,fill = NA),
     axis.line = element_line(size = 1, colour = "black"),
     axis.ticks = element_line(size = 1),
     axis.text = element_text(size = 14,colour = "black"),

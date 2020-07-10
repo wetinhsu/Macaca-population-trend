@@ -193,3 +193,25 @@ df %>%
   reshape2::dcast(SP ~ Year, value.var = c("number")) %>% 
   View()
 
+
+#--------- 
+df2 <- df %>% setDT %>% 
+  .[Year %in% c(2015:2017,2019),] %>% 
+  .[,Year2 := ifelse(Year %in% 2019, (Year-2014-1), (Year-2014))] %>% 
+  setDF
+
+
+m2 <- trim(
+  number ~ SP + Year2 + Region2 ,
+  weights = "weight",df2,
+  model =  2,
+  changepoints = "all",
+  overdisp = F,
+  serialcor = F, 
+  autodelete = T, 
+  stepwise = F)
+index(m2, "imputed", covars = F) %>% plot(., pct =T)
+overall(m2,"imputed") %T>% plot
+
+
+#---------

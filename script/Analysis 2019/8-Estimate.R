@@ -92,7 +92,17 @@ df %>%
 0.5-0.04*1.96
 0.5+0.04*1.96
 
+#檢測是否符合常態
+test <- 
+df %>% 
+  .[, .(E = sum(Macaca_sur)/length(Macaca_sur)), by = c("Year", "Survey")] 
+  qqnorm(test$E)
+  qqline(test$E)
+  
+  shapiro.test(test$E)
+  
 
+  
 #分層抽樣"Year", "Survey",
 
 df %>% 
