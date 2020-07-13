@@ -273,7 +273,7 @@ Alt.d.n <-
 ggplot(data = Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
                outlier.size = 3) +
-  geom_text(data = Alt.d.n, aes(y = y+0.0018,label = mean_N),
+  geom_text(data = Alt.d.n, aes(y = y+0.0018,label = paste0(mean_N,c("","","","","","","","*"))),
             size = 3,
             hjust = -0.1,
             position = position_dodge(0.9))+

@@ -7,6 +7,8 @@ library(tidyverse)
 library(sf)
 library(ggspatial)
 library(ggrepel)
+library(mapdata) 
+library(extrafont)
 #-------------
 
 EL50 <- st_read("./data/clean/gis/elev50.shp") %>% 
@@ -106,14 +108,45 @@ S.all_P<- S.all %>%
   select("X", "Y")%>%
   unique()  #Point data
 
+#-------------------
+worldmap =  map_data('world') 
 
+world <- 
+ggplot() + 
+  geom_polygon(data = worldmap, 
+               aes(x = long, y = lat, group = group),
+                fill =gray(0.85), color = gray(0.5))+   
+  
+  geom_sf(data = TW, fill = gray(0.3), size = .5)+
+  
+  geom_rect(aes(xmin = c(119),
+                xmax = c(122.5),
+                ymin = c(21),
+                ymax = c(26)),
+            col = "blue", fill = NA, size = 2)+
+  geom_text(aes(x = c(110,144,126),
+                y = c(35,37,23.5),
+                label = c("China", "Japan", "Taiwan")),
+            size = 6)+
+  
+  coord_sf(crs = 4326, 
+           xlim = c(90, 150), ylim = c(15, 55),
+           expand = FALSE)+
+   theme(
+     plot.margin = margin(40,40,10,10),
+     panel.grid = element_blank(),
+     panel.border = element_rect(fill = NA,colour = "black",size = 1.5),
+     panel.background = element_rect(fill = "white"),
+     axis.title = element_blank()
+  )
+  
 
 #plot --------------------------------------------------------------------
 
 
 ggplot()+
 
-  geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
+#  geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
   
   geom_sf(data = TW, fill = NA, aes(color = "#ADADAD"), size = .5)+
   
@@ -191,7 +224,7 @@ ggplot()+
   
   
   coord_sf(crs = 4326, 
-           xlim = c(119, 123), ylim = c(21, 25.45),
+           xlim = c(117.8, 122), ylim = c(21, 25.45),
            expand = FALSE)+
   
   scale_x_continuous(breaks = 120:122.3)+
@@ -204,10 +237,13 @@ ggplot()+
                          pad_x = unit(1.5, "cm"),
                          pad_y = unit(1.5, "cm"),
                          style = north_arrow_orienteering())+
-  annotation_scale(location = "bl",
+  annotation_scale(location = "tl",
                    pad_x = unit(1.5, "cm"),
                    pad_y = unit(1.2, "cm"),
                    style = "ticks") +
+  annotation_custom(grob = ggplotGrob(world), 
+                    xmin = 117.8, xmax = 119.8, 
+                    ymin = 21.0, ymax = 22.5)+
   
   theme_bw()+
   theme(
@@ -215,11 +251,11 @@ ggplot()+
     text = element_text(family="serif"),
 
     plot.background = element_blank(),
+    panel.border = element_rect(fill = NA,colour = "black"),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     
     axis.title = element_blank(),
-    panel.border = element_blank(),
     axis.ticks = element_blank(),
     axis.text = element_blank(),
     plot.margin = margin(0,0,0,0),
@@ -234,7 +270,7 @@ ggplot()+
     legend.box.background = element_blank()
   ) 
 
-
+#https://www.r-spatial.org/r/2018/10/25/ggplot2-sf-3.html 參考
 
 ggsave("MAP_12.png",
            path = "./result",
