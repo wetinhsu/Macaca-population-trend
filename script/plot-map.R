@@ -109,33 +109,35 @@ S.all_P<- S.all %>%
   unique()  #Point data
 
 #-------------------
-worldmap =  map_data('world') 
+world =  map_data('world') 
 
-world <- 
+worldmap <- 
 ggplot() + 
-  geom_polygon(data = worldmap, 
+  geom_polygon(data = world, 
                aes(x = long, y = lat, group = group),
                 fill =gray(0.85), color = gray(0.5))+   
   
-  geom_sf(data = TW, fill = gray(0.3), size = .5)+
+  geom_sf(data = TW, fill = gray(0.3))+
   
   geom_rect(aes(xmin = c(119),
                 xmax = c(122.5),
                 ymin = c(21),
                 ymax = c(26)),
-            col = "blue", fill = NA, size = 2)+
-  geom_text(aes(x = c(110,144,126),
-                y = c(35,37,23.5),
+            col = "blue", fill = NA, size = 0.2)+
+  geom_text(aes(x = c(100,149,134),
+                y = c(35,35,23.5),
                 label = c("China", "Japan", "Taiwan")),
-            size = 6)+
+            size = 5)+
   
   coord_sf(crs = 4326, 
-           xlim = c(90, 150), ylim = c(15, 55),
-           expand = FALSE)+
+           xlim = c(80, 160), ylim = c(15, 55),
+           expand = FALSE)+ 
+  scale_x_continuous(breaks = seq(90,150,30))+
+  scale_y_continuous(breaks = seq(15,55,20))+
    theme(
-     plot.margin = margin(40,40,10,10),
+     plot.margin = margin(0,0,0,0),
      panel.grid = element_blank(),
-     panel.border = element_rect(fill = NA,colour = "black",size = 1.5),
+     panel.border = element_rect(fill = NA,colour = "black",size = 0.7),
      panel.background = element_rect(fill = "white"),
      axis.title = element_blank()
   )
@@ -143,14 +145,15 @@ ggplot() +
 
 #plot --------------------------------------------------------------------
 
-
+TWmap <- 
 ggplot()+
+  geom_sf(data = TW, fill = "white", aes(color = "#ADADAD"), size = .5)+
 
-#  geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
+  geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
   
   geom_sf(data = TW, fill = NA, aes(color = "#ADADAD"), size = .5)+
   
-  geom_sf(data = Region, fill = NA, aes(color = "#7B7B7B"), size = .9)+
+  geom_sf(data = Region, fill = NA, aes(color = "#7B7B7B"), size = .7)+
   
   geom_rect(aes(xmin = 121.45, xmax = 121.66, ymin = 21.92, ymax = 22.69), fill = "white")+
   
@@ -163,8 +166,8 @@ ggplot()+
                    segment.colour = NA,
                    label.size = NA,
                    box.padding = 0,
-                   nudge_x      = c(-0.8,-0.7,-0.9,-0.4,0.4,0.5),
-                   nudge_y      = c(0.1,0.2,-.05,-0.3,-0.2,0)) +
+                   nudge_x      = c(-0.8,-0.7,-0.9,-0.4,0.4,0.5), # N,C,SW,S,T,H
+                   nudge_y      = c(0.1,0.2,-.05,-0.3,-0.25,0)) +
   
 #  geom_sf(data = EL50, fill = NA, color = "#FF9EFF", size = .1, lty = 1)+ 
   
@@ -188,7 +191,7 @@ ggplot()+
                      name = NA,
                      guide = guide_legend(order = 1,
                                           override.aes = list( fill = c("red", NA),
-                                                               color = c("black", "#72A8F8"),#""
+                                                               color = c("black", "#72A8F8"),
                                                                size = c(3, 3)),
                                           title.theme = element_blank(),
                                           label.theme = element_text(family="serif",
@@ -222,28 +225,17 @@ ggplot()+
                     guide = guide_legend(order = 3,
                                          title.theme = element_blank()))+
   
-  
   coord_sf(crs = 4326, 
-           xlim = c(117.8, 122), ylim = c(21, 25.45),
+           xlim = c(119, 123), ylim = c(21, 25.45),
            expand = FALSE)+
   
-  scale_x_continuous(breaks = 120:122.3)+
-  scale_y_continuous(breaks = 22:25)+
-  
-  annotation_north_arrow(location = "tl",
-                         which_north = "grid",
-                         height = unit(1.0, "cm"),
-                         width = unit(1.0, "cm"),
-                         pad_x = unit(1.5, "cm"),
-                         pad_y = unit(1.5, "cm"),
-                         style = north_arrow_orienteering())+
-  annotation_scale(location = "tl",
-                   pad_x = unit(1.5, "cm"),
-                   pad_y = unit(1.2, "cm"),
-                   style = "ticks") +
-  annotation_custom(grob = ggplotGrob(world), 
-                    xmin = 117.8, xmax = 119.8, 
-                    ymin = 21.0, ymax = 22.5)+
+  scale_x_continuous(breaks = seq(121,121,1))+   
+  scale_y_continuous(breaks = seq(24,24,1))+  
+  annotation_scale(location = "tr",
+                   line_width = 1,
+                   pad_x = unit(0, "cm"),
+                   pad_y = unit(0, "cm"),
+                   style = "tick") +
   
   theme_bw()+
   theme(
@@ -251,13 +243,13 @@ ggplot()+
     text = element_text(family="serif"),
 
     plot.background = element_blank(),
-    panel.border = element_rect(fill = NA,colour = "black"),
-    panel.grid.major = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.major = element_line(linetype = , colour = gray(0.8)),
     panel.grid.minor = element_blank(),
     
     axis.title = element_blank(),
     axis.ticks = element_blank(),
-    axis.text = element_blank(),
+    axis.text.x = element_text(vjust = 185),
     plot.margin = margin(0,0,0,0),
     
     
@@ -270,9 +262,49 @@ ggplot()+
     legend.box.background = element_blank()
   ) 
 
-#https://www.r-spatial.org/r/2018/10/25/ggplot2-sf-3.html 參考
+# https://www.r-spatial.org/r/2018/10/25/ggplot2-sf-3.html 參考
 
-ggsave("MAP_12.png",
+  ggplot()+
+    coord_equal(xlim = c(0, 25), ylim = c(0, 35), expand = FALSE) +
+    
+    annotation_custom(grob = ggplotGrob(TWmap), 
+                      xmin = 2, xmax = 25, 
+                      ymin = 5, ymax = 35)+
+    
+    annotation_custom(grob = ggplotGrob(worldmap), 
+                      xmin = 0, xmax = 16, 
+                      ymin = 0, ymax = 10)+
+    
+    annotation_north_arrow(location = "tl",
+                           which_north = "grid",
+                           height = unit(1.0, "cm"),
+                           width = unit(1.0, "cm"),
+                           pad_x = unit(1.5, "cm"),
+                           pad_y = unit(1.5, "cm"),
+                           style = north_arrow_orienteering())+
+    
+    geom_curve(aes(x = 9, y = 3.5, xend = 13, yend = 12),
+               curvature = 0.1,
+                 arrow = arrow(), lineend = "round") +
+    
+    theme_bw()+
+    theme(
+      plot.margin = margin(0,0,0,0),
+      plot.background = element_rect(fill = "white"),
+      panel.border = element_blank(),
+      axis.title = element_blank(),
+      axis.ticks = element_blank(),
+      axis.text = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank()
+      
+    )
+    
+  
+  
+  
+  
+ggsave("MAP_13.png",
            path = "./result",
            width = 15,
            height = 19,
