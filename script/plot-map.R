@@ -115,31 +115,32 @@ worldmap <-
 ggplot() + 
   geom_polygon(data = world, 
                aes(x = long, y = lat, group = group),
-                fill =gray(0.85), color = gray(0.5))+   
+                fill = gray(0.85), color = gray(0.5))+   
   
-  geom_sf(data = TW, fill = gray(0.3))+
+  geom_sf(data = TW, fill = "black")+
   
   geom_rect(aes(xmin = c(119),
                 xmax = c(122.5),
                 ymin = c(21),
                 ymax = c(26)),
-            col = "blue", fill = NA, size = 0.2)+
-  geom_text(aes(x = c(100,149,134),
-                y = c(35,35,23.5),
+            col = "blue", fill = NA, size = 0.5)+
+  geom_text(aes(x = c(115,140,128),
+                y = c(33,33.1,23),
                 label = c("China", "Japan", "Taiwan")),
-            size = 5)+
+            size = 3)+
   
   coord_sf(crs = 4326, 
-           xlim = c(80, 160), ylim = c(15, 55),
+           xlim = c(110, 150), ylim = c(15, 40),
            expand = FALSE)+ 
-  scale_x_continuous(breaks = seq(90,150,30))+
-  scale_y_continuous(breaks = seq(15,55,20))+
+
    theme(
      plot.margin = margin(0,0,0,0),
      panel.grid = element_blank(),
-     panel.border = element_rect(fill = NA,colour = "black",size = 0.7),
+     panel.border = element_rect(fill = NA,colour = gray(0.3),size = 0.7),
      panel.background = element_rect(fill = "white"),
-     axis.title = element_blank()
+     axis.title = element_blank(),
+     axis.text = element_blank(),
+     axis.ticks = element_blank()
   )
   
 
@@ -147,7 +148,6 @@ ggplot() +
 
 TWmap <- 
 ggplot()+
-  geom_sf(data = TW, fill = "white", aes(color = "#ADADAD"), size = .5)+
 
   geom_sf(data = nc.b, aes(fill = TypeName.1), color = NA, size = 1)+ 
   
@@ -166,8 +166,8 @@ ggplot()+
                    segment.colour = NA,
                    label.size = NA,
                    box.padding = 0,
-                   nudge_x      = c(-0.8,-0.7,-0.9,-0.4,0.4,0.5), # N,C,SW,S,T,H
-                   nudge_y      = c(0.1,0.2,-.05,-0.3,-0.25,0)) +
+                   nudge_x      = c(-0.8,-0.7,-0.9,-0.43,0.41,0.5), # N,C,SW,S,T,H
+                   nudge_y      = c(0.1,0.2,-.05,-0.28,-0.23,0)) +
   
 #  geom_sf(data = EL50, fill = NA, color = "#FF9EFF", size = .1, lty = 1)+ 
   
@@ -226,16 +226,16 @@ ggplot()+
                                          title.theme = element_blank()))+
   
   coord_sf(crs = 4326, 
-           xlim = c(119, 123), ylim = c(21, 25.45),
+           xlim = c(119.4, 122), ylim = c(21.5, 25.45),
            expand = FALSE)+
   
   scale_x_continuous(breaks = seq(121,121,1))+   
-  scale_y_continuous(breaks = seq(24,24,1))+  
-  annotation_scale(location = "tr",
-                   line_width = 1,
-                   pad_x = unit(0, "cm"),
-                   pad_y = unit(0, "cm"),
-                   style = "tick") +
+  scale_y_continuous(breaks = seq(24,24,1))  +
+  annotation_scale(location = "bl",
+                 line_width = 1,
+                 pad_x = unit(0, "cm"),
+                 pad_y = unit(0, "cm"),
+                 style = "tick") +
   
   theme_bw()+
   theme(
@@ -244,19 +244,19 @@ ggplot()+
 
     plot.background = element_blank(),
     panel.border = element_blank(),
-    panel.grid.major = element_line(linetype = , colour = gray(0.8)),
+    panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     
     axis.title = element_blank(),
+    axis.text = element_blank(),
     axis.ticks = element_blank(),
-    axis.text.x = element_text(vjust = 185),
     plot.margin = margin(0,0,0,0),
     
     
     legend.background = element_blank(),
     legend.justification = c(0.7,0.1),
-    legend.position = c(0.85,0.05),
-    legend.text = element_text(size = 12),
+    legend.position = c(1,0.05),
+    legend.text = element_text(size = 10.5),
     legend.spacing = unit(0, 'mm'),
     legend.margin = margin(0,0,0,0),
     legend.box.background = element_blank()
@@ -268,24 +268,24 @@ ggplot()+
     coord_equal(xlim = c(0, 25), ylim = c(0, 35), expand = FALSE) +
     
     annotation_custom(grob = ggplotGrob(TWmap), 
-                      xmin = 2, xmax = 25, 
-                      ymin = 5, ymax = 35)+
+                      xmin = 0, xmax = 25, 
+                      ymin = 0, ymax = 35)+
     
     annotation_custom(grob = ggplotGrob(worldmap), 
-                      xmin = 0, xmax = 16, 
-                      ymin = 0, ymax = 10)+
+                      xmin = 0.5, xmax = 8, 
+                      ymin = 29, ymax = 34.5)+
     
-    annotation_north_arrow(location = "tl",
+    annotation_north_arrow(location = "bl",
                            which_north = "grid",
                            height = unit(1.0, "cm"),
                            width = unit(1.0, "cm"),
                            pad_x = unit(1.5, "cm"),
-                           pad_y = unit(1.5, "cm"),
+                           pad_y = unit(1, "cm"),
                            style = north_arrow_orienteering())+
     
-    geom_curve(aes(x = 9, y = 3.5, xend = 13, yend = 12),
-               curvature = 0.1,
-                 arrow = arrow(), lineend = "round") +
+    geom_curve(aes(x = 3, y = 30.5, xend = 8, yend = 28),
+               curvature = 0, linetype = 2, color = gray(0.4),
+                 arrow = arrow(length = unit(0.25, "cm"), type = "closed"), lineend = "round") +
     
     theme_bw()+
     theme(

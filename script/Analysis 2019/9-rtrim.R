@@ -210,8 +210,24 @@ m2 <- trim(
   serialcor = F, 
   autodelete = T, 
   stepwise = F)
-index(m2, "imputed", covars = F) %>% plot(., pct =T)
+index(m2, "imputed", covars = F) %>% plot(., pct =T, axes = F)
+axis(1, at = 1:4, labels = c(2015:2017,2019))
+axis(2)
+box()
+
+
 overall(m2,"imputed") %T>% plot
+
+index(m1, "imputed", covars = F) %>% plot(., pct =T, axes = F)
+axis(1)
+axis(2)
+box()
+overall(m1,"imputed") %T>% plot
+
+
+overall(m1)
+overall(m2)
+
 
 
 #---------
