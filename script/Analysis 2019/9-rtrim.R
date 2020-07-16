@@ -94,10 +94,6 @@ weight <-
 
 
 
-
-
-
-
 df <- 
   M.data %>% 
   setDT %>% 
@@ -231,3 +227,58 @@ overall(m2)
 
 
 #---------
+
+weight2 <- 
+  M.data %>% 
+  mutate(Region2 = Region2 %>% as.character) %>% 
+  mutate(Macaca_sur = ifelse(is.na(Macaca_sur),0,  Macaca_sur))%>% 
+  
+  filter(!TypeName.1 %in% "Not forest") %>% 
+  mutate(SP = paste0(Site_N,"-",Point))  %>%
+  reshape2::dcast(SP + Region2  ~ Year) %>% 
+  reshape2::melt(id = 1:2, variable.name = "Year", value.name = "point_n") %>% 
+  mutate(point_n = ifelse(point_n %in% 0 ,1, point_n)) %>% 
+  group_by(Region2) %>% 
+  mutate(SP_n := SP %>% unique %>% length()) %>% 
+  left_join(county.area)  %>% 
+  mutate( weight= (prob_Area / SP_n /point_n)  ) %>% 
+  select(SP, Year, Region2, weight) %>% 
+  mutate(Year = Year %>% as.character() %>% as.integer())
+
+
+df3 <- 
+  M.data %>% 
+  setDT %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  #.[Year < 2019,] %>%
+  .[!(TypeName.1 %in% "Not forest"), ] %>% 
+  .[, SP := paste0(Site_N,"-",Point)] %>% 
+  .[, .(number = sum(Macaca_sur)), by = list(Year, SP, Region2, Altitude)] %>% 
+  .[, N := sum(number), by = list(SP, Region2)] %>% 
+  left_join(weight2)  %>% setDT %>%
+  .[!(N %in% 0),] %>% 
+  .[, N := NULL] %>% 
+  .[, Altitude_f := cut(Altitude,
+                        breaks = c(0,1000,2500,4000),
+                        labels = c("A","B","C"),
+                        include.lowest = T)] %>%
+  .[, Altitude_f := factor(Altitude_f)] %>%
+  .[, Region2 := factor(Region2)] %>% 
+  .[,Altitude := NULL] %>% 
+  setDF
+
+
+m3 <- trim(
+  number ~ SP + Year + Region2 ,
+  weights = "weight",df3,
+  model =  2,
+  changepoints = "all",
+  overdisp = F,
+  serialcor = F, 
+  autodelete = T, 
+  stepwise = F)
+
+index(m3, covars = F) %>% plot(., pct=F)
+summary(m3)
+wald(m3)
+#-----------
