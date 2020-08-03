@@ -174,8 +174,8 @@ ggplot()+
   
   geom_point(data = S.all_P,
              aes(x = X, y = Y,  shape = "B"),
-             color = "#72A8F8",
-             size = 2,
+             color = "#0350B5",
+             size = 1.3,
              show.legend = F)+
   
   geom_point(data = S.all_M,
@@ -191,7 +191,7 @@ ggplot()+
                      name = NA,
                      guide = guide_legend(order = 1,
                                           override.aes = list( fill = c("red", NA),
-                                                               color = c("black", "#72A8F8"),
+                                                               color = c("black", "#0350B5"),
                                                                size = c(3, 3)),
                                           title.theme = element_blank(),
                                           label.theme = element_text(family="serif",
@@ -304,7 +304,7 @@ ggplot()+
   
   
   
-ggsave("MAP_13.png",
+ggsave("MAP_14-2.png",
            path = "./result",
            width = 15,
            height = 19,
