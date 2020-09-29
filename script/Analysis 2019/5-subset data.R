@@ -78,7 +78,7 @@ output.1<- M.0 %>%
 write_xlsx(list(
   "group.Site" = output.1,
   "groupDistance" = M.abc),
-  "./result/20191210-cheak distacne_V1.xlsx")
+  "./result_2019/20191210-cheak distacne_V1.xlsx")
 
 
 M.data.1 <- 
