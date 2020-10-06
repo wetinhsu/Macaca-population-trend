@@ -1,0 +1,118 @@
+#樣點資料檢核
+#---- load library
+
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(sf)
+
+#------------
+path <-  "//10.40.1.138/Bird Research/BBSTW/15_計畫/臺灣獼猴族群監測計畫/與林務局合作監測/各林管處陳報的樣區和樣點/"
+
+M.Point <- read_excel(paste0(path,"樣區樣點資訊_2020.xlsx"),
+                      sheet = "樣點")
+
+M.Point.del <- read_excel(paste0(path,"樣區樣點資訊_2020.xlsx"),
+                      sheet = "刪除樣區的樣點")
+#--------------
+
+S20<- 
+lapply(paste0("./data/raw/FORESTRYdata/", 2020), function(x){
+  list.files(x, full.names = T) %>%  #讀取各2020資料夾內的excel檔名
+    lapply(., function(x){
+      x %>% 
+      excel_sheets(.) %>%   #讀取各excel內的sheet名
+      lapply(.,read_excel, path = x,
+             col_names = T, col_type = "text", cell_cols("B:S")) %>%  #讀取各sheet的內容
+      bind_rows()  
+    })
+  }) %>% 
+  bind_rows() %>% 
+  select(Office = `林管處`, 
+         Station = `工作站`,
+         Site_N = `樣區編號`, 
+         Year = `年`, 
+         Month = `月`, 
+         Day = `日`, 
+         Survey = `旅次`, 
+         Surveyor = `調查者`,
+         Point = `樣點編號`, 
+         TWD97_X = `X座標(TWD97)`, 
+         TWD97_Y = `Y座標(TWD97)`, 
+         Hour = `時`, 
+         Minute = `分`, 
+         Macaca_sur = `數量`, 
+         Macaca_dist = `距離`, 
+         Macaca_voice = `叫聲`, 
+         Habitat = `棲地類型(主要)`) %>% 
+  mutate(Macaca_voice = gsub("n","N", .$Macaca_voice)) %>% 
+  mutate(Macaca_voice = ifelse(Macaca_sur %in% 0 & Macaca_voice %in% c("N"), NA,  Macaca_voice)) %>% 
+  
+  mutate(Date = ISOdatetime(Year, Month, Day, Hour, Minute, sec = 0) )  
+
+
+S20 %>% 
+  filter(Macaca_sur %in% 0) %>% 
+  filter(! is.na(Macaca_dist) | !is.na(Macaca_voice) ) 
+
+S20 %>% 
+  filter( Macaca_sur %in% c(1, 2)) %>% 
+  filter( is.na(Macaca_dist) | is.na(Macaca_voice) ) 
+
+#Part 1 最粗的資料----
+#(收到的資料)----------------------
+
+#樣區樣點的統計資料
+
+S20  %>% 
+  mutate(SP = paste0(Site_N, "-", Point)) %>% 
+  filter(!is.na(Macaca_sur) ) %>% 
+  group_by(Office) %>% 
+  summarise(Site_n = Site_N %>% unique %>% length,
+            Point_n = SP %>% unique %>% length,
+            Data_n = Macaca_sur %>% length) 
+
+
+#調查者的統計資料
+List_surveyor <- 
+S20 %>%
+  separate(.,Surveyor,
+           into = paste0("Surveyor","_",0:10),
+           sep ="、|,", extra = "drop", fill = "right") %>% 
+  reshape2::melt(., id.vars = c("Office","Year", "Site_N", "Point",  "Survey"),
+                 measure.vars = paste0("Surveyor","_",0:10),
+                 variable.name = "Surveyor", value.name = "Name",)%>% 
+  filter(!is.na(Name)) 
+
+List_surveyor %>% 
+  mutate(SP = paste0(Site_N, "-", Point)) %>% 
+  group_by(Office) %>% 
+  summarise(Point_n = SP %>% unique %>% length,     #樣點數
+            Person_n = Name %>% unique %>% length)  #人數
+
+#猴群、孤猴的統計資料             
+
+S20  %>% 
+  mutate(SP = paste0(Site_N, "-", Point))  %>% 
+  filter(!is.na(Macaca_sur) ) %>% 
+  group_by(Office, Macaca_sur) %>% 
+  summarise(N = SP %>% length) %>% 
+  reshape2::dcast(Office ~ Macaca_sur, guess_value  = "N")
+
+#Part 2 刪疏失的資料----------------
+#(刪除 after11pm、不足6分鐘、不在檢核點上)----------
+
+S20 %>% 
+  mutate(SS = paste0(Site_N, "-", Survey)) %>% 
+  split(.,.$SS) %>% 
+  lapply(., function(x){
+  
+      sort(x$Date, decreasing =F)
+  })
+
+
+
+
+#Part 3 可納入分析的資料----------------
+#(僅留下 距離A、B、海拔50m以上、森林)----------  
+
