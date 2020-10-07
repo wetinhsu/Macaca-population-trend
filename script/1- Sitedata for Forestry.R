@@ -70,7 +70,8 @@ S20  %>%
   group_by(Office) %>% 
   summarise(Site_n = Site_N %>% unique %>% length,
             Point_n = SP %>% unique %>% length,
-            Data_n = Macaca_sur %>% length) 
+            Data_n = Macaca_sur %>% length)
+#有些樣點兩旅次做在不同位置上，所以data數不會剛好是point的兩倍
 
 
 #調查者的統計資料
@@ -100,19 +101,34 @@ S20  %>%
   reshape2::dcast(Office ~ Macaca_sur, guess_value  = "N")
 
 #Part 2 刪疏失的資料----------------
-#(刪除 after11pm、不足6分鐘、不在檢核點上)----------
-
+#(刪除不足6分鐘、 after11pm、不在檢核點上、同一旅次超過7日才完成調查)----------
+#同一旅次同一樣區內超過7日才完成調查，整個旅次的資料方棄。----
+S20.2 <- 
 S20 %>% 
+  add_column(analysis = "Y", .before = "Office") %>% 
   mutate(SS = paste0(Site_N, "-", Survey)) %>% 
   split(.,.$SS) %>% 
   lapply(., function(x){
+
+      x[order(x$Date),] %>%
+      mutate(time2 = NA) %>% 
+      mutate(time2 = c(Date[2: length(Date)], NA)) %>%
+      mutate(time.diff = difftime(time2, Date, units ="mins")) %>% #時間相隔，以分為單位
+      mutate(day.diff = difftime(time2, Date, units ="day"))  }) %>%   #時間相隔，以日為單位
   
-      sort(x$Date, decreasing =F)
-  })
+  lapply(., function(x){     # 超過7日才完成調查，整個旅次的資料方棄
+    if(TRUE %in% (as.numeric(x$day.diff)>8)) x$analysis <- "N"
+    return(x)
+  })%>%  bind_rows() %>%
+  
+  mutate(analysis = ifelse(as.numeric(Hour) >= 11, "N", analysis)) %>%  #11點
+  mutate(analysis = ifelse(time.diff >= 6 | is.na(time.diff), analysis, "N"))   #6分鐘
 
 
 
+ S20.2 %>% 
+   filter(analysis %in% "Y") %>% dim
 
 #Part 3 可納入分析的資料----------------
-#(僅留下 距離A、B、海拔50m以上、森林)----------  
+#(僅留下 距離A、B、海拔50m以上、森林、300m的猴群)---------- 
 
