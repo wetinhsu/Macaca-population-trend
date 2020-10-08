@@ -13,7 +13,11 @@ M.Point <- read_excel(paste0(path,"樣區樣點資訊_2020.xlsx"),
                       sheet = "樣點")
 
 M.Point.del <- read_excel(paste0(path,"樣區樣點資訊_2020.xlsx"),
-                      sheet = "刪除樣區的樣點")
+                      sheet = "刪除樣區的樣點", cell_cols("A:L")) %>% 
+  mutate(樣區樣點編號 = paste0("d", 樣區樣點編號))
+
+
+
 #--------------
 
 S20<- 
@@ -72,6 +76,7 @@ S20  %>%
             Point_n = SP %>% unique %>% length,
             Data_n = Macaca_sur %>% length)
 #有些樣點兩旅次做在不同位置上，所以data數不會剛好是point的兩倍
+#Data_n奇數筆原因是花蓮的長良林道兩旅次做的樣點數不一樣，第2旅次為8樣點，第1旅次7樣點。
 
 
 #調查者的統計資料
@@ -127,8 +132,48 @@ S20 %>%
 
 
  S20.2 %>% 
-   filter(analysis %in% "Y") %>% dim
+   filter(analysis %in% "Y") %>% 
+   group_by(Office) %>% 
+ summarise(N = n())
+ 
+ #---
+
+ S20.2 %>% 
+   filter(!is.na(Macaca_sur)) %>% 
+   split(.,.$Site_N) %>%
+   lapply(., function(x){
+     
+     st_M.Point <-
+       M.Point %>% 
+       rbind(., M.Point.del) %>% 
+       filter(Macaca_Site %in% unique(x$Site_N)) %>%
+       mutate(X = as.numeric(TWD97_X)) %>% 
+       mutate(Y = as.numeric(TWD97_Y)) %>%
+       st_as_sf(., coords = c("X", "Y"), crs = 3826)
+     
+     st_S20.2 <-
+       x %>% 
+       mutate(X = as.numeric(TWD97_X)) %>% 
+       mutate(Y = as.numeric(TWD97_Y)) %>% 
+       st_as_sf(., coords = c("X", "Y"), crs = 3826)
+     
+     st_S20.2$point_O <- 
+       st_distance(st_S20.2, st_M.Point) %>% 
+       apply(.,1,which.min) %>% 
+         st_M.Point$樣區樣點編號[.] 
+     
+     st_S20.2$point.diff <- 
+       st_distance(st_S20.2, st_M.Point) %>% 
+       apply(., 1,min) 
+     
+     return(st_drop_geometry(st_S20.2))
+     }) %>% 
+   bind_rows() %>% View
 
 #Part 3 可納入分析的資料----------------
 #(僅留下 距離A、B、海拔50m以上、森林、300m的猴群)---------- 
 
+ 
+ 
+ 
+ 
