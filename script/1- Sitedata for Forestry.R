@@ -85,6 +85,19 @@ S20  %>%
   summarise(Site_n = Site_N %>% unique %>% length,
             Point_n = SP %>% unique %>% length,
             Data_n = Macaca_sur %>% length)
+
+
+S20  %>% 
+  filter(!is.na(Macaca_sur) ) %>% 
+  group_by(Office, Survey) %>% 
+  summarise(
+            Data_n = Macaca_sur %>% length)
+
+
+
+
+
+
 #有些樣點兩旅次做在不同位置上，所以data數不會剛好是point的兩倍
 #Data_n奇數筆原因是花蓮的長良林道兩旅次做的樣點數不一樣，第2旅次為8樣點，第1旅次7樣點。
 
@@ -134,14 +147,18 @@ S20  %>%
      }) %>%   
 
 
-   lapply(., function(x){  #計算位置誤差距離
+   lapply(., function(x){  #計算位置誤差距離：依樣區旅次分別計算各樣區內，各樣點離做近檢核點的距離
      
-     st_M.Point <-
+     st_M.Point <-  #與st_S20對應的樣區
        st_M.Point %>% 
        filter(Macaca_Site %in% unique(x$Site_N)) 
      
-     st_S20.2 <-
+     st_S20.2 <-   
        x %>% 
+       mutate(SP = ifelse(nchar(Point) %in% 1,
+                          paste0(Site_N, "-0", Point),
+                          paste0(Site_N, "-", Point))) %>%
+       
        mutate(X = as.numeric(TWD97_X)) %>% 
        mutate(Y = as.numeric(TWD97_Y)) %>% 
        st_as_sf(., coords = c("X", "Y"), crs = 3826)
@@ -162,20 +179,39 @@ S20  %>%
      return(x)
    })%>%  
    
-    bind_rows() %>%
-   
-   mutate(analysis = ifelse(as.numeric(Hour) >= 11, "N", analysis)) %>%  #11點
-   mutate(analysis = ifelse(time.diff >= 6 | is.na(time.diff), analysis, "N")) %>%   #6分鐘
-   mutate(analysis = ifelse(point.diff > 50 | Point %in% "X", "N", analysis))  # range of gps =50m
- 
+    bind_rows() %>% 
+  select(-SS) %>%   #刪除輔註欄位
+  
+  mutate(analysis = ifelse(as.numeric(Hour) >= 11, "N1", analysis)) %>%  #11點
+  mutate(analysis = ifelse(!analysis %in% "Y", analysis,
+                           ifelse(time.diff >= 6 | is.na(time.diff), analysis, "N2"))) %>%   #6分鐘
+  mutate(analysis = ifelse(!analysis %in% "Y", analysis,
+                           ifelse(point.diff > 50 | Point %in% "X", "N3", analysis)))    # range of gps =50m
 
- 
+
+
+  S20.2 %>% 
+    split(., row(.)) %>% 
+    lapply(.,function(x){is.logical(x$SP ==  x$point_0)}) %>% do.call(rbind, .) %>% View
+
+
+
  S20.2 %>% 
-   filter(analysis %in% "Y") %>%
-   group_by(Office) %>% 
-   summarise(N = n())
+  group_by(Office, analysis) %>%
+  summarise(N = n()) %>%
+  reshape2::dcast( analysis ~ Office, guess.var = "N")
+ 
+ M.data <- 
+   S20.2 %>% 
+   filter(analysis %in% "Y")
  
  
+ M.data  %>% 
+   mutate(SP = paste0(Site_N, "-", Point))  %>% 
+   filter(!is.na(Macaca_sur) ) %>% 
+   group_by(Office, Macaca_sur) %>% 
+   summarise(N = SP %>% length) %>% 
+   reshape2::dcast(Office ~ Macaca_sur, guess_value  = "N")
 #Part 3 可納入分析的資料----------------
 #(僅留下 距離A、B、海拔50m以上、森林、300m的猴群)---------- 
 
