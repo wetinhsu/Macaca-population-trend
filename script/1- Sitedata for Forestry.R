@@ -8,13 +8,13 @@ library(sf)
 
 #------------
 path <-  "//10.40.1.138/Bird Research/BBSTW/15_計畫/臺灣獼猴族群監測計畫/與林務局合作監測/各林管處陳報的樣區和樣點/"
-path <-  "C:/Users/wetin/Desktop/R/"
+#path <-  "C:/Users/wetin/Desktop/R/"
 
 M.Point <- read_excel(paste0(path,"樣區樣點資訊_2020.xlsx"),
                       sheet = "樣點")
 
 M.Point.del <- read_excel(paste0(path,"樣區樣點資訊_2020.xlsx"),
-                      sheet = "刪除樣區的樣點", cell_cols("A:L")) %>% 
+                      sheet = "刪除樣區的樣點", cell_cols("A:M")) %>% 
   mutate(樣區樣點編號 = paste0("d", 樣區樣點編號))
 
 
@@ -192,18 +192,27 @@ S20  %>%
   summarise(N = n()) %>%
   reshape2::dcast( analysis ~ Office, guess.var = "N")
  
- M.data <- 
-   S20.2 %>% 
-   filter(analysis %in% "Y")
  
- 
- M.data  %>% 
+ S20.2 %>% 
    filter(!is.na(Macaca_sur) ) %>% 
-   group_by(Office, Macaca_sur) %>% 
-   summarise(N = n()) %>% 
-   reshape2::dcast(Office ~ Macaca_sur, guess_value  = "N")
+   filter(analysis %in% "Y" ) %>% 
+   group_by(Office, analysis, Survey) %>%
+   summarise(N = n()) %>%
+   reshape2::dcast( Office ~ analysis + Survey, guess.var = "N")
+ 
 
- M.data  %>% 
+ 
+ 
+ S20.2 %>% 
+   filter(analysis %in% "Y")  %>% 
+   filter(!is.na(Macaca_sur) ) %>% 
+   group_by(Office, Macaca_sur, Survey) %>% 
+   summarise(N = n()) %>% 
+   reshape2::dcast(Office + Survey ~ Macaca_sur, guess_value  = "N")
+
+
+ S20.2 %>% 
+   filter(analysis %in% "Y")  %>% 
    filter(!is.na(Macaca_sur) ) %>% 
    left_join(st_drop_geometry(st_M.Point), by = c("point_O" = "樣區樣點編號") ) %>% 
    mutate(Macaca_sur = ifelse(Macaca_sur %in% "1" , 0,
@@ -213,12 +222,39 @@ S20  %>%
    summarise(N = n()) %>%
    reshape2::dcast( Office + Macaca_sur ~ TypeName.1, guess.var = "N")
  
- 
+ S20.2_f <- 
+   S20.2 %>% 
+   filter(analysis %in% "Y")  %>% 
+   filter(!is.na(Macaca_sur) ) %>% 
+   left_join(st_drop_geometry(st_M.Point), by = c("point_O" = "樣區樣點編號") ) %>% 
+   select(analysis, Office, Station, 
+          "Site_N" = Macaca_Site,
+          "Point" = 樣點代號, 
+          "X" = TWD97_X.y,
+          "Y" = TWD97_Y.y,
+          Year, Month, Day, Survey, Macaca_sur,
+          Hour, Minute, Day, Date,
+          Macaca_dist,
+          distance, join_TypeName, TypeName.1, Altitude)
  
  #Part 3 可納入分析的資料----------------
 #(僅留下 距離A、B、海拔50m以上、森林、300m的猴群)---------- 
 
+ M.data <- 
+   S20.2_f %>% 
+   mutate(Macaca_sur = ifelse(Macaca_sur %in% "1" , 0,    #孤猴改成0，猴群改成1
+                              ifelse(Macaca_sur %in% "2" , 1, Macaca_sur))) %>% 
+   mutate(Macaca_sur = ifelse(Macaca_dist %in% "C" , 0, Macaca_sur)) %>% #距離為C的猴群改成0
+   mutate(analysis = ifelse(distance > 20 , "N", analysis))
+   
+   
+   
+ M.data %>% 
+   filter(Altitude >= 50)  %>% 
+   group_by(Office, TypeName.1) %>% 
+   summarise(M = sum(Macaca_sur),S = n()) %>%
+   reshape2::melt(id = 1:2) %>% 
+   reshape2::dcast( Office + variable ~ TypeName.1, guess.var = "value")
  
- 
- 
+ write_xlsx( M.data, "./data/clean/full_combind_Forestrydata_V1.xlsx")
  
