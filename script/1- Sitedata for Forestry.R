@@ -183,7 +183,7 @@ S20  %>%
 
   S20.2 %>% 
     split(., row(.)) %>% 
-    lapply(.,function(x){is.logical(x$SP ==  x$point_0)}) %>% do.call(rbind, .) %>% View
+    lapply(.,function(x){is.logical(x$SP ==  x$point_0)}) %>% do.call(rbind, .) 
 
 
 
@@ -222,7 +222,7 @@ S20  %>%
    summarise(N = n()) %>%
    reshape2::dcast( Office + Macaca_sur ~ TypeName.1, guess.var = "N")
  
- S20.2_f <- 
+ M.data <- 
    S20.2 %>% 
    filter(analysis %in% "Y")  %>% 
    filter(!is.na(Macaca_sur) ) %>% 
@@ -235,26 +235,16 @@ S20  %>%
           Year, Month, Day, Survey, Macaca_sur,
           Hour, Minute, Day, Date,
           Macaca_dist,
-          distance, join_TypeName, TypeName.1, Altitude)
+          "Distance" = distance, 
+          "TypeName" = join_TypeName, TypeName.1, Altitude)
+ 
+ 
+  write_xlsx( M.data, "./data/clean/full_combind_Forestrydata_V1.xlsx")
  
  #Part 3 可納入分析的資料----------------
 #(僅留下 距離A、B、海拔50m以上、森林、300m的猴群)---------- 
 
- M.data <- 
-   S20.2_f %>% 
-   mutate(Macaca_sur = ifelse(Macaca_sur %in% "1" , 0,    #孤猴改成0，猴群改成1
-                              ifelse(Macaca_sur %in% "2" , 1, Macaca_sur))) %>% 
-   mutate(Macaca_sur = ifelse(Macaca_dist %in% "C" , 0, Macaca_sur)) %>% #距離為C的猴群改成0
-   mutate(analysis = ifelse(distance > 20 , "N", analysis))
-   
-   
-   
- M.data %>% 
-   filter(Altitude >= 50)  %>% 
-   group_by(Office, TypeName.1) %>% 
-   summarise(M = sum(Macaca_sur),S = n()) %>%
-   reshape2::melt(id = 1:2) %>% 
-   reshape2::dcast( Office + variable ~ TypeName.1, guess.var = "value")
+
  
- write_xlsx( M.data, "./data/clean/full_combind_Forestrydata_V1.xlsx")
+
  
