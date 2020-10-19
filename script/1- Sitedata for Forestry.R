@@ -110,15 +110,6 @@ List_surveyor %>%
   summarise(Site_n = Site_N %>% unique %>% length,     #樣區數
             Person_n = Name %>% unique %>% length)  #人數
 
-#猴群、孤猴的統計資料             
-
-S20  %>% 
-  mutate(SP = paste0(Site_N, "-", Point))  %>% 
-  filter(!is.na(Macaca_sur) ) %>% 
-  group_by(Office, Macaca_sur) %>% 
-  summarise(N = SP %>% length) %>% 
-  reshape2::dcast(Office ~ Macaca_sur, guess_value  = "N")
-
 #Part 2 刪疏失的資料----------------
 #(刪除不足6分鐘、 after11pm、不在檢核點上、同一旅次超過7日才完成調查)----------
 #同一旅次同一樣區內超過7日才完成調查，整個旅次的資料方棄。----
@@ -181,19 +172,15 @@ S20  %>%
 
 
 
-  S20.2 %>% 
-    split(., row(.)) %>% 
-    lapply(.,function(x){is.logical(x$SP ==  x$point_0)}) %>% do.call(rbind, .) 
 
 
-
- S20.2 %>% 
+ S20.2 %>%  #各林管處的各疏失情況的樣點數
   group_by(Office, analysis) %>%
   summarise(N = n()) %>%
   reshape2::dcast( analysis ~ Office, guess.var = "N")
  
  
- S20.2 %>% 
+ S20.2 %>%   #林管處無疏失情形的樣點數
    filter(!is.na(Macaca_sur) ) %>% 
    filter(analysis %in% "Y" ) %>% 
    group_by(Office, analysis, Survey) %>%
@@ -203,7 +190,7 @@ S20  %>%
 
  
  
- S20.2 %>% 
+ S20.2 %>%    #時無疏失情形下，林管處在1、2旅次的猴群、孤猴數
    filter(analysis %in% "Y")  %>% 
    filter(!is.na(Macaca_sur) ) %>% 
    group_by(Office, Macaca_sur, Survey) %>% 
@@ -237,6 +224,21 @@ S20  %>%
           Macaca_dist,
           "Distance" = distance, 
           "TypeName" = join_TypeName, TypeName.1, Altitude)
+ 
+ 
+ 
+ 
+ #猴群、孤猴的統計資料             
+ 
+ M.data  %>% 
+   mutate(SP = paste0(Site_N, "-", Point))  %>% 
+   filter(!is.na(Macaca_sur) ) %>% 
+   group_by(Office, Macaca_sur) %>% 
+   summarise(N = SP %>% length) %>% 
+   reshape2::dcast(Office ~ Macaca_sur, guess_value  = "N")
+ 
+ 
+ 
  
  
   write_xlsx( M.data, "./data/clean/full_combind_Forestrydata_V1.xlsx")
