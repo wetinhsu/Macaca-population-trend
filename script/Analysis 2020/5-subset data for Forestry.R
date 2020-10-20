@@ -7,7 +7,8 @@ library(writexl)
 library(sf)
 
 #------------
-M.data <- read_excel("./data/clean/full_combind_Forestrydata_V1.xlsx")%>% 
+M.data <- read_excel("./data/clean/full_combind_Forestrydata_V1.xlsx", sheet = "Data")%>% 
+  select(-Macaca_voice, -Habitat ) %>% 
   mutate(Macaca_sur = ifelse(Macaca_sur %in% "1" , 0,    #孤猴改成0，猴群改成1
                              ifelse(Macaca_sur %in% "2" , 1, Macaca_sur))) %>% 
   mutate(Macaca_sur = ifelse(Macaca_dist %in% "C" , 0, Macaca_sur)) 
@@ -159,7 +160,9 @@ M.data.1 %>%
 M.data.1 <- 
 M.data.1 %>%
   mutate(TypeName.1 = ordered(TypeName.1,c("闊葉林", "針葉林","混淆林","竹林","非森林"))) %>% 
-  mutate(julian.D = Date %>% as.POSIXlt(format = "%yyyy%mm%dd") %>% format(., "%j") %>% as.numeric())
+  mutate(julian.D = ISOdatetime(Year, Month, Day, Hour, Minute, sec = 0) %>%
+           as.POSIXlt(format = "%yyyy%mm%dd") %>%
+           format(., "%j") %>% as.numeric())
    
 M.data.2 <-
   M.data.1 %>%  
@@ -177,9 +180,10 @@ M.data.2 %>%
   summarise(N = n()) %>% 
   filter(N >1)
 
+NOTE <- data.frame(說明 = "本資料集為已有刪減，僅留下可納入分析的資料。")
 
 
 
-write_xlsx(M.data.2, "./data/clean/for analysis Forestrydata_V1.xlsx")
+write_xlsx( list('NOTE' = NOTE, 'Data' = M.data.2), "./data/clean/for analysis Forestrydata_V1.xlsx")
 
 

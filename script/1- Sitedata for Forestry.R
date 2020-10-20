@@ -220,8 +220,10 @@ List_surveyor %>%
           "X" = TWD97_X.y,
           "Y" = TWD97_Y.y,
           Year, Month, Day, Survey, Macaca_sur,
-          Hour, Minute, Day, Date,
+          Hour, Minute, Day, 
           Macaca_dist,
+          Macaca_voice,
+          Habitat,
           "Distance" = distance, 
           "TypeName" = join_TypeName, TypeName.1, Altitude)
  
@@ -238,10 +240,10 @@ List_surveyor %>%
    reshape2::dcast(Office ~ Macaca_sur, guess_value  = "N")
  
  
+ NOTE <- data.frame(說明 = "本資料集為林務局獼猴調查資料的合併檔，並已完成清理動作，僅留下符合調查規範的資料。共計4178筆。")
  
  
- 
-  write_xlsx( M.data, "./data/clean/full_combind_Forestrydata_V1.xlsx")
+  write_xlsx( list('NOTE' = NOTE, 'Data' = M.data), "./data/clean/full_combind_Forestrydata_V1.xlsx")
  
  #Part 3 可納入分析的資料----------------
 #(僅留下 距離A、B、海拔50m以上、森林、300m的猴群)---------- 
