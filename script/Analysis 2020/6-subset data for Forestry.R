@@ -128,7 +128,7 @@ M.data %>%
                    include.lowest = T, right = TRUE))
 
 
-
+#非森林的樣點離森林的距離
 ggplot(M.data_notForest, aes(x = Distance))+
   geom_histogram(fill = gray(0.8), col = "black", breaks = seq(20,240,10))+
   stat_bin( geom="text", colour="black", size=3.5, breaks = seq(20,240,10),
@@ -146,5 +146,48 @@ ggplot(M.data_notForest, aes(x = Distance))+
   )
  
 
+
+#----------
+#林管處的Encounter_rate
+M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  group_by(Office, Survey) %>% 
+  summarise(E = sum(Macaca_sur)/n()) %>% 
+  
+  ggplot(., aes(x = Office, y = E)) +
+  geom_boxplot(size = 1, width = 0.4, fill= gray(.9))+
+  scale_y_continuous(breaks = seq(0,0.15,0.05), limits = c(0,0.15))+
+  labs(x = "林管處", y = "Encounter_rate")+
+  theme(
+    text = element_text(family="serif"),
+    panel.border = element_rect(size = 1.5,fill = NA),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5)
+  )
+
+  
+#-----------
+#TypeName.1的Encounter_rate
+M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  group_by(TypeName.1, Survey) %>% 
+  summarise(E = sum(Macaca_sur)/n()) %>% 
+  
+  ggplot(., aes(x = TypeName.1, y = E)) +
+  geom_boxplot(size = 1, width = 0.4, fill= gray(.9))+
+  scale_y_continuous(breaks = seq(0,0.15,0.05), limits = c(0,0.15))+
+  labs(x = "森林類型", y = "Encounter_rate")+
+  theme(
+    text = element_text(family="serif"),
+    panel.border = element_rect(size = 1.5,fill = NA),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5)
+  )
 
 
