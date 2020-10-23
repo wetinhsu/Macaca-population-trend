@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="full_combind_Forestrydata_V1-Data">
+        <SrcDataSource relativeToVRT="1">full_combind_Forestrydata_V1.xlsx</SrcDataSource>
+        <!--Header=False-->
+        <SrcLayer>Data</SrcLayer>
+        <Field name="analysis" src="analysis" type="String"/>
+        <Field name="Office" src="Office" type="String"/>
+        <Field name="Station" src="Station" type="String"/>
+        <Field name="Site_N" src="Site_N" type="String"/>
+        <Field name="Point" src="Point" type="Integer"/>
+        <Field name="Year" src="Year" type="String"/>
+        <Field name="Month" src="Month" type="String"/>
+        <Field name="Day" src="Day" type="String"/>
+        <Field name="Survey" src="Survey" type="String"/>
+        <Field name="Macaca_sur" src="Macaca_sur" type="String"/>
+        <Field name="Hour" src="Hour" type="String"/>
+        <Field name="Minute" src="Minute" type="String"/>
+        <Field name="Macaca_dist" src="Macaca_dist" type="String"/>
+        <Field name="Macaca_voice" src="Macaca_voice" type="String"/>
+        <Field name="Habitat" src="Habitat" type="String"/>
+        <Field name="Distance" src="Distance" type="Real"/>
+        <Field name="TypeName" src="TypeName" type="String"/>
+        <Field name="TypeName.1" src="TypeName.1" type="String"/>
+        <Field name="Altitude" src="Altitude" type="Integer"/>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>EPSG:3826</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="X" y="Y"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>

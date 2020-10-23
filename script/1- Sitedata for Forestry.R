@@ -11,17 +11,12 @@ path <-  "//10.40.1.138/Bird Research/BBSTW/15_計畫/臺灣獼猴族群監測�
 #path <-  "C:/Users/wetin/Desktop/R/"
 
 M.Point <- read_excel(paste0(path,"樣區樣點資訊_2020.xlsx"),
-                      sheet = "樣點")
-
-M.Point.del <- read_excel(paste0(path,"樣區樣點資訊_2020.xlsx"),
-                      sheet = "刪除樣區的樣點", cell_cols("A:M")) %>% 
-  mutate(樣區樣點編號 = paste0("d", 樣區樣點編號))
+                      sheet = "樣點", cell_cols("A:M") )
 
 
 
 st_M.Point <-
   M.Point %>% 
-  rbind(., M.Point.del) %>% 
   mutate(X = as.numeric(TWD97_X)) %>% 
   mutate(Y = as.numeric(TWD97_Y)) %>%
   st_as_sf(., coords = c("X", "Y"), crs = 3826)
@@ -74,6 +69,20 @@ S20 %>%
 S20 %>% 
   filter( Macaca_sur %in% c(1, 2)) %>% 
   filter( is.na(Macaca_dist) | is.na(Macaca_voice) ) 
+
+
+#確認旅次---
+S20 <- 
+S20 %>%  
+  reshape2::dcast(Year + Site_N ~ Survey, length, value.var = "Macaca_sur") %>% 
+  #計算第1旅次及第2旅次調查的樣點數
+  filter(`1` %in% 0 & `2` >= 6) %>%  #找出有第2旅次沒第1旅次的樣區
+  left_join(S20, ., by = c("Year", "Site_N"))%>%
+  mutate( Survey = ifelse(!is.na(`1`),1, Survey)) %>%#將第1次調查的旅次改回1
+  select(-`1`, -`2`, -`NA`)
+
+
+
 
 #Part 1 最粗的資料----
 #(收到的資料)----------------------

@@ -16,6 +16,7 @@ M.data <- read_excel("./data/clean/full_combind_Forestrydata_V1.xlsx", sheet = "
 
 
 
+
 M.0<- M.data %>%
   filter(Macaca_sur %in% 1)  #猴群
 
@@ -140,15 +141,15 @@ M.data.1%>%
 
 
 
-M.data %>%
+M.data %>%  #移除重複前
   filter(Macaca_sur %in% 1) %>% 
   group_by(Year, Survey, Site_N) %>% 
   summarise(N = n()) %>%
   .$N %>% 
-  table
+  table 
 
 
-M.data.1 %>%
+M.data.1 %>%   #移除重複前
   filter(Macaca_sur %in% 1) %>% 
   group_by(Year, Survey, Site_N) %>% 
   summarise(N = n()) %>% 
