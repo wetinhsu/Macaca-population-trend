@@ -54,7 +54,7 @@ allFit(glmer(Macaca_sur ~ TypeName.1  +  Altitude + julian.D + Office +  (1|Site
 df$Altitude.1 <-  scale(df$Altitude,scale =T)
 df$julian.D.1 <-  scale(df$julian.D,scale =T)
 
-m1 <- glmer(Macaca_sur ~  TypeName.1 + Altitude.1 + julian.D.1 + Office +  (1|Site_N), 
+m1 <- glmer(Macaca_sur ~  TypeName.1 + Altitude.1 + julian.D.1 + Office  + (1|Site_N), 
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 
@@ -86,7 +86,14 @@ summary(glht(m1, linfct = mcp(Office = "Tukey")))
 
 summary(glht(m1, linfct = c("Altitude.1 = 0",
                             "julian.D.1 = 0"))) 
+
+par(mai=c(1,1,1,0.2))
+glht(m1, linfct = mcp(Office = "Tukey")) %>% cld()  %>% plot
+
 par(mai=c(1,1.5,1,1))
 glht(m1, linfct = mcp(Office = "Tukey")) %>% plot
+
+
+
 
 
