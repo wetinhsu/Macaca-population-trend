@@ -55,6 +55,8 @@ lapply(paste0("./data/raw/FORESTRYdata/", 2020), function(x){
          Macaca_dist = `距離`, 
          Macaca_voice = `叫聲`, 
          Habitat = `棲地類型(主要)`) %>% 
+  mutate(Surveyor = gsub(",","、", Surveyor)) %>%
+  mutate(Surveyor = gsub(" ","", Surveyor)) %>%
   mutate(Macaca_voice = gsub("n","N", .$Macaca_voice)) %>% 
   mutate(Macaca_voice = ifelse(Macaca_sur %in% 0 & Macaca_voice %in% c("N"), NA,  Macaca_voice)) %>% 
   
@@ -99,25 +101,8 @@ S20 %>%
   reshape2::dcast(Office ~ Survey + variable, guess_var = "value")
 
 #有些樣點兩旅次做在不同位置上，所以data數不會剛好是point的兩倍
-#Data_n奇數筆原因是花蓮的長良林道兩旅次做的樣點數不一樣，第2旅次為8樣點，第1旅次7樣點。
+#Data_n奇數筆原因是花蓮的長良林道，第1旅次7樣點，第2旅次刪除沒作，另設長良樣區(8樣點)只作1旅次。
 
-
-#調查者的統計資料
-List_surveyor <- 
-S20 %>%
-  separate(.,Surveyor,
-           into = paste0("Surveyor","_",0:10),
-           sep ="、|,", extra = "drop", fill = "right") %>% 
-  reshape2::melt(., id.vars = c("Office","Year", "Site_N", "Point",  "Survey"),
-                 measure.vars = paste0("Surveyor","_",0:10),
-                 variable.name = "Surveyor", value.name = "Name",)%>% 
-  filter(!is.na(Name)) 
-
-List_surveyor %>% 
-  mutate(SP = paste0(Site_N, "-", Point)) %>% 
-  group_by(Office) %>% 
-  summarise(Site_n = Site_N %>% unique %>% length,     #樣區數
-            Person_n = Name %>% unique %>% length)  #人數
 
 #Part 2 刪疏失的資料----------------
 #(刪除不足6分鐘、 after11pm、不在檢核點上、同一旅次超過7日才完成調查)----------
