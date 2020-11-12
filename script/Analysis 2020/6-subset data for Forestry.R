@@ -190,4 +190,72 @@ M.data %>%
                               vjust = -2, hjust = 0.5)
   )
 
+#-----------
+#Altitude的Encounter_rate
+Alt.d.n <-
+  M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  mutate(Altitude_f =cut(Altitude,
+                         breaks = c(seq(0,4000,500)),
+                         labels = c(seq(250,3750,500)),
+                         include.lowest = T) ) %>% 
+  group_by(Altitude_f,Survey) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
+  group_by(Altitude_f) %>% 
+  summarise(mean_N = mean(N),  y = quantile(E,0.75)) 
 
+  M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  mutate(Altitude_f =cut(Altitude,
+                         breaks = c(seq(0,4000,500)),
+                         labels = c(seq(250,3750,500)),
+                         include.lowest = T) ) %>% 
+  group_by(Altitude_f,Survey) %>% 
+  summarise(E = sum(Macaca_sur)/n()) %>% 
+  
+  ggplot(., aes(x = Altitude_f, y = E)) +
+  geom_boxplot(size = 1, width = 0.4, fill= gray(.9))+
+    geom_text(data = Alt.d.n, aes(y = y+0.0025,label = paste0(mean_N,c("","","","","","",""))),
+              size = 4,
+              hjust = -0.1,
+              position = position_dodge(0.9))+
+    
+  scale_y_continuous(breaks = seq(0,0.10,0.02), limits = c(0,0.10))+
+  labs(x = "Elevation (m)", y = "Encounter rate (troop/point)") +
+  theme(
+    text = element_text(family="serif"),
+    panel.border = element_rect(size = 1.5,fill = NA),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5)
+  )
+
+
+  M.data %>% 
+    filter(analysis %in% "Y") %>% 
+    mutate(Altitude_f =cut(Altitude,
+                           breaks = c(seq(0,4000,500)),
+                           labels = c(seq(250,3750,500)),
+                           include.lowest = T) ) %>% 
+    group_by(Altitude_f,Survey) %>% 
+    summarise(E = sum(Macaca_sur)/n()) %>% 
+    group_by(Altitude_f) %>% #確認中位數
+    summarise(mid = median(E))
+
+  
+  
+  
+  M.data %>% 
+    filter(analysis %in% "Y") %>% 
+    mutate(Altitude_f =cut(Altitude,
+                           breaks = c(seq(0,4000,50)),
+                           labels = c(seq(25,4000,50)),
+                           include.lowest =T) ) %>% 
+    group_by(Altitude_f) %>% 
+    summarise(N = n()) %>% 
+ #   mutate(Altitude_f = Altitude_f %>% as.character() %>% as.numeric()) %>% 
+    ggplot(., aes(x = Altitude_f, y = N))+
+    geom_point()
+  
