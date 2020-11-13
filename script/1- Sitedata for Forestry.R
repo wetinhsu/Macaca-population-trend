@@ -131,7 +131,7 @@ S20 %>%
      
      st_S20.2 <-   
        x %>% 
-       mutate(SP = ifelse(nchar(Point) %in% 1,
+       mutate(SP = ifelse(!nchar(Point) %in% 1,
                           paste0(Site_N, "-0", Point),
                           paste0(Site_N, "-", Point))) %>%
        
@@ -158,12 +158,12 @@ S20 %>%
     bind_rows() %>% 
   select(-SS) %>%   #刪除輔註欄位
   
-  mutate(analysis = ifelse(as.numeric(Hour) >= 11, "N1", analysis)) %>%  #11點
-  mutate(analysis = ifelse(!analysis %in% "Y", analysis,
-                           ifelse(time.diff >= 6 | is.na(time.diff), analysis, "N2"))) %>%   #6分鐘
-  mutate(analysis = ifelse(!analysis %in% "Y", analysis,
-                           ifelse(point.diff > 50 | Point %in% "X", "N3", analysis)))    # range of gps =50m
-
+  mutate(analysis =case_when(analysis %in% "Y" & as.numeric(Hour) >= 11            ~ "N1",  #11點
+                             analysis %in% "Y" & time.diff < 6 & !is.na(time.diff) ~ "N2",  #6分鐘
+                             analysis %in% "Y" & point.diff > 50                   ~ "N3",  # range of gps =50m
+                             analysis %in% "Y" & Point %in% "X"                    ~ "N3",  # range of gps =50m
+                             TRUE ~ analysis))
+         
 
 
 
