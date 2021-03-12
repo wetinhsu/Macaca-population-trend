@@ -74,8 +74,24 @@ M19 <-
            Macaca_dist = `距離`,
            Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
 
+# 2020
+M20 <- 
+  read_xlsx("data/raw/2020樣區內獼猴調查.xlsx") %>% 
+  setDT %>% 
+  .[, list(Site_N = `樣區編號`,
+           Point = `樣點編號`,
+           Year = 2020,
+           Survey = `調查旅次\r\n編號`,
+           Macaca_sur = ifelse(`結群` == "Y", 1, 0),
+           Macaca_dist = `距離`,
+           Time = `時段`)]%>% setDT %>% .[!duplicated(.)]
+
+
+
+
+
 M.all <- 
-  rbind(M15, M16, M17, M18, M19) %>% 
+  rbind(M15, M16, M17, M18, M19, M20) %>% 
   .[, Year := as.character(Year)] %>% 
   .[, Survey := as.character(Survey)] %>%
   .[, Time := as.character(Time)] %>% 
@@ -87,4 +103,4 @@ M.all <-
 
 M.all  %>% setDT %>%.[, .N, by =  c("Year", "Site_N", "Point", "Survey")] %>% View
 
-write_xlsx(M.all, "data/clean/MAcaca/Macaca_1519_v2.xlsx")
+write_xlsx(M.all, "data/clean/MAcaca/Macaca_1520_v1.xlsx")

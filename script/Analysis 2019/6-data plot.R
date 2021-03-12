@@ -296,6 +296,11 @@ ggplot(data = Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
     panel.grid = element_blank(),
     plot.margin = margin(30,30,20,20)
   )
+ggsave("圖1.png",
+       path = "./result_2019",
+       width = 15,
+       height = 15,
+       units = "cm")
 
 boxplot(Encounter_rate~Altitude_f, Alt.d,plot=F) #確認中位數
 #only 闊葉林

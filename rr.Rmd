@@ -1,25 +1,37 @@
 ---
-title: "Untitled"
+title: "架構說明"
 author: "Weiting Hsu"
-date: "2020/11/2"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(include = FALSE)
 ```
 
+### 運作架構
 
-```{r, include=FALSE}
-source("./script/0-Surveyer for Forestry.R", local = knitr::knit_global(), 
-       encoding = "UTF-8")
-```
+1.  樣區樣點
+2.  獼猴紀錄
+3.  森林與海拔
+4.  資料繪圖
 
-```{r}
-List_surveyor %>% 
-  select(Name) %>% 
-  unique %>% 
-  .$Name %>% 
-  sort(.)
-```
+### 細節
 
+#### 1. 樣區樣點
+
+-   確認最今年的樣區樣點，並完成樣區樣點的Debug 。
+
+-   如果要分析時BBS資料(小柯那邊)尚未檢核完成，先用名剛整理的當年度樣區" **BBS Taiwan調查樣區──認養一覽表及回收明細** "，來當作最新年度的樣區。
+
+-   樣點編號沒變者，表示 *樣點座標微調可忽略不看* ，安心服用最新的樣點座標。
+
+-   BBS舊年份的資料沒有 *新的回傳資料的話* ，只有處理新的一年的資料就好，就之前年份的樣區資料沿用。
+
+#### 2. 獼猴紀錄
+
+-   基本上就是用名剛每年整理出來的獼猴資料 **樣區內獼猴調查** 。
+
+#### 3. 森林與海拔
+
+-   只需幫新樣點添加森林類型及海拔高度的資料。
