@@ -16,7 +16,8 @@ s <- stack(imported_raster)
 
 
 
-S.all<- read_xlsx( "./data/clean/forest_combind_data_V1.xlsx") %>% 
+S.all<- read_xlsx( "./data/clean/forest_combind_data_V2.xlsx") %>% 
+  filter(! is.na(Month)| ! is.na(Day)| ! is.na(Hour)| ! is.na(Minute)) %>% 
   add_column(NO = 1:nrow(.))
 
 S.all %>%  #確認每一旅次內的每一個樣點資料只有1筆
@@ -46,4 +47,4 @@ S.all <-
   left_join(pp, by = c("NO")) %>% 
   dplyr::select(-"NO")
 
-write_xlsx(S.all, "./data/clean/full_combind_data_V1.xlsx")
+write_xlsx(S.all, "./data/clean/full_combind_data_V2.xlsx")

@@ -29,7 +29,7 @@ st.all<-
   st_as_sf(., coords = c("X", "Y"), crs = 4326) %>% 
   st_transform(., 3826)
 
-st.all %<>% add_column(TypeName = NA) %>% add_column(distance = NA) 
+st.all %<>% add_column(TypeName = NA) %>% add_column(Distance = NA) 
 
 #----------------
 #read forest spatial data, merge polgons by TypeName, area by TypeName
@@ -37,7 +37,7 @@ st.all %<>% add_column(TypeName = NA) %>% add_column(distance = NA)
 path <- "D:/R/test/第四次森林資源調查全島森林林型分布圖"
 
 nc <- st_read(paste0(path,"/","全島森林林型分布圖.shp"),
-              crs="+init=epsg:3826") %>% 
+              crs=3826) %>% 
   arrange(TypeName, st_geometry_type(geometry), FunctionTy,Function)
 
 nc.a<-
@@ -70,7 +70,7 @@ nc.b <-
 #calculate distance
 
 Sys.time()
-st.dis2<- st_distance(st.all,nc.b)  #3619筆耗時約50分鐘
+st.dis2<- st_distance(st.all,nc.b)  
 Sys.time()
 
 TypeName <- apply(st.dis2,1,which.min) %>% nc.b$TypeName[.] %>% as.character
@@ -89,7 +89,7 @@ st.all %>%
   select(-NO)
 
 
-M.all <- read_excel("./data/clean/Macaca/Macaca_1519_v2.xlsx", col_types = "text") %>% 
+M.all <- read_excel("./data/clean/Macaca/Macaca_1520_v1.xlsx", col_types = "text") %>% 
   setDT %>% 
   .[, Year := as.character(Year)]
 
@@ -101,4 +101,4 @@ M.data<- M.all %>%
   .[, Y := as.numeric(Y)]
 
 
-write_xlsx(M.data, "./data/clean/forest_combind_data_V1.xlsx")
+write_xlsx(M.data, "./data/clean/forest_combind_data_V2.xlsx")
