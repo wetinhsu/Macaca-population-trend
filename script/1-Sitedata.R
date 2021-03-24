@@ -70,6 +70,7 @@ S20 <-
       #.[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
       .[!(時段 %in% "Supplementary"),] %>%
       .[調查旅次編號 %in% c("1","2")] %>%
+      .[!鳥種 %in% c("無法調查")] %>%
       #.[ 分析 %in% "Y",] %>% 
       .[,list(年, 樣區編號, 樣點編號, 調查旅次編號, 月, 日, `開始時間（時）`, `開始時間（分）`)] %>%
       setnames(., c("Year", "Site_N", "Point",  "Survey", "Month", "Day", "Hour", "Minute")) %>%
@@ -118,7 +119,6 @@ S19 <-
     list.files(x, pattern = "BBSdata_", full.names = T) %>%  
       read_xlsx(., sheet = "birddata", cell_cols("A:AF"), col_types ="text") %>% 
       setDT %>%
-      #.[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
       .[!(時段 %in% "Supplementary"),] %>%
       .[調查旅次編號 %in% c("1","2")] %>%
       .[! 分析 %in% "N",] %>% 
@@ -172,6 +172,7 @@ S18<-
       setDT %>%
       .[!(時段 %in% "Supplementary"),] %>%
       .[調查旅次編號 %in% c("1","2")] %>%
+      .[!鳥種 %in% c("無法調查")] %>%
       #.[ 分析 %in% "Y",] %>%
       .[, list(年, 樣區編號, 樣點編號, 調查旅次編號, 月, 日, `開始時間（時）`, `開始時間（分）`)] %>%
       setnames(., c("Year", "Site_N", "Point",  "Survey", "Month", "Day", "Hour", "Minute")) %>%

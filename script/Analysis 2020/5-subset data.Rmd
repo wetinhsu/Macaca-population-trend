@@ -1,6 +1,6 @@
 ---
 title: "CH5_Data Filter"
-author: "徐瑋婷"
+author: "Weiting Hsu"
 date: "2021/3/20"
 output:
   html_document: default
@@ -8,7 +8,6 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(data.table)
 library(tidyverse)
 library(readxl)
 library(tidyr)
@@ -27,7 +26,7 @@ here::here()
 
 ```{r}
 M.data <- read_excel(here("./data/clean/full_combind_data_V2.xlsx") ) %>% 
-  mutate(Macaca_sur = ifelse(Macaca_dist %in% "C" , NA, Macaca_sur)) 
+  mutate(Macaca_sur = ifelse(Macaca_sur %in% 1 & Macaca_dist %in% "C" , NA, Macaca_sur)) 
 
 ```
 
@@ -156,10 +155,10 @@ M.data.1 <-
 M.data.1 %>%
   mutate(DATE = paste(Year, Month, Day, sep = "-") %>% as.Date()) %>% 
   mutate(TypeName.1 = case_when(
-    TypeName %like% "混"         ~ "混淆林",
-    TypeName %like% "闊葉樹林型" ~ "闊葉林",
-    TypeName %like% "竹林"       ~ "竹林",
-    TypeName %like% "針葉樹林型" ~ "針葉林",
+    TypeName %in% grep("混",.$TypeName , fixed = T, value = T)  ~ "混淆林",
+    TypeName %in% "闊葉樹林型" ~ "闊葉林",
+    TypeName %in% "竹林"       ~ "竹林",
+    TypeName %in% "針葉樹林型" ~ "針葉林",
   )) %>% 
   mutate(TypeName.1 = ifelse(Distance>20, "非森林", TypeName.1)) %>% 
   mutate(TypeName.1 = ordered(TypeName.1, c("闊葉林",
@@ -191,14 +190,9 @@ M.data.2 <-
 ```
 
 
-```{r}
-
-M.data.2 %>%
-  filter(analysis %in% "Y") %>%  #看一下誰被刪掉
-  anti_join(M.data.1,.) 
 
 
-```
+
 
 ```{r eval=FALSE, include=FALSE}
 write_xlsx(M.data.2, here("./data/clean/for analysis_V2.xlsx"))

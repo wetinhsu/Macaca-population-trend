@@ -2,23 +2,27 @@
 title: "CH6_Data Plot"
 author: "Weiting Hsu"
 date: "2021/3/22"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+  fig.width = 6,
+ fig.asp = 1,
+  echo = TRUE)
 library(data.table)
 library(tidyverse)
 library(readxl)
 library(tidyr)
 library(writexl)
-library(sf)
 library(here)
 library(kableExtra)
 
+
 here::here() 
 ```
-
 
 ```{r}
 #Original data---- 
@@ -41,11 +45,73 @@ M.data <- read_excel(here("./data/clean/for analysis_V2.xlsx"),
 ```
 
 
+### 原始資料
+
+#### 調查日3/1~6/30間、包含非森林、包含50m以下
+
+猴群數量
+
 ```{r}
-M.data %>% .[analysis %in% "Y",] %>% 
-  .[!(TypeName.1 %in% "非森林"),] %>%.[Macaca_sur %in%1,] %>% .[, .N]
+(output.4<- M.data %>%  
+    .[Macaca_sur %in% 1,] %>%
+    .[,.(ll=length(Macaca_sur),
+         mm=length(unique(Site_N)),
+         kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
+    dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))%>% 
+  kable(., format= "html") 
+
 ```
 
+孤猴數量
+
+```{r}
+(output.5<- M.data %>%   
+    .[analysis %in% "Y",] %>% 
+    .[Macaca_sur %in% 0 & !is.na(Macaca_dist),] %>% 
+    .[,.(ll=length(Macaca_sur),
+         mm=length(unique(Site_N)),
+         kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
+    dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))%>% 
+  kable(full_width = F)
+```
+
+----------
+#### 調查日3/1~6/30間、**不包含**非森林、**不包含**50m以下
+猴群數量 = **分析用**
+
+```{r}
+(output.4.1<- M.data %>%  
+    .[analysis %in% "Y",] %>% 
+    .[Macaca_sur %in% 1,] %>%
+    .[!(TypeName.1 %in% "非森林"),] %>% 
+    .[,.(ll=length(Macaca_sur),
+         mm=length(unique(Site_N)),
+         kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
+    dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))
+```
+
+孤猴數量
+
+```{r}
+(output.5.1<- M.data %>%   
+    .[analysis %in% "Y",] %>% 
+    .[Macaca_sur %in% 0 & !is.na(Macaca_dist),] %>% 
+    .[!(TypeName.1 %in% "非森林"),] %>% 
+    .[,.(ll=length(Macaca_sur),
+         mm=length(unique(Site_N)),
+         kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
+    dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))
+```
+------
+
+
+```{r}
+M.data %>% 
+  .[analysis %in% "Y",] %>% 
+  .[!(TypeName.1 %in% "非森林"),] %>%
+  .[Macaca_sur %in%1,] %>%
+  .[, .N]
+```
 
 ```{r}
 (output.1<- M.data %>% 
@@ -55,69 +121,49 @@ M.data %>% .[analysis %in% "Y",] %>%
    .[, .(N = .N, m = sum(Macaca_sur)), by = list(TypeName.1,TypeName)])
 ```
 
-
-```{r}
-output.2<- 
+```{r message=FALSE}
+E_rate_Region<- 
     M.data %>% setDT %>%  
-    .[analysis %in% "Y",] %>% 
-    .[,.(N=.N, 
-         m = sum(Macaca_sur,na.rm=T),
-         E = sum(Macaca_sur,na.rm=T)/.N),
-      by = list(Year, Survey, Region2)]%>%
-    .[, m:= as.numeric(m)] %>% 
-    .[, N:= as.numeric(N)] %>% 
-    .[, E:= as.numeric(E)] %>% 
-    melt(id.vars = c("Year" ,"Survey" ,"Region2")) %>% 
-    dcast(., Region2+ variable ~ Year + Survey, value.var = c("value")) 
+    filter(analysis %in% "Y") %>% 
+#  filter(!Year %in% 2020) %>% 
+  mutate(Y_S = paste0(Year, "_", Survey)) %>% 
   
-output.2 %>% kable
+  group_by(Y_S, Region2) %>% 
+  summarise(
+    N= n(),
+    m = sum(Macaca_sur,na.rm=T)
+    ) %>% 
+    bind_rows(group_by(.,Y_S) %>%  #增加total的部分
+                summarise(N=sum(N), m = sum(m)) %>%
+                mutate(Region2='TW')) %>% 
+    mutate(E = (m/N) %>% round(.,3)) %>%
+    ungroup()
+
+#
+
+E_rate_Region%>% 
+  reshape2::melt(id.vars = c("Y_S" ,"Region2")) %>% 
+  mutate(Region2 = ordered(Region2, c("North", "Center","Southwest",
+                           "South", "Hualien","Taitung", "TW"))) %>% 
+  
+  bind_rows(group_by(.,Region2, variable) %>%  #增加total的Mean部分
+                summarise(value=mean(value)%>% round(.,3))%>%
+                mutate(Y_S='Mean') ) %>% 
+    bind_rows(filter(., !Y_S %in%'Mean') %>%
+                group_by(Region2, variable) %>%  #增加total的SE部分
+                summarise(value=(sd(value)/sqrt(n()))%>% round(.,3)) %>%
+                mutate(Y_S='SE') ) %>% 
+  
+    reshape2::dcast( Region2+ variable ~ Y_S,
+                     value.var = c("value"))%>% 
+  kable( "html")%>%
+  kable_styling("striped",  full_width = F)
+
+
+
 ```
 
-
 ```{r}
-(output.4<- M.data %>%  
-    .[analysis %in% "Y",] %>% 
-    .[Macaca_sur %in% 1,] %>%
-    .[,.(ll=length(Macaca_sur),
-         mm=length(unique(Site_N)),
-         kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
-    dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))
-
-
-
-(output.5<- M.data %>%   
-    .[analysis %in% "Y",] %>% 
-    .[Macaca_sur %in% 0 & !is.na(Macaca_dist),] %>% 
-    .[,.(ll=length(Macaca_sur),
-         mm=length(unique(Site_N)),
-         kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
-    dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))
-
-
-(output.4.1<- M.data %>%  
-    .[analysis %in% "Y",] %>% 
-    .[Macaca_sur %in% 1,] %>%
-    .[!(TypeName.1 %in% "非森林"),] %>% 
-    .[,.(ll=length(Macaca_sur),
-         mm=length(unique(Site_N)),
-         kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
-    dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))
-
-
-
-(output.5.1<- M.data %>%   
-    .[analysis %in% "Y",] %>% 
-    .[Macaca_sur %in% 0 & !is.na(Macaca_dist),] %>% 
-    .[!(TypeName.1 %in% "非森林"),] %>% 
-    .[,.(ll=length(Macaca_sur),
-         mm=length(unique(Site_N)),
-         kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
-    dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))
-
-
-
-
-
 (output.6<- M.data %>%    
     .[TypeName.1 %in% "非森林", analysis := "Z"] %>% 
     .[,.(N=.N,
@@ -130,14 +176,17 @@ output.2 %>% kable
     melt(id.vars = c("Year" ,"Survey" ,"TypeName.1", "analysis")) %>% 
     dcast(., analysis+TypeName.1+ variable ~ Year + Survey, value.var = c("value")) 
 )
+```
 
-
+```{r}
 (output.7<- M.data %>% 
     #.[!(TypeName.1 %in% "非森林"),] %>% 
     .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
     .[Macaca_sur %in% 1, .N, list(TypeName.1, Macaca_dist)] %>% 
     dcast(., TypeName.1~Macaca_dist, value.var = "N"))
+```
 
+```{r}
 (output.8<-M.data %>% 
     .[analysis %in% "Y",] %>% 
     .[!(TypeName.1 %in% "非森林"),] %>% 
@@ -155,8 +204,10 @@ output.2 %>% kable
           Encounter_rate = mean(Encounter_rate),
           Se = sd(Encounter_rate)/sqrt(length(Encounter_rate))), by= list(Year)]
 )
+```
 
-output.9<-
+```{r}
+(output.9<-
   M.data %>% setDT %>%   
   .[analysis %in% "Y",] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>%
@@ -168,8 +219,10 @@ output.9<-
   .[, N:= as.numeric(N)] %>% 
   .[, E:= as.numeric(E)] %>% 
   melt(id.vars = c("Year" ,"Survey" ,"County")) %>% 
-  dcast(., County+ variable ~ Year + Survey, value.var = c("value")) 
+  dcast(., County+ variable ~ Year + Survey, value.var = c("value")))
+```
 
+```{r eval=FALSE, include=FALSE}
 write_xlsx(list(
   TypeName_point = output.1,
   Year_point= output.8,
@@ -186,7 +239,9 @@ write_xlsx(list(
   
 ),
 paste0("./result/tables_2019",format(Sys.Date(),"%y%m%d"),".xlsx"))
+```
 
+```{r eval=FALSE, include=FALSE}
 #know your data------------------------------------------
 M.data %>% .[, .N, by = list(Year, Survey)]
 M.data %>% dcast( County ~ Year + Survey, value.var = "Point", length)
@@ -194,10 +249,9 @@ M.data %>% dcast( TypeName.1 + TypeName ~ Year + Survey, value.var = "Point", le
 M.data %>% .[, Altitude_c := cut(Altitude, breaks=seq(0,4000,500), include.lowest = T)] %>%
   dcast( Altitude_c ~ Year + Survey, value.var = "Point", length) 
 M.data %>%  dcast( julian.D ~ Year + Survey, value.var = "Point", length) %>% View()
+```
 
-
-
-
+```{r}
 #------------------  
 M.data %>%
   filter(analysis %in% "Y") %>% 
@@ -208,7 +262,9 @@ M.data %>%
                           include.lowest = T)) %>% 
   group_by(Altitude_f) %>% 
   summarise(N = n())
+```
 
+```{r}
 #--------------------------
 
 M.data %>% 
@@ -248,9 +304,9 @@ M.data %>%
     panel.grid = element_blank(),
     plot.margin = margin(30,30,20,20)
   )
+```
 
-
-
+```{r}
 Alt.d <- 
   M.data %>% 
   .[analysis %in% "Y",] %>% 
@@ -295,6 +351,9 @@ ggplot(data = Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
     panel.grid = element_blank(),
     plot.margin = margin(30,30,20,20)
   )
+```
+
+```{r eval=FALSE, include=FALSE}
 ggsave("圖1.png",
        path = "./result_2019",
        width = 15,
@@ -303,8 +362,9 @@ ggsave("圖1.png",
 
 boxplot(Encounter_rate~Altitude_f, Alt.d,plot=F) #確認中位數
 #only 闊葉林
+```
 
-
+```{r}
 Alt.d.B <- 
   M.data %>% 
   .[analysis %in% "Y",] %>% 
@@ -341,16 +401,15 @@ ggplot(Alt.d.B, aes( x=Altitude_f, y = Encounter_rate)) +
     panel.grid = element_blank(),
     plot.margin = margin(30,30,20,20)
   )
+```
 
-
-
-
+```{r}
 Rgn.d <- 
   M.data %>% 
   .[analysis %in% "Y",] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
   .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
-  .[, Region2 := ordered(Region2, c("North","Center1", "Center2", "South","East1", "East2" ))] %>% 
+  .[, Region2 := ordered(Region2, c("North","Center", "Southwest", "South","Hualien", "Taitung" ))] %>% 
   .[, .(V1 = sum(Macaca_sur),.N), by= list(Year, Survey, Region2)] %>% 
   .[, Encounter_rate := V1/N] 
 
@@ -359,11 +418,11 @@ ggplot(Rgn.d, aes( Region2, Encounter_rate))+
                outlier.size = 3)+
   theme_bw()+
   scale_x_discrete("Region", labels = c("North" = "北部",
-                                        "Center1" = "中彰投",
-                                        "Center2" = "雲嘉南",
+                                        "Center" = "中彰投",
+                                        "Southwest" = "雲嘉南",
                                         "South" = "高屏",
-                                        "East1" = "花蓮",
-                                        "East2" = "台東"))+
+                                        "Hualien" = "花蓮",
+                                        "Taitung" = "台東"))+
   theme(
     text = element_text(family="serif"),
     aspect.ratio = 1,
@@ -379,11 +438,9 @@ ggplot(Rgn.d, aes( Region2, Encounter_rate))+
     panel.grid = element_blank(),
     plot.margin = margin(30,30,20,20)
   )
+```
 
-
-
-
-
+```{r}
 Jd.d <- 
   M.data %>% 
   .[analysis %in% "Y",] %>% 
@@ -422,10 +479,9 @@ ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
     panel.grid = element_blank(),
     plot.margin = margin(30,30,20,20)
   )
+```
 
-
-
-
+```{r}
 Type.d <- 
   M.data %>% 
   .[analysis %in% "Y",] %>% 
@@ -456,9 +512,9 @@ ggplot(Type.d, aes(TypeName.1, Encounter_rate))+
     panel.grid = element_blank(),
     plot.margin = margin(30,30,20,20)
   )
+```
 
-
-
+```{r}
 M.data %>%setDT %>% 
   .[Macaca_sur %in% 1,DD := cut(Distance, breaks = seq(0,100,10),
                                 ordered_result = T,
@@ -472,4 +528,3 @@ M.data %>%setDT %>%
   ylab("Count")
 
 ```
-
