@@ -13,16 +13,9 @@ library(readxl)
 
 #Original data---- 
 
-M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
+M.data <- read_excel("./data/clean/for analysis_V2.xlsx",
                      sheet=1) %>% setDT %>% 
-  #.[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
-  .[analysis %in% "Y",] %>% 
-  .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
-  .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
-  .[TypeName %like% "闊葉樹林型", TypeName.n := "broad-leaved"] %>% 
-  .[TypeName %like% "針葉樹林型", TypeName.n := "coniferous"] %>% 
-  .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)]  %>% 
-  
+
   .[, Year := as.numeric(Year)] %>% 
   .[, Survey := as.numeric(Survey)] %>% 
   .[, Point := as.numeric(Point)] %>% 
@@ -31,7 +24,6 @@ M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
   .[, Day := as.numeric(Day)] %>% 
   .[, Distance := as.numeric(Distance)] %>% 
   .[, julian.D := as.numeric(julian.D)] %>% 
-  .[, Region := as.factor(Region)] %>% 
   .[, TypeName.1 := as.factor(TypeName.1)] %>% 
   .[, Site_N := as.factor(Site_N)] %>% 
   .[, Region2 := as.factor(Region2)] 
@@ -64,14 +56,14 @@ county.area <- read.csv("./data/clean/gis/county area-2.csv", header = T) %>%
                      "新竹縣","苗栗縣"), Region2 := "North"] %>% 
   .[County %in% list("台中市","臺中市",
                      "台中縣","臺中縣",
-                     "彰化縣","南投縣","南投市"), Region2 := "Center1"] %>% 
+                     "彰化縣","南投縣","南投市"), Region2 := "Center"] %>% 
   .[County %in% list("雲林縣","嘉義縣","嘉義市",
                      "台南市","臺南市",
-                     "台南縣","臺南縣"), Region2 := "Center2"] %>%
+                     "台南縣","臺南縣"), Region2 := "Southwest"] %>%
   .[County %in% list("高雄縣","高雄市",
                      "屏東縣"), Region2 := "South"]%>%
-  .[County %in% list("花蓮縣"), Region2 := "East1"] %>%
-  .[County %in% list("台東縣","臺東縣"), Region2 := "East2"] %>% 
+  .[County %in% list("花蓮縣"), Region2 := "Hualien"] %>%
+  .[County %in% list("台東縣","臺東縣"), Region2 := "Taitung"] %>% 
   
   .[!is.na(Region2),] %>% 
   .[, .(area=sum(Area)), by = list(Region2)] %>% 

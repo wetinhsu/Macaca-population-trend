@@ -1,17 +1,14 @@
 ---
-title: "CH6_Data Plot"
-author: "Weiting Hsu"
-date: "2021/3/22"
+title: "SUMMARY of BBS"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
 output:
+  word_document: default
   html_document: default
-  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(
-  fig.width = 6,
- fig.asp = 1,
-  echo = TRUE)
+knitr::opts_chunk$set(fig.width = 6, fig.asp = 1, echo = TRUE)
+
 library(data.table)
 library(tidyverse)
 library(readxl)
@@ -24,7 +21,7 @@ library(kableExtra)
 here::here() 
 ```
 
-```{r}
+```{r include=FALSE}
 #Original data---- 
 
 M.data <- read_excel(here("./data/clean/for analysis_V2.xlsx"),
@@ -41,66 +38,112 @@ M.data <- read_excel(here("./data/clean/for analysis_V2.xlsx"),
   .[, Macaca_sur := as.numeric(Macaca_sur)] %>% 
   .[, Month := as.numeric(Month)] %>% 
   .[, Day := as.numeric(Day)] %>% 
-  .[, Distance := as.numeric(Distance)]
+  .[, Distance := as.numeric(Distance)] %>% 
+  .[, County := ordered(County,
+                        c("宜蘭縣","基隆市","臺北市",
+                          "新北市",
+                          "桃園縣","桃園市","新竹市",
+                          "新竹縣","苗栗縣",
+                          "臺中市","彰化縣",
+                          "南投縣","南投市",
+                          "雲林縣","嘉義縣","嘉義市",
+                          "臺南市","高雄市",
+                          "屏東縣", "花蓮縣",
+                          "台東縣","臺東縣"))] 
 ```
 
 
-### 原始資料
+### **原始資料**
 
-#### 調查日3/1~6/30間、包含非森林、包含50m以下
+#### **調查日3/1~6/30間、包含非森林、包含50m以下**
 
 猴群數量
 
-```{r}
-(output.4<- M.data %>%  
+```{r echo=FALSE, message=FALSE}
+output.4<- M.data %>%  
     .[Macaca_sur %in% 1,] %>%
+    .[!(TypeName.1 %in% "非森林"),] %>% 
     .[,.(ll=length(Macaca_sur),
          mm=length(unique(Site_N)),
          kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
-    dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))%>% 
-  kable(., format= "html") 
+    dcast(.,County ~ Year , value.var = c( "ll","mm","kk"), fill = 0L)
+
+
+  kbl(output.4, align = "c",
+      col.names = gsub("ll_|mm_|kk_", " ", names(output.4))) %>%
+  kable_classic(full_width = F, html_font = "TheTimesRoman")%>%
+  add_header_above(c(" " = 1,
+                     "筆數" = 6,
+                     "樣區數" = 6,
+                     "樣點數" = 6))
+  
 
 ```
 
 孤猴數量
 
-```{r}
-(output.5<- M.data %>%   
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+output.5<- M.data %>%   
     .[analysis %in% "Y",] %>% 
     .[Macaca_sur %in% 0 & !is.na(Macaca_dist),] %>% 
     .[,.(ll=length(Macaca_sur),
          mm=length(unique(Site_N)),
          kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
-    dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))%>% 
-  kable(full_width = F)
+    dcast(.,County ~ Year , value.var = c( "ll","mm","kk"), fill = 0L) 
+  
+  
+  kable(output.5,
+      col.names = gsub("ll_|mm_|kk_", " ", names(output.5)))%>%
+  kable_classic(full_width = F, html_font = "TheTimesRoman")%>%
+  add_header_above(c(" " = 1,
+                     "筆數" = 6,
+                     "樣區數" = 6,
+                     "樣點數" = 6))
 ```
 
 ----------
-#### 調查日3/1~6/30間、**不包含**非森林、**不包含**50m以下
-猴群數量 = **分析用**
+### **分析用** 
+#### **調查日3/1~6/30間、"不"包含非森林、"不"包含50m以下**
+猴群數量 
 
-```{r}
-(output.4.1<- M.data %>%  
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+output.4.1<- M.data %>%  
     .[analysis %in% "Y",] %>% 
     .[Macaca_sur %in% 1,] %>%
     .[!(TypeName.1 %in% "非森林"),] %>% 
     .[,.(ll=length(Macaca_sur),
          mm=length(unique(Site_N)),
          kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
-    dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))
+    dcast(.,County ~ Year , value.var = c( "ll","mm","kk"), fill = 0L)
+
+  kable(output.4.1,
+      col.names = gsub("ll_|mm_|kk_", " ", names(output.4.1)))%>%
+  kable_classic(full_width = F, html_font = "TheTimesRoman")%>%
+  add_header_above(c(" " = 1,
+                     "筆數" = 6,
+                     "樣區數" = 6,
+                     "樣點數" = 6))
 ```
 
 孤猴數量
 
-```{r}
-(output.5.1<- M.data %>%   
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+output.5.1<- M.data %>%   
     .[analysis %in% "Y",] %>% 
     .[Macaca_sur %in% 0 & !is.na(Macaca_dist),] %>% 
     .[!(TypeName.1 %in% "非森林"),] %>% 
     .[,.(ll=length(Macaca_sur),
          mm=length(unique(Site_N)),
          kk=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
-    dcast(.,County ~ Year , value.var = c( "ll","mm","kk")))
+    dcast(.,County ~ Year , value.var = c( "ll","mm","kk"), fill = 0L)
+
+  kable(output.5.1,
+      col.names = gsub("ll_|mm_|kk_", " ", names(output.5.1)))%>%
+  kable_classic(full_width = F, html_font = "TheTimesRoman")%>%
+  add_header_above(c(" " = 1,
+                     "筆數" = 6,
+                     "樣區數" = 6,
+                     "樣點數" = 6))
 ```
 ------
 
@@ -110,18 +153,22 @@ M.data %>%
   .[analysis %in% "Y",] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>%
   .[Macaca_sur %in%1,] %>%
-  .[, .N]
+  .[, .N] 
 ```
 
 ```{r}
 (output.1<- M.data %>% 
    .[analysis %in% "Y",] %>% 
-   .[!(TypeName.1 %in% "非森林"),] %>% 
+   .[ ,TypeName:= ifelse(TypeName %in% "針闊葉樹混",
+                        "針闊葉樹混淆",
+                        TypeName)] %>% 
    .[is.na(Macaca_sur), Macaca_sur := 0] %>%
-   .[, .(N = .N, m = sum(Macaca_sur)), by = list(TypeName.1,TypeName)])
+   .[, .(N = .N, m = sum(Macaca_sur)), by = list(TypeName.1,TypeName)])%>% 
+  kbl() %>% 
+  kable_classic(full_width = F, html_font = "TheTimesRoman")
 ```
 
-```{r message=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 E_rate_Region<- 
     M.data %>% setDT %>%  
     filter(analysis %in% "Y") %>% 
@@ -140,7 +187,7 @@ E_rate_Region<-
     ungroup()
 
 #
-
+tl_E_rate_Region <- 
 E_rate_Region%>% 
   reshape2::melt(id.vars = c("Y_S" ,"Region2")) %>% 
   mutate(Region2 = ordered(Region2, c("North", "Center","Southwest",
@@ -155,27 +202,59 @@ E_rate_Region%>%
                 mutate(Y_S='SE') ) %>% 
   
     reshape2::dcast( Region2+ variable ~ Y_S,
-                     value.var = c("value"))%>% 
-  kable( "html")%>%
-  kable_styling("striped",  full_width = F)
+                     value.var = c("value"))
 
+  kable(tl_E_rate_Region) %>%
+  column_spec(1, bold = T) %>%
+  collapse_rows(columns = 1, valign = "top")%>%
+  kable_classic(full_width = F, html_font = "TheTimesRoman")
 
 
 ```
 
-```{r}
-(output.6<- M.data %>%    
-    .[TypeName.1 %in% "非森林", analysis := "Z"] %>% 
-    .[,.(N=.N,
-         m = sum(Macaca_sur,na.rm=T),
-         E = sum(Macaca_sur,na.rm=T)/.N),
-      by = list(Year, Survey, TypeName.1, analysis)]%>%
-    .[, m:= as.numeric(m)] %>% 
-    .[, N:= as.numeric(N)] %>% 
-    .[, E:= as.numeric(E)] %>% 
-    melt(id.vars = c("Year" ,"Survey" ,"TypeName.1", "analysis")) %>% 
-    dcast(., analysis+TypeName.1+ variable ~ Year + Survey, value.var = c("value")) 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+tmp.forest <- 
+M.data %>%  #非森林的小計
+  filter(TypeName.1 %in%　"非森林") %>% 
+  group_by(Year, Survey, TypeName.1) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm = T)) 
+
+tmp.alt <- 
+M.data %>%  #<50m & >=50m 分別森林的小計
+  filter(!TypeName.1 %in%　"非森林") %>%
+  mutate(TypeName.1 = ifelse(Altitude<50, "less50","Forest")) %>%
+  group_by(Year, Survey, TypeName.1) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm = T)) 
+
+(E_rate_Forest<-
+M.data %>% 
+  group_by(analysis, Year, Survey, TypeName.1) %>%
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm = T)) %>%  
+  bind_rows(group_by(.,Year, Survey) %>% #增加total的部分，total的資料包含非森林及<50m
+              summarise(N=sum(N), m = sum(m, na.rm = T)) %>%
+              mutate(TypeName.1='Total', analysis ="Y")) %>% 
+  filter(analysis =="Y") %>%   #移除 非森林及<50m
+  select(-analysis)%>% 
+  
+  bind_rows(., tmp.alt, tmp.forest) %>%  #增加是先算好 森林、非森林、<50的小計
+  
+  mutate(E = m/N) %>%
+  ungroup() %>%
+  
+  group_by( TypeName.1) %>%
+  summarise(Mean_N = mean(N),
+            Se_N = sd(N)/sqrt(n()),
+            Mean_m = mean(m),
+            Se_m = sd(m)/sqrt(n()),
+            Mean_E = mean(E),
+            Se_E = sd(E)/sqrt(n())) 
 )
+
+
 ```
 
 ```{r}
@@ -206,7 +285,7 @@ E_rate_Region%>%
 )
 ```
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 (output.9<-
   M.data %>% setDT %>%   
   .[analysis %in% "Y",] %>% 
@@ -251,11 +330,10 @@ M.data %>% .[, Altitude_c := cut(Altitude, breaks=seq(0,4000,500), include.lowes
 M.data %>%  dcast( julian.D ~ Year + Survey, value.var = "Point", length) %>% View()
 ```
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 #------------------  
 M.data %>%
   filter(analysis %in% "Y") %>% 
-  filter(!TypeName.1 %in% "非森林") %>% 
   mutate(Altitude_f = cut(Altitude,
                           breaks = c(seq(0,4000,500)),
                           labels = c(seq(250,3750,500)),
@@ -264,7 +342,7 @@ M.data %>%
   summarise(N = n())
 ```
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 #--------------------------
 
 M.data %>% 
@@ -305,8 +383,38 @@ M.data %>%
     plot.margin = margin(30,30,20,20)
   )
 ```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-```{r}
+M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  group_by(Year, Survey) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm=T),
+            Encounter_rate = m/N) %>% 
+  ggplot(., aes(x = Year, y = Encounter_rate, group = Year))+
+  geom_boxplot(width = 0.3, fill= gray(.9))+
+  theme_classic() + 
+  scale_y_continuous(limits = c(0,0.03),expand = c(0, 0.002, 0, 0))+
+  labs(x = "Year", y = "Encounter rate (troop/point)" )+
+  theme(
+    text = element_text(family="serif"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+
+```
+
+```{r echo=FALSE}
 Alt.d <- 
   M.data %>% 
   .[analysis %in% "Y",] %>% 
@@ -361,10 +469,11 @@ ggsave("圖1.png",
        units = "cm")
 
 boxplot(Encounter_rate~Altitude_f, Alt.d,plot=F) #確認中位數
-#only 闊葉林
+
 ```
 
-```{r}
+```{r echo=FALSE}
+#only 闊葉林
 Alt.d.B <- 
   M.data %>% 
   .[analysis %in% "Y",] %>% 
@@ -403,7 +512,7 @@ ggplot(Alt.d.B, aes( x=Altitude_f, y = Encounter_rate)) +
   )
 ```
 
-```{r}
+```{r echo=FALSE}
 Rgn.d <- 
   M.data %>% 
   .[analysis %in% "Y",] %>% 
@@ -417,12 +526,12 @@ ggplot(Rgn.d, aes( Region2, Encounter_rate))+
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
                outlier.size = 3)+
   theme_bw()+
-  scale_x_discrete("Region", labels = c("North" = "北部",
-                                        "Center" = "中彰投",
-                                        "Southwest" = "雲嘉南",
-                                        "South" = "高屏",
-                                        "Hualien" = "花蓮",
-                                        "Taitung" = "台東"))+
+  scale_x_discrete("Region", labels = c("North" = "N",
+                                        "Center" = "C",
+                                        "Southwest" = "SW",
+                                        "South" = "S",
+                                        "Hualien" = "H",
+                                        "Taitung" = "T"))+
   theme(
     text = element_text(family="serif"),
     aspect.ratio = 1,
@@ -440,7 +549,7 @@ ggplot(Rgn.d, aes( Region2, Encounter_rate))+
   )
 ```
 
-```{r}
+```{r echo=FALSE}
 Jd.d <- 
   M.data %>% 
   .[analysis %in% "Y",] %>% 
@@ -481,7 +590,7 @@ ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
   )
 ```
 
-```{r}
+```{r echo=FALSE}
 Type.d <- 
   M.data %>% 
   .[analysis %in% "Y",] %>% 
@@ -514,7 +623,7 @@ ggplot(Type.d, aes(TypeName.1, Encounter_rate))+
   )
 ```
 
-```{r}
+```{r echo=FALSE}
 M.data %>%setDT %>% 
   .[Macaca_sur %in% 1,DD := cut(Distance, breaks = seq(0,100,10),
                                 ordered_result = T,

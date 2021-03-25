@@ -11,15 +11,16 @@ library(MuMIn)
 #------------------------------------------------
 #Original data---- 
 
-M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
+M.data <- read_excel("./data/clean/for analysis_V2.xlsx",
                      sheet=1) %>% setDT %>% 
   .[analysis %in% "Y",] %>% 
   
-  .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
-  .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
-  .[TypeName %like% "闊葉樹林型", TypeName.n := "broad-leaved"] %>% 
-  .[TypeName %like% "針葉樹林型", TypeName.n := "coniferous"] %>% 
-  .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)] %>% 
+  .[TypeName.1 %like% "混淆林", TypeName.1 := "mixed"] %>% 
+  .[TypeName.1 %like% "竹林", TypeName.1 := "Bamboo"] %>% 
+  .[TypeName.1 %like% "闊葉林", TypeName.1 := "broad-leaved"] %>% 
+  .[TypeName.1 %like% "針葉林", TypeName.1 := "coniferous"] %>% 
+  .[TypeName.1 %like% "非森林", TypeName.1 := "Not forest"] %>% 
+
   
   .[, Year := as.numeric(Year)] %>% 
   .[, Survey := as.numeric(Survey)] %>% 
@@ -29,7 +30,6 @@ M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
   .[, Day := as.numeric(Day)] %>% 
   .[, Distance := as.numeric(Distance)] %>% 
   .[, julian.D := as.numeric(julian.D)] %>% 
-  .[, Region := as.factor(Region)] %>% 
   .[, TypeName.1 := as.factor(TypeName.1)] %>% 
   .[, Site_N := as.factor(Site_N)] %>% 
   .[, Region2 := as.factor(Region2)] 
@@ -45,10 +45,7 @@ M.data <- M.data %>%
 
 #==============================================
 df <- 
-  M.data %>% 
-  #.[Year < 2019,] %>%
-  .[!(TypeName.1 %in% "Not forest"), ] %>% 
-  .[Macaca_dist %in% "c", Macaca_sur :=0]
+  M.data 
 
 #-------------------------------------------
 
@@ -71,11 +68,7 @@ summary(m1)
 
 #AICc==============================================
 options(na.action = "na.fail")
-d1<- dredge(
-  glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude.1 + julian.D.1 +  Region2 + (1|Site_N), 
-        family = binomial, data = df,
-        control = glmerControl(optimizer = "bobyqa")), 
-  trace = T)
+d1<- dredge(m1, trace = T)
 
 summary(model.avg(d1))
 summary(model.avg(d1, subset = delta < 2))
@@ -103,6 +96,20 @@ summary(glht(m2, linfct = c("Year.re = 0",
                             "julian.D.1 = 0"))) 
 par(mai=c(1,1.5,1,1))
 glht(m2, linfct = mcp(Region2 = "Tukey")) %>% plot
+
+
+#-----
+ND <- 
+df %>% 
+  dplyr::select(Year.re, Region2, julian.D.1, Year, julian.D, Site_N, Altitude.1, Altitude) 
+
+ND$pred= predict(m2, ND,re.form=NA,
+               type="response")
+
+ND %>% 
+  dplyr::group_by(Year) %>% 
+  dplyr::summarise(Mean = mean(pred)) %>% 
+  plot(Mean ~ Year,data = ., type = "o", pch=16, ylim = c(0, 0.01))
 
 
 
