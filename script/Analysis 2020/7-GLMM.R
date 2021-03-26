@@ -108,8 +108,16 @@ ND$pred= predict(m2, ND,re.form=NA,
 
 ND %>% 
   dplyr::group_by(Year) %>% 
-  dplyr::summarise(Mean = mean(pred)) %>% 
-  plot(Mean ~ Year,data = ., type = "o", pch=16, ylim = c(0, 0.01))
+  dplyr::summarise(Mean = mean(pred), 
+                   DL = quantile(pred,0.025),
+                   UL = quantile(pred,0.975)) %>% 
+  ggplot(., aes(x= Year, y = Mean))+
+  geom_ribbon(aes(ymin = DL, ymax = UL), fill = "grey80")+
+  geom_point()+
+  geom_line(lty = 1)+
+  theme_bw()
+  
+
 
 
 

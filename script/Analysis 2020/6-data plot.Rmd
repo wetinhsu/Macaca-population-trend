@@ -2,7 +2,6 @@
 title: "SUMMARY of BBS"
 date: "`r format(Sys.time(), '%Y-%m-%d')`"
 output:
-  word_document: default
   html_document: default
 ---
 
@@ -157,15 +156,15 @@ M.data %>%
 ```
 
 ```{r}
-(output.1<- M.data %>% 
+output.1<- M.data %>% 
    .[analysis %in% "Y",] %>% 
    .[ ,TypeName:= ifelse(TypeName %in% "針闊葉樹混",
                         "針闊葉樹混淆",
                         TypeName)] %>% 
    .[is.na(Macaca_sur), Macaca_sur := 0] %>%
-   .[, .(N = .N, m = sum(Macaca_sur)), by = list(TypeName.1,TypeName)])%>% 
-  kbl() %>% 
-  kable_classic(full_width = F, html_font = "TheTimesRoman")
+   .[, .(N = .N, m = sum(Macaca_sur)), by = list(TypeName.1,TypeName)]
+
+
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -229,7 +228,7 @@ M.data %>%  #<50m & >=50m 分別森林的小計
   summarise(N = n(),
             m = sum(Macaca_sur, na.rm = T)) 
 
-(E_rate_Forest<-
+E_rate_Forest<-
 M.data %>% 
   group_by(analysis, Year, Survey, TypeName.1) %>%
   summarise(N = n(),
@@ -251,22 +250,30 @@ M.data %>%
             Mean_m = mean(m),
             Se_m = sd(m)/sqrt(n()),
             Mean_E = mean(E),
-            Se_E = sd(E)/sqrt(n())) 
-)
+            Se_E = sd(E)/sqrt(n())) %>% 
+    ungroup() 
 
+
+     kable(E_rate_Forest) %>%
+  kable_classic(full_width = F, html_font = "TheTimesRoman")
 
 ```
 
-```{r}
-(output.7<- M.data %>% 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+output.7<- M.data %>% 
     #.[!(TypeName.1 %in% "非森林"),] %>% 
     .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
     .[Macaca_sur %in% 1, .N, list(TypeName.1, Macaca_dist)] %>% 
-    dcast(., TypeName.1~Macaca_dist, value.var = "N"))
+    dcast(., TypeName.1~Macaca_dist, value.var = "N")
+
+kbl(output.7, align = "c", 
+        caption = "各森林類型、距離段、猴群數") %>%
+kable_classic(full_width = T, html_font = "TheTimesRoman")
 ```
 
-```{r}
-(output.8<-M.data %>% 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+output.8<-M.data %>% 
     .[analysis %in% "Y",] %>% 
     .[!(TypeName.1 %in% "非森林"),] %>% 
     .[is.na(Macaca_sur), Macaca_sur := 0] %>%
@@ -280,16 +287,24 @@ M.data %>%
           Mean.N = mean(N),
           Se.N = sd(N)/sqrt(length(N)),
           
-          Encounter_rate = mean(Encounter_rate),
-          Se = sd(Encounter_rate)/sqrt(length(Encounter_rate))), by= list(Year)]
-)
+          Mean.E = mean(Encounter_rate) %>% round(.,4),
+          Se.E = (sd(Encounter_rate)/sqrt(length(Encounter_rate)))%>% round(.,4)), by= list(Year)]
+
+
+  kable(output.8, align = "c",
+        caption = "每年的猴群數、樣點數及相對密度",
+      col.names = gsub("\\.m|\\.N|\\.E", " ", names(output.8)))%>%
+  kable_classic(full_width = F, html_font = "TheTimesRoman")%>%
+  add_header_above(c(" " = 1,
+                     "猴群數" = 3,
+                     "樣點數" = 3,
+                     "Encounter_rate" = 2))
 ```
 
 ```{r eval=FALSE, include=FALSE}
-(output.9<-
+output.9<-
   M.data %>% setDT %>%   
   .[analysis %in% "Y",] %>% 
-  .[!(TypeName.1 %in% "非森林"),] %>%
   .[,.(N=.N,
        m = sum(Macaca_sur,na.rm=T),
        E = sum(Macaca_sur,na.rm=T)/.N),
@@ -298,14 +313,17 @@ M.data %>%
   .[, N:= as.numeric(N)] %>% 
   .[, E:= as.numeric(E)] %>% 
   melt(id.vars = c("Year" ,"Survey" ,"County")) %>% 
-  dcast(., County+ variable ~ Year + Survey, value.var = c("value")))
+  dcast(., County+ variable ~ Year + Survey, value.var = c("value"))
+
+kable(output.9, align = "c") %>% 
+  kable_classic(full_width = F, html_font = "TheTimesRoman") 
 ```
 
 ```{r eval=FALSE, include=FALSE}
-write_xlsx(list(
+list(
   TypeName_point = output.1,
   Year_point= output.8,
-  Region_point= output.2,
+  Region_point= tl_E_rate_Region,
   County_point= output.9,
   
   group_County = output.4,
@@ -313,11 +331,10 @@ write_xlsx(list(
   group_County_only_forest = output.4.1,
   single_County_only_forest = output.5.1,
   
-  Forest_Macaca = output.6,
-  Macaca_dist = output.7
-  
-),
-paste0("./result/tables_2019",format(Sys.Date(),"%y%m%d"),".xlsx"))
+  Forest_Macaca = E_rate_Forest,
+  Macaca_dist = output.7) %>% 
+    write_xlsx(.,
+               here(paste0("./result_2020/tables_",format(Sys.Date(),"%y%m%d"),".xlsx")))
 ```
 
 ```{r eval=FALSE, include=FALSE}
