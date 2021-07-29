@@ -1,13 +1,30 @@
 ---
-title: "架構說明"
+title: "Monkey Data Clean"
 author: "Weiting Hsu"
-date: "`r format(Sys.time(), '%Y-%m-%d')`"
+date: "2021/7/15"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(include = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 ```
+
+## 林務局獼猴資料
+
+#### 清理原則
+
+1.  確認資料為當年度資料\
+2.  手動移除非制式表格的欄位\
+3.  利用 R 開始清理資料\
+    3.1 訂正欄位名稱\
+    3.2 林管處、工作站、樣區編號、地名 **向下填滿**\
+    3.3 訂正錯誤的樣區編號、地名 3.4 日期 **向下填滿**\
+    3.5 訂正旅次。第1次調查為第1旅次，非 **依月分而定**
+4.  
+
+\newpage
+
+## BBS獼猴資料
 
 ### 運作架構
 
