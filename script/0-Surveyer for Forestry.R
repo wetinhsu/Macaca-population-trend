@@ -4,19 +4,11 @@
 library(tidyverse)
 library(readxl)
 library(writexl)
-library(sf)
-
-#------------
-path <-  "//10.40.1.138/Bird Research/BBSTW/15_計畫/臺灣獼猴族群監測計畫/與林務局合作監測/各林管處陳報的樣區和樣點/"
-#path <-  "C:/Users/wetin/Desktop/R/"
-
-M.Point <- read_excel(paste0(path,"樣區樣點資訊_2020.xlsx"),
-                      sheet = "樣點", cell_cols("A:M") )
 
 #--------------
 
-S20<- 
-  lapply(paste0("./data/raw/FORESTRYdata/", 2020), function(x){
+DF<- 
+  lapply(paste0("./data/raw/FORESTRYdata/", 2020:2021), function(x){
     list.files(x, full.names = T) %>%  #讀取各2020資料夾內的excel檔名
       lapply(., function(x){
         x %>% 
@@ -56,7 +48,7 @@ S20<-
 
 #調查者的統計資料
 List_surveyor <- 
-  S20 %>%
+  DF %>%
   separate(.,Surveyor,
            into = paste0("Surveyor","_",0:10),
            sep ="、|,", extra = "drop", fill = "right") %>% 
@@ -67,7 +59,8 @@ List_surveyor <-
 
 List_surveyor %>% 
   mutate(SP = paste0(Site_N, "-", Point)) %>% 
-  group_by(Office) %>% 
+  group_by(Year, Office) %>% 
   summarise(Site_n = Site_N %>% unique %>% length,     #樣區數
-            Person_n = Name %>% unique %>% length)  #人數
+            Person_n = Name %>% unique %>% length) %>%  #人數
+  arrange(Office)
 
