@@ -244,5 +244,11 @@ DF %>%
 
 
  
+M.Point %>% 
+    filter(str_detect(備註, "刪除")) %>% 
+    select(Macaca_Site, 樣點代號) %>% 
 
- 
+  anti_join(M.data, ., by = c( "Site_N" = "Macaca_Site", "Point" = "樣點代號")) %>% 
+    View
+  
+  
