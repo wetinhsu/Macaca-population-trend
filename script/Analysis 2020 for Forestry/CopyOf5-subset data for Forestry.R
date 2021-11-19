@@ -59,7 +59,7 @@ M.abc <- M.2 %>%
 #重複記錄用人工卻認吧，依樣區有3個以上的重複記錄就很麻煩，程式規則也寫很麻煩
 
 
-(M.data.1 <-
+M.data.1 <-
     M.data %>% 
     
     #exculde 重複記錄
@@ -107,9 +107,9 @@ M.abc <- M.2 %>%
                                 0)) #exculde 重複記錄
     
     
-)
 
- 
+
+View(M.data.1 )
 
 
 
@@ -128,7 +128,7 @@ M.data %>%  #移除重複前
   table 
 
 
-M.data.1 %>%   #移除重複前
+M.data.1 %>%   #移除重複後  #樣區數應該不會變
   filter(Macaca_sur %in% 1) %>% 
   group_by(Year, Survey, Site_N) %>% 
   summarise(N = n()) %>% 
