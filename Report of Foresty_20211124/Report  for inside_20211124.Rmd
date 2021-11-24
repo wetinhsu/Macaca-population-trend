@@ -1,15 +1,35 @@
-#樣點資料檢核
-#---- load library
+---
+title: "Data Summary of Foresty(內部資料)"
+author: '  '
+date: "`r format(Sys.time(), '%Y/%m/%d')`"
+output: html_document
+---
 
+### **2021 林務局獼猴調查情形**
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
 library(tidyverse)
 library(readxl)
 library(writexl)
 library(sf)
+library(here)
 
-#------------
+library(flextable)
+library(ftExtra)
+```
+
+
+```{r include=FALSE}
 
 M.data <- 
-  read_excel("./data/clean/for analysis Forestrydata_2021_V1.xlsx",
+  read_excel(here("data/clean/for analysis Forestrydata_2021_V1.xlsx"),
              sheet="Data")  %>%
 #  bind_rows(
 #  read_excel("./data/clean/for analysis Forestrydata_V1.xlsx",
@@ -23,10 +43,12 @@ M.data <-
   mutate(Macaca_sur = as.numeric(Macaca_sur)) %>% 
   mutate(Distance = as.numeric(Distance)) 
   
-  
-#-----------------------------------
+```
 
-(Group_than2<- M.data %>%
+
+#### 大於兩群的樣點
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+Group_than2<- M.data %>%
    filter(analysis %in% "Y") %>% 
    filter(!(TypeName.1 %in% "非森林")) %>% 
    filter(Macaca_sur %in% 1) %>% 
@@ -34,20 +56,49 @@ M.data <-
      summarise(N = n()) %>% 
    filter(N>1)
 
-)
+Group_than2 %>% 
+  mutate(Year = as.character(Year)) %>% 
+  arrange(Site_N) %>% 
+  flextable(.) %>% 
+   width(., width = c(1,1,2,1)) %>% 
+  
+  align(.,j = 1:4,
+        align = "center", part = "all")  %>% 
 
 
+  set_header_labels(
+    'Site_N' = "樣區編號",
+    'N' = "猴群數" ) 
 
+```
+\newpage
 
-(Composition_Forest<- M.data %>% 
+猴群分布的森林類型
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+Composition_Forest<- M.data %>% 
    filter(analysis %in% "Y") %>% 
    filter(!(TypeName.1 %in% "非森林")) %>% 
    group_by(TypeName.1,TypeName) %>% 
-   summarise(N = n(), m = sum(Macaca_sur)))
+   summarise(N = n(), m = sum(Macaca_sur))
 
+Composition_Forest %>% 
+  flextable(.) %>% 
+   width(., width = c(1,2,1,1))  %>%
+  
+  align(.,
+        align = "center", part = "all") %>% 
+  set_header_labels(
+    'TypeName.1' = "森林類型",
+    'TypeName' = "森林類型(森林4th的圖層)",
+    'N' = "樣點數",
+    'm' = "猴群數" )
 
+```
 
-(E_rate_Office<-
+各林管處的樣點、猴群、相對密度 (mean & se)
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+E_rate_Office<-
     M.data %>% 
     filter(analysis %in% "Y") %>% 
     filter(!(TypeName.1 %in% "非森林")) %>%
@@ -67,8 +118,28 @@ M.data <-
               Se_m = sd(m)/sqrt(n()),
               Mean_E = mean(E),
               Se_E = sd(E)/sqrt(n())) 
-)
 
+
+E_rate_Office %>%
+  mutate(Mean_E = round(Mean_E, 3),
+         Se_E = round(Se_E, 4)) %>% 
+  mutate(Office = ordered(Office, c('羅東',
+                                       '新竹',
+                                       '東勢',
+                                       '南投',
+                                       '嘉義',
+                                       '屏東',
+                                       '花蓮',
+                                       '臺東', 
+                                       'Total'))) %>% 
+  arrange(Office) %>% 
+  flextable(.) %>%
+  
+  align(.,
+        align = "center", part = "all")  
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 tmp.forest <- 
 M.data %>%  #非森林的小計
@@ -85,7 +156,7 @@ M.data %>%  #<50m & >=50m 分別森林的小計
   summarise(N = n(),
             m = sum(Macaca_sur)) 
 
-(E_rate_Forest<-
+E_rate_Forest<-
 M.data %>% 
   group_by(analysis, Year, Survey, TypeName.1) %>%
   summarise(N = n(),
@@ -108,22 +179,17 @@ M.data %>%
             Se_m = sd(m)/sqrt(n()),
             Mean_E = mean(E),
             Se_E = sd(E)/sqrt(n())) 
-)
 
+E_rate_Forest%>% 
+  flextable(.) %>%
+  
+  align(.,
+        align = "center", part = "all") 
 
+```
 
-
-
-write_xlsx(list(
-  "大於2群的樣區" = Group_than2,
-  "森林組成" = Composition_Forest,
-  "rate_林管處" = E_rate_Office,
-  "rate_森林" = E_rate_Forest
-),
-paste0("./林務局報告_20211124/tables_",format(Sys.Date(),"%y%m%d"),".xlsx"))
-
-
-#--------------------------
+非森林的樣點離森林的距離
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 M.data_notForest <- 
 M.data %>%  
@@ -131,8 +197,6 @@ M.data %>%
   mutate(cut = cut(Distance, breaks = seq(20,240,10),
                    include.lowest = T, right = TRUE))
 
-
-#非森林的樣點離森林的距離
 ggplot(M.data_notForest, aes(x = Distance))+
   geom_histogram(fill = gray(0.8), col = "black", breaks = seq(20,240,10))+
   stat_bin( geom="text", colour="black", size=3.5, breaks = seq(20,240,10),
@@ -150,9 +214,10 @@ ggplot(M.data_notForest, aes(x = Distance))+
   )
  
 
+```
 
-#----------
-#林管處的Encounter_rate
+林管處的Encounter_rate
+```{r}
 M.data %>% 
   filter(analysis %in% "Y") %>% 
   group_by(Office, Survey, Year) %>% 
@@ -171,10 +236,12 @@ M.data %>%
     axis.title = element_text(size = 18,colour = "black",
                               vjust = -2, hjust = 0.5)
   )
+```
+\br
+TypeName.1的Encounter_rate
 
-  
-#-----------
-#TypeName.1的Encounter_rate
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
 M.data %>% 
   filter(analysis %in% "Y") %>% 
   group_by(TypeName.1, Survey, Year) %>% 
@@ -182,7 +249,8 @@ M.data %>%
   
   ggplot(., aes(x = TypeName.1, y = E)) +
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9))+
-  scale_y_continuous(breaks = seq(0,0.15,0.05), limits = c(0,0.15))+
+  scale_y_continuous(breaks = seq(0,0.15,0.05), 
+                     limits = c(0,0.15))+
   labs(x = "森林類型", y = "Encounter_rate")+
   theme(
     text = element_text(family="serif"),
@@ -194,8 +262,10 @@ M.data %>%
                               vjust = -2, hjust = 0.5)
   )
 
-#-----------
-#Altitude的Encounter_rate
+```
+
+Altitude的Encounter_rate
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 Alt.d.n <-
   M.data %>% 
   filter(analysis %in% "Y") %>% 
@@ -206,9 +276,14 @@ Alt.d.n <-
   group_by(Altitude_f,Survey, Year) %>% 
   summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
   group_by(Altitude_f) %>% 
-  summarise(mean_N = mean(N),  y = quantile(E,0.75)) 
+  summarise(mean_N = mean(N),  y = quantile(E,0.75))
 
-  M.data %>% 
+Alt.d.n
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+M.data %>% 
   filter(analysis %in% "Y") %>% 
   mutate(Altitude_f =cut(Altitude,
                          breaks = c(seq(0,4000,500)),
@@ -219,13 +294,19 @@ Alt.d.n <-
   
   ggplot(., aes(x = Altitude_f, y = E)) +
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9))+
-    geom_text(data = Alt.d.n, aes(y = y+0.0025,label = paste0(mean_N,c("","","","","","",""))),
+    geom_text(data = Alt.d.n, 
+              aes(y = y+0.0025,
+                  label = paste0(mean_N,rep("",7))
+                  ),
               size = 4,
               hjust = -0.1,
               position = position_dodge(0.9))+
     
-  scale_y_continuous(breaks = seq(0,0.10,0.02), limits = c(0,0.10))+
-  labs(x = "Elevation (m)", y = "Encounter rate (troop/point)") +
+  scale_y_continuous(breaks = seq(0,0.10,0.02)#,
+                 #    limits = c(0,0.10)
+                     )+ #0.10
+  labs(x = "Elevation (m)",
+       y = "Encounter rate (troop/point)") +
   theme(
     text = element_text(family="serif"),
     panel.border = element_rect(size = 1.5,fill = NA),
@@ -236,6 +317,50 @@ Alt.d.n <-
                               vjust = -2, hjust = 0.5)
   )
 
+```
+
+排除3000m以上，再畫一次
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+M.data %>% 
+  filter(analysis %in% "Y") %>%
+  filter(Altitude < 3000) %>%
+  mutate(Altitude_f =cut(Altitude,
+                         breaks = c(seq(0,4000,500)),
+                         labels = c(seq(250,3750,500)),
+                         include.lowest = T) ) %>% 
+  group_by(Altitude_f,Survey, Year) %>% 
+  summarise(E = sum(Macaca_sur)/n()) %>% 
+  
+  ggplot(., aes(x = Altitude_f, y = E)) +
+  geom_boxplot(size = 1, width = 0.4, fill= gray(.9))+
+  geom_text(data = Alt.d.n, 
+              aes(y = y+0.0025,
+                  label = mean_N
+                  ),
+              size = 4,
+              hjust = -0.1,
+            vjust = 0.2,
+              position = position_dodge(0.9))+
+    
+  scale_y_continuous(breaks = seq(0,0.10,0.02),
+                     limits = c(0,0.10)
+                     )+ #0.10
+  labs(x = "Elevation (m)",
+       y = "Encounter rate (troop/point)") +
+  theme(
+    text = element_text(family="serif"),
+    panel.border = element_rect(size = 1.5,fill = NA),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5)
+  )
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
   M.data %>% 
     filter(analysis %in% "Y") %>% 
@@ -248,14 +373,24 @@ Alt.d.n <-
     group_by(Altitude_f) %>% #確認中位數
     summarise(mid = median(E))
 
-  
-  
-  
+```
+猴群分布的海拔 (max Alt = 3075, n=1)
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+M.data %>% 
+    filter(analysis %in% "Y") %>% 
+  filter(Macaca_sur %in% 1) %>%
+  .$Altitude %>% 
+  hist(breaks = c(seq(0,3200,100)))
+
+```
+樣點的海拔分布
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ 
   M.data %>% 
     filter(analysis %in% "Y") %>% 
     mutate(Altitude_f =cut(Altitude,
-                           breaks = c(seq(0,4000,50)),
-                           labels = c(seq(25,4000,50)),
+                           breaks = c(seq(0,4000,100)),
+                           labels = c(seq(50,4000,100)),
                            include.lowest =T) ) %>% 
     group_by(Altitude_f, Year) %>% 
     summarise(N = n()) %>% 
@@ -264,3 +399,5 @@ Alt.d.n <-
     geom_point()
   
   
+```
+
