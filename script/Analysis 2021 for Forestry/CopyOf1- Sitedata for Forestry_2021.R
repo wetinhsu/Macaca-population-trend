@@ -111,19 +111,39 @@ DF %>%
  DF.2 <- 
    DF %>% 
    add_column(analysis = "Y", .before = "Office") %>% 
+  
+
    mutate(SS = paste0(Site_N, "-", Survey)) %>% 
-   split(.,.$SS) %>% 
-   
-   lapply(., function(x){  #計算調查時間間隔
-     x[order(x$Date),] %>%
-       mutate(time2 = NA) %>% 
-       mutate(time2 = c(Date[2: length(Date)], NA)) %>%
-       mutate(time.diff = difftime(time2, Date, units ="mins")%>% as.numeric()) %>% #時間相隔，以分為單位
-       mutate(day.diff = difftime(time2, Date, units ="day"))  #時間相隔，以日為單位
-     }) %>%   
-
-
-   lapply(., function(x){  #計算位置誤差距離：依樣區旅次分別計算各樣區內，各樣點離做近檢核點的距離
+  
+  split(., .$Site_N) %>% 
+  lapply(., function(x){  #檢核時間
+    x %>% 
+      split(., .$Survey) %>% 
+      lapply(., function(y){
+        
+        y %>% 
+          arrange(Date) %>% 
+          mutate(time_2=  c(Date[2: n()], NA))%>% 
+       mutate(time_diff = difftime(time_2, Date, units='mins') %>% 
+                as.numeric())  %>%   
+       
+       mutate(analysis = ifelse(time_diff<6 & !is.na(time_diff),  paste0(analysis, ", 6min"), analysis)) %>% 
+       
+       select(-time_2) %>% 
+       
+       mutate(day_diff = difftime(Date[n()], Date[1], units='days') %>% 
+                as.numeric() %>% round(.,0))  %>% 
+       mutate(analysis = ifelse(day_diff > 7, 
+                          paste0(analysis, ", 7day"), analysis)) %>% 
+       
+       mutate(analysis = ifelse(as.numeric(Hour) >= 11, 
+                           paste0(analysis, ", Toolate"), analysis))
+      }) %>% 
+      bind_rows()}) %>%   
+  bind_rows() %>% 
+  
+  split(., .$SS) %>% 
+  lapply(., function(x){  #計算位置誤差距離：依樣區旅次分別計算各樣區內，各樣點離做近檢核點的距離
      
      st_M.Point <-  #與st_DF對應的樣區
        st_M.Point %>% 
@@ -150,19 +170,21 @@ DF %>%
      
      return(st_drop_geometry(st_DF.2))}) %>% 
    
-   lapply(., function(x){     # 超過7日才完成調查，整個旅次的資料方棄
-     if(TRUE %in% (as.numeric(x$day.diff)>8)) x$analysis <- "N"
-     return(x)
-   })%>%  
    
     bind_rows() %>% 
-  select(-SS) %>%   #刪除輔註欄位
+  select(-SS) 
+
+
+
+
+
+DF.2%>%   #刪除輔註欄位
   
-  mutate(analysis =case_when(analysis %in% "Y" & as.numeric(Hour) >= 11            ~ "N1",  #11點
-                             analysis %in% "Y" & time.diff < 6 & !is.na(time.diff) ~ "N2",  #6分鐘
+  mutate(analysis =case_when(
                              analysis %in% "Y" & point.diff > 50                   ~ "N3",  # range of gps =50m
                              analysis %in% "Y" & Point %in% "X"                    ~ "N3",  # range of gps =50m
-                             TRUE ~ analysis))
+                             TRUE ~ analysis)) %>% 
+  View
          
 
 

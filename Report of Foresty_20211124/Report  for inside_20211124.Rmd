@@ -7,8 +7,12 @@ output: html_document
 
 ### **2021 林務局獼猴調查情形**
 
+```
+1.
+2.
+3.
 
-
+```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -34,14 +38,14 @@ M.data <-
 #  bind_rows(
 #  read_excel("./data/clean/for analysis Forestrydata_V1.xlsx",
 #                     sheet="Data"))  %>% 
-  mutate(Office = ordered(Office, c("羅東", "新竹", "東勢", "南投", "嘉義", "屏東", "花蓮", "臺東"))) %>% 
-  mutate(Year = as.numeric(Year)) %>% 
-  mutate(Survey = as.numeric(Survey)) %>% 
-  mutate(Point = as.numeric(Point)) %>% 
-  mutate(Month = as.numeric(Month)) %>% 
-  mutate(Day = as.numeric(Day)) %>% 
-  mutate(Macaca_sur = as.numeric(Macaca_sur)) %>% 
-  mutate(Distance = as.numeric(Distance)) 
+  mutate(Office = ordered(Office, 
+                          c("羅東", "新竹", "東勢", "南投",
+                            "嘉義", "屏東", "花蓮", "臺東"))) %>% 
+  mutate(TypeName.1 = ordered(TypeName.1,
+                              c("闊葉林", "針葉林", "竹林",
+                                "混淆林", "非森林"))) %>% 
+  mutate_at(c("Year", "Survey","Point","Month",
+              "Day", "Macaca_sur", "Distance"), as.numeric) 
   
 ```
 
@@ -122,7 +126,7 @@ E_rate_Office<-
 
 E_rate_Office %>%
   mutate(Mean_E = round(Mean_E, 3),
-         Se_E = round(Se_E, 4)) %>% 
+         Se_E = round(Se_E, 3)) %>% 
   mutate(Office = ordered(Office, c('羅東',
                                        '新竹',
                                        '東勢',
@@ -180,7 +184,18 @@ M.data %>%
             Mean_E = mean(E),
             Se_E = sd(E)/sqrt(n())) 
 
-E_rate_Forest%>% 
+E_rate_Forest %>% 
+  mutate(TypeName.1 = ordered(TypeName.1, c('Forest',
+                                            '闊葉林',
+                                       '針葉林',
+                                       '竹林',
+                                       '混淆林',
+                                       '非森林',
+                                       'less50',
+                                       'Total'))) %>% 
+  arrange(TypeName.1) %>% 
+  mutate(Mean_E = round(Mean_E,3)) %>% 
+  mutate(Se_E = round(Se_E,3)) %>% 
   flextable(.) %>%
   
   align(.,
@@ -217,7 +232,7 @@ ggplot(M.data_notForest, aes(x = Distance))+
 ```
 
 林管處的Encounter_rate
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
   filter(analysis %in% "Y") %>% 
   group_by(Office, Survey, Year) %>% 
@@ -237,8 +252,8 @@ M.data %>%
                               vjust = -2, hjust = 0.5)
   )
 ```
-\br
-TypeName.1的Encounter_rate
+
+森林類型的Encounter_rate
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -276,9 +291,24 @@ Alt.d.n <-
   group_by(Altitude_f,Survey, Year) %>% 
   summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
   group_by(Altitude_f) %>% 
-  summarise(mean_N = mean(N),  y = quantile(E,0.75))
+  summarise(mean_N = mean(N), 
+            E25 = quantile(E,0.25),
+            E50 = quantile(E,0.50),
+            E75 = quantile(E,0.75)) %>% 
+  ungroup()
 
-Alt.d.n
+  M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  mutate(Altitude_f =cut(Altitude,
+                         breaks = c(seq(0,4000,500)),
+                         labels = c(seq(250,3750,500)),
+                         include.lowest = T) ) %>% 
+  group_by(Altitude_f,Survey, Year) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
+  flextable(.) %>%
+  
+  align(.,
+        align = "center", part = "all")
 ```
 
 
@@ -291,18 +321,19 @@ M.data %>%
                          include.lowest = T) ) %>% 
   group_by(Altitude_f,Survey, Year) %>% 
   summarise(E = sum(Macaca_sur)/n()) %>% 
+  ungroup()%>% 
   
   ggplot(., aes(x = Altitude_f, y = E)) +
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9))+
     geom_text(data = Alt.d.n, 
-              aes(y = y+0.0025,
-                  label = paste0(mean_N,rep("",7))
-                  ),
-              size = 4,
-              hjust = -0.1,
+              aes(y = E75,
+                label = mean_N),
+            size = 4,
+            hjust = -0.2, 
+            vjust = -0.7,
               position = position_dodge(0.9))+
     
-  scale_y_continuous(breaks = seq(0,0.10,0.02)#,
+  scale_y_continuous(breaks = seq(0,1,0.2)#,
                  #    limits = c(0,0.10)
                      )+ #0.10
   labs(x = "Elevation (m)",
@@ -323,30 +354,31 @@ M.data %>%
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
   filter(analysis %in% "Y") %>%
-  filter(Altitude < 3000) %>%
   mutate(Altitude_f =cut(Altitude,
                          breaks = c(seq(0,4000,500)),
                          labels = c(seq(250,3750,500)),
                          include.lowest = T) ) %>% 
+   
   group_by(Altitude_f,Survey, Year) %>% 
   summarise(E = sum(Macaca_sur)/n()) %>% 
+  ungroup()%>% 
   
   ggplot(., aes(x = Altitude_f, y = E)) +
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9))+
   geom_text(data = Alt.d.n, 
-              aes(y = y+0.0025,
-                  label = mean_N
-                  ),
-              size = 4,
-              hjust = -0.1,
-            vjust = 0.2,
-              position = position_dodge(0.9))+
-    
-  scale_y_continuous(breaks = seq(0,0.10,0.02),
+            aes(y = E75,
+                label = mean_N),
+            size = 4,
+            hjust = -0.2, 
+            vjust = -0.7,
+            position = position_dodge(0.9))+
+  
+  scale_y_continuous(breaks = seq(0,0.10,0.02), 
                      limits = c(0,0.10)
-                     )+ #0.10
+                     )+ 
+  coord_cartesian(xlim = c(1, 6))+
   labs(x = "Elevation (m)",
-       y = "Encounter rate (troop/point)") +
+      y = "Encounter rate (troop/point)") +
   theme(
     text = element_text(family="serif"),
     panel.border = element_rect(size = 1.5,fill = NA),
@@ -374,7 +406,7 @@ M.data %>%
     summarise(mid = median(E))
 
 ```
-猴群分布的海拔 (max Alt = 3075, n=1)
+猴群分布的海拔 (max Alt = 3075)
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
     filter(analysis %in% "Y") %>% 
@@ -394,7 +426,7 @@ M.data %>%
                            include.lowest =T) ) %>% 
     group_by(Altitude_f, Year) %>% 
     summarise(N = n()) %>% 
- #   mutate(Altitude_f = Altitude_f %>% as.character() %>% as.numeric()) %>% 
+
     ggplot(., aes(x = Altitude_f, y = N))+
     geom_point()
   
