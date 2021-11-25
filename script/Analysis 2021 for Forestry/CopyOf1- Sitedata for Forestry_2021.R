@@ -10,7 +10,9 @@ library(sf)
 
 M.Point <- 
   read_excel("./data/refer/林務局獼猴樣點_20211118.xlsx") %>% 
-  filter(!is.na(TWD97_X)|!is.na(TWD97_Y)) 
+  filter(!is.na(TWD97_X)|!is.na(TWD97_Y)) %>% 
+  mutate(樣點代號 = as.character(樣點代號)) %>% 
+  select(-`樣區樣點編號`)
   
 
 
@@ -109,11 +111,8 @@ DF %>%
 #同一旅次同一樣區內超過7日才完成調查，整個旅次的資料方棄。----
 
  DF.2 <- 
-   DF %>% 
-   add_column(analysis = "Y", .before = "Office") %>% 
-  
-
-   mutate(SS = paste0(Site_N, "-", Survey)) %>% 
+  DF %>% 
+  add_column(analysis = "Y", .before = "Office") %>% 
   
   split(., .$Site_N) %>% 
   lapply(., function(x){  #檢核時間
@@ -124,76 +123,89 @@ DF %>%
         y %>% 
           arrange(Date) %>% 
           mutate(time_2=  c(Date[2: n()], NA))%>% 
-       mutate(time_diff = difftime(time_2, Date, units='mins') %>% 
-                as.numeric())  %>%   
-       
-       mutate(analysis = ifelse(time_diff<6 & !is.na(time_diff),  paste0(analysis, ", 6min"), analysis)) %>% 
-       
-       select(-time_2) %>% 
-       
-       mutate(day_diff = difftime(Date[n()], Date[1], units='days') %>% 
-                as.numeric() %>% round(.,0))  %>% 
-       mutate(analysis = ifelse(day_diff > 7, 
-                          paste0(analysis, ", 7day"), analysis)) %>% 
-       
-       mutate(analysis = ifelse(as.numeric(Hour) >= 11, 
-                           paste0(analysis, ", Toolate"), analysis))
-      }) %>% 
-      bind_rows()}) %>%   
+          mutate(time_diff = difftime(time_2, Date, units='mins') %>% 
+                as.numeric())  %>% 
+          
+          select(-time_2) %>% 
+          
+          mutate(day_diff = difftime(Date[n()], Date[1], units='days') %>% 
+                as.numeric() %>% round(.,0))  
+        }) %>% 
+      bind_rows()
+    }) %>%   
+  bind_rows() %>%
+
+  left_join(M.Point,
+            by = c("Site_N" = "Macaca_Site",
+                   "Point" = "樣點代號"),
+            suffix = c(".ori", "")) %>% 
+  mutate(point_diff = NA) %>% 
+  split(. ,rownames(.)) %>% 
+  lapply(., function(x){
+    
+    P.sur <- #調查位置
+    x %>%
+      mutate(X = as.numeric(TWD97_X.ori)) %>% 
+      mutate(Y = as.numeric(TWD97_Y.ori)) %>% 
+      st_as_sf(., coords = c("X", "Y"), crs = 3826)
+    
+    if(is.na(x$TWD97_X)| is.na(x$TWD97_Y)){
+      x$point_diff <- NA
+    }else{
+      P.set <- #表定位置
+        x %>% 
+        mutate(X = as.numeric(TWD97_X)) %>% 
+        mutate(Y = as.numeric(TWD97_Y)) %>% 
+        st_as_sf(., coords = c("X", "Y"), crs = 3826)
+      
+      x$point_diff <- 
+        st_distance(P.sur, P.set,
+                    by_element = TRUE) %>% 
+        as.numeric()
+    }
+    x
+   
+    }) %>% 
   bind_rows() %>% 
   
-  split(., .$SS) %>% 
-  lapply(., function(x){  #計算位置誤差距離：依樣區旅次分別計算各樣區內，各樣點離做近檢核點的距離
-     
-     st_M.Point <-  #與st_DF對應的樣區
-       st_M.Point %>% 
-       filter(Macaca_Site %in% unique(x$Site_N)) 
-     
-     st_DF.2 <-   
-       x %>% 
-       mutate(SP = ifelse(!nchar(Point) %in% 1,
-                          paste0(Site_N, "-0", Point),
-                          paste0(Site_N, "-", Point))) %>%
-       
-       mutate(X = as.numeric(TWD97_X)) %>% 
-       mutate(Y = as.numeric(TWD97_Y)) %>% 
-       st_as_sf(., coords = c("X", "Y"), crs = 3826)
-     
-     st_DF.2$point_O <-
-       st_distance(st_DF.2, st_M.Point) %>% 
-       apply(.,1,which.min) %>% 
-       st_M.Point$樣區樣點編號[.] 
-     
-     st_DF.2$point.diff <- 
-       st_distance(st_DF.2, st_M.Point) %>% 
-       apply(., 1,min) 
-     
-     return(st_drop_geometry(st_DF.2))}) %>% 
-   
-   
-    bind_rows() %>% 
-  select(-SS) 
-
-
-
-
-
-DF.2%>%   #刪除輔註欄位
+  mutate(Macaca_sur.ori = Macaca_sur) %>% 
+  mutate(Macaca_sur = ifelse(Macaca_sur %in% "1" & !is.na(Macaca_sur), 0,
+                             ifelse(Macaca_sur %in% "2"& !is.na(Macaca_sur) , 1, Macaca_sur))) %>% 
+  mutate(Macaca_sur = as.numeric(Macaca_sur))  
   
-  mutate(analysis =case_when(
-                             analysis %in% "Y" & point.diff > 50                   ~ "N3",  # range of gps =50m
-                             analysis %in% "Y" & Point %in% "X"                    ~ "N3",  # range of gps =50m
-                             TRUE ~ analysis)) %>% 
-  View
+  
+
+DF.3 <-  
+  DF.2 %>% 
+  mutate(analysis = ifelse(time_diff<6 & !is.na(time_diff),
+                           paste0(analysis, ", 6min"), analysis)) %>% 
+  mutate(analysis = ifelse(day_diff > 7, 
+                           paste0(analysis, ", 7day"), analysis)) %>% 
+  
+  mutate(analysis = ifelse(as.numeric(Hour) >= 11, 
+                           paste0(analysis, ", Toolate"), analysis))%>% 
+  
+  mutate(analysis = case_when(
+             point_diff > 51 | is.na(point_diff) ~ paste0(analysis, ", locate"),  # range of gps =50m
+             Point %in% "X" ~ paste0(analysis, ", locate"),  # range of gps =50m
+             str_detect(備註, "刪除") ~ paste0(analysis, ", locate"),
+             TRUE ~ analysis)) %>% 
+  mutate(analysis = str_replace(analysis, "Y, ","")) 
          
 
 
 
-
- DF.2 %>%  #各林管處的各疏失情況的樣點數
-  group_by(Office, analysis) %>%
-  summarise(N = n()) %>%
-  reshape2::dcast( analysis ~ Office, guess.var = "N")
+ DF.3 %>%  #各林管處的各疏失情況的樣點數
+   filter(!is.na(Macaca_sur) ) %>%
+   group_by(Office) %>%
+   summarise(
+     FULL = n(),
+     '6min' = str_subset(analysis,"6min") %>% length,
+     '7day' = str_subset(analysis,"7day") %>% length,
+     'Toolate' = str_subset(analysis,"Toolate") %>% length,
+     'locate' = str_subset(analysis,"locate") %>% length,
+     'good' = str_subset(analysis,"Y") %>% length
+  ) 
  
  
  DF.2 %>%   #林管處無疏失情形的樣點數
@@ -206,7 +218,7 @@ DF.2%>%   #刪除輔註欄位
 
  
  
- DF.2 %>%    #時無疏失情形下，林管處在1、2旅次的猴群、孤猴數
+ DF.3 %>%    #時無疏失情形下，林管處在1、2旅次的猴群、孤猴數
    filter(analysis %in% "Y")  %>% 
    filter(!is.na(Macaca_sur) ) %>% 
    group_by(Office, Macaca_sur, Survey) %>% 
@@ -214,69 +226,48 @@ DF.2%>%   #刪除輔註欄位
    reshape2::dcast(Office + Survey ~ Macaca_sur, guess_value  = "N")
 
 
- DF.2 %>% 
+ DF.3 %>% 
    filter(analysis %in% "Y")  %>% 
-   filter(!is.na(Macaca_sur) ) %>% 
-   left_join(st_drop_geometry(st_M.Point), by = c("point_O" = "樣區樣點編號") ) %>% 
-   mutate(Macaca_sur = ifelse(Macaca_sur %in% "1" , 0,
-                              ifelse(Macaca_sur %in% "2" , 1, Macaca_sur))) %>% 
-   mutate(Macaca_sur = as.numeric(Macaca_sur)) %>% 
+   filter(!is.na(Macaca_sur)) %>% 
    group_by(Office, Macaca_sur, TypeName.1) %>% 
    summarise(N = n()) %>%
    reshape2::dcast( Office + Macaca_sur ~ TypeName.1, guess.var = "N")
  
  M.data <- 
-   DF.2 %>% 
-   filter(analysis %in% "Y")  %>% 
-   filter(!is.na(Macaca_sur) ) %>% 
-   left_join(st_drop_geometry(st_M.Point), by = c("point_O" = "樣區樣點編號") ) %>% 
-   select(analysis, Office, Station, 
-          "Site_N" = Macaca_Site,
-          "Point" = 樣點代號, 
-          "X" = TWD97_X.y,
-          "Y" = TWD97_Y.y,
-          Year, Month, Day, Survey, Macaca_sur,
-          Hour, Minute, Day, 
-          Macaca_dist,
-          Macaca_voice,
-          Habitat,
-          "Distance" = distance, 
-          "TypeName" = join_TypeName, TypeName.1, Altitude)
-
- M.data <-
- M.Point %>% 
-   filter(str_detect(備註, "刪除")) %>% 
-   select(Macaca_Site, 樣點代號) %>% 
+   DF.3 %>% 
+   relocate(ends_with("ori"), .after = last_col()) %>% 
+   relocate(ends_with("diff"), .after = last_col())%>% 
+   relocate("地點 (樣區名稱)", .after = "Station") %>% 
+   setNames(., str_replace(colnames(.), "^地點.*", "Name")) %>% 
+   setNames(., str_replace(colnames(.), "^join_TypeName$", "TypeName")) %>% 
+   setNames(., str_replace(colnames(.), "^distance$", "Distance")) %>% 
+   arrange(Office, Site_N, Survey, Point)
    
-   anti_join(M.data, ., by = c( "Site_N" = "Macaca_Site", "Point" = "樣點代號")) 
- 
- 
- 
+
+
+
  #猴群、孤猴的統計資料             
  
  M.data  %>% 
-   mutate(SP = paste0(Site_N, "-", Point))  %>% 
    filter(!is.na(Macaca_sur) ) %>% 
    group_by(Office, Macaca_sur) %>% 
-   summarise(N = SP %>% length) %>% 
+   summarise(N = n()) %>% 
    reshape2::dcast(Office ~ Macaca_sur, guess_value  = "N")
  
  
- NOTE <- data.frame(說明 = "本資料集為林務局獼猴調查資料的合併檔，並已完成清理動作，僅留下符合調查規範的資料。共計4178筆。")
+ NOTE <- data.frame(
+   說明 = c(
+     "1. 欄位名有.ori 為調查者所填的原始數字",
+     "2. 欄位名有.diff 為輔助欄位，用於計算時間差及位置偏差 ",
+     "本資料集為林務局獼猴調查資料的合併檔，並已完成清理動作。"
+     ))
  
  
-  write_xlsx( list('NOTE' = NOTE, 'Data' = M.data), "./data/clean/full_combind_Forestrydata_2021_V1.xlsx")
+  write_xlsx( list('NOTE' = NOTE, 'Data' = M.data), "./data/clean/full_combind_Forestrydata_2021_V2.xlsx")
  
  #Part 3 可納入分析的資料----------------
 #(僅留下 距離A、B、海拔50m以上、森林、300m的猴群)---------- 
 
 
- 
-M.Point %>% 
-    filter(str_detect(備註, "刪除")) %>% 
-    select(Macaca_Site, 樣點代號) %>% 
 
-  anti_join(M.data, ., by = c( "Site_N" = "Macaca_Site", "Point" = "樣點代號")) %>% 
-    View
-  
   
