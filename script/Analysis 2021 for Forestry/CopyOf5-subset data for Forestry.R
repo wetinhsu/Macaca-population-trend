@@ -7,10 +7,8 @@ library(writexl)
 library(sf)
 
 #------------
-M.data <- read_excel("./data/clean/full_combind_Forestrydata_2021_V1.xlsx", sheet = "Data")%>% 
+M.data <- read_excel("./data/clean/full_combind_Forestrydata_2021_V2.xlsx", sheet = "Data")%>% 
   select(-Macaca_voice, -Habitat ) %>% 
-  mutate(Macaca_sur = ifelse(Macaca_sur %in% "1" , 0,    #孤猴改成0，猴群改成1
-                             ifelse(Macaca_sur %in% "2" , 1, Macaca_sur))) %>% 
   mutate(Macaca_sur = ifelse(Macaca_dist %in% "C" , 0, Macaca_sur)) 
 
 
@@ -32,7 +30,7 @@ M.2<- M.0 %>%  #找出同一旅次同一樣區有猴群大於2者
 M.abc <- M.2 %>%
   left_join(M.0) %>%   #幫M.2這樣區樣點加回座標等資訊
   mutate(Y_S_S = paste0(Year, "_", Survey, "_",Site_N)) %>% 
-  st_as_sf(., coords = c("X", "Y"), crs = 3826) %>% 
+  st_as_sf(., coords = c("TWD97_X", "TWD97_Y"), crs = 3826) %>% 
   split(., .$Y_S_S) %>% 
   lapply(., function(x){
 
@@ -145,7 +143,8 @@ M.data.1 %>%
            format(., "%j") %>% as.numeric())
    
 M.data.2 <-
-  M.data.1 %>%  
+  M.data.1 %>% 
+  filter(analysis == "Y") %>%
   filter(Month >= 3 & Month <= 6) %>%   #刪除調查季(包含緩衝期)以外的資料
   mutate(analysis = ifelse(TypeName.1 %in% "非森林" | Altitude<50, "N", analysis)) 
 
