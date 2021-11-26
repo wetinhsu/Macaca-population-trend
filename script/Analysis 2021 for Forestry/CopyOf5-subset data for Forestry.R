@@ -16,9 +16,11 @@ M.data <- read_excel("./data/clean/full_combind_Forestrydata_2021_V2.xlsx", shee
 
 
 M.0<- M.data %>%
+  filter(analysis %in% "Y") %>% 
   filter(Macaca_sur %in% 1)  #猴群
 
 M.2<- M.0 %>%  #找出同一旅次同一樣區有猴群大於2者
+  filter(analysis %in% "Y") %>% 
   group_by(Year, Survey, Site_N) %>% 
   summarise(N = n()) %>% 
   filter(N>1) 
@@ -144,13 +146,30 @@ M.data.1 %>%
    
 M.data.2 <-
   M.data.1 %>% 
-  filter(analysis == "Y") %>%
-  filter(Month >= 3 & Month <= 6) %>%   #刪除調查季(包含緩衝期)以外的資料
-  mutate(analysis = ifelse(TypeName.1 %in% "非森林" | Altitude<50, "N", analysis)) 
+  mutate(analysis = ifelse(analysis == "Y" &( Month < 3 | Month > 6), 
+                           "Y(month)", analysis)) %>%   #刪除調查季(包含緩衝期)以外的資料
+  mutate(analysis = ifelse(analysis == "Y" &  Altitude<50, 
+                           "Y(50m)", analysis)) %>%  
+  mutate(analysis = ifelse(analysis == "Y" &  TypeName.1 %in% "非森林", 
+                           "Y(NotForest)", analysis)) 
 
-
-M.data.2 %>% filter(analysis %in% "Y") %>%  #看一下誰被刪掉
-  anti_join(M.data.1,.) %>% View
+point_summary <- 
+M.data.2 %>% 
+  summarise(
+    '1 收到' = n(),
+    '2-1 6min' = str_subset(analysis, "6min") %>% length,
+    '2-2 Toolate' = str_subset(analysis, "Toolate") %>% length,
+    '2-3 7day' = str_subset(analysis, "7day") %>% length,
+    '2-4 locate' = str_subset(analysis, "locate") %>% length,
+    'end of 2' = str_subset(analysis, "locate|6min|Toolate|7day", negate = T) %>% length,
+    '3 不在3~6月內' = str_subset(analysis, "month") %>% length,
+    '4 低於50m' = str_subset(analysis, "50m") %>% length,
+    '5 非森林' = str_subset(analysis, "NotForest") %>% length,
+    '6 分析用' = str_subset(analysis, "^Y$") %>% length
+  ) %>% 
+  
+  reshape2::melt(variable.name = "項目",
+                 value.name = "樣點次")
 
 
 
@@ -159,10 +178,19 @@ M.data.2 %>%
   summarise(N = n()) %>% 
   filter(N >1)
 
-NOTE <- data.frame(說明 = "本資料集為已有刪減，僅留下可納入分析的資料。")
+NOTE <- data.frame(
+  說明 = c(
+    "6min, Toolate, 7day, locate = 不符合調查規範",
+    "month = 符合調查規範，但月份不在3~6月",
+    "50m = 符合調查規範述，月份在3~6月，但海拔<50m",
+    "NotForest = 符合調查規範述，月份在3~6月，海拔>=50m，但非森林",
+    "Y = 符合調查規範述，月份在3~6月，海拔>=50m，只有森林"
+         ))
 
 
 
-write_xlsx( list('NOTE' = NOTE, 'Data' = M.data.2), "./data/clean/for analysis Forestrydata_2021_V1.xlsx")
+write_xlsx( list('NOTE' = NOTE,
+                 'Point_Summary' = point_summary,
+                 'Data' = M.data.2), "./data/clean/for analysis Forestrydata_2021_V1.xlsx")
 
 

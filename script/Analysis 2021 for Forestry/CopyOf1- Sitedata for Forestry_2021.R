@@ -16,16 +16,6 @@ M.Point <-
   
 
 
-
-st_M.Point <-
-  M.Point %>% 
-  mutate(X = as.numeric(TWD97_X)) %>% 
-  mutate(Y = as.numeric(TWD97_Y)) %>%
-  st_as_sf(., coords = c("X", "Y"), crs = 3826)
-
-
-
-
 #--------------
 
 DF<- 

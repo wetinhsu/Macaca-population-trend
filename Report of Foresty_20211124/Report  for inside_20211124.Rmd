@@ -5,14 +5,6 @@ date: "`r format(Sys.time(), '%Y/%m/%d')`"
 output: html_document
 ---
 
-### **2021 林務局獼猴調查情形**
-
-```
-1.
-2.
-3.
-
-```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -35,9 +27,7 @@ library(ftExtra)
 M.data <- 
   read_excel(here("data/clean/for analysis Forestrydata_2021_V1.xlsx"),
              sheet="Data")  %>%
-#  bind_rows(
-#  read_excel("./data/clean/for analysis Forestrydata_V1.xlsx",
-#                     sheet="Data"))  %>% 
+
   mutate(Office = ordered(Office, 
                           c("羅東", "新竹", "東勢", "南投",
                             "嘉義", "屏東", "花蓮", "臺東"))) %>% 
@@ -49,12 +39,110 @@ M.data <-
   
 ```
 
+### Part 1 最初的資料  
+```
+說明：收到的資料，尚未刪減任何資料。  
+```
+各林管處的調查人員人數
 
-#### 大於兩群的樣點
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+#調查者的統計資料
+List_surveyor <- 
+  M.data %>%
+  separate(.,Surveyor,
+           into = paste0("Surveyor","_",0:10),
+           sep ="、|,",
+           extra = "drop",
+           fill = "right") %>% 
+  reshape2::melt(., 
+                 id.vars = c("Office","Year", "Site_N",
+                             "Point",  "Survey"),
+                 measure.vars = paste0("Surveyor","_",0:10),
+                 variable.name = "Surveyor",
+                 value.name = "Name",)%>% 
+  filter(!is.na(Name)) 
+
+List_surveyor %>% 
+  mutate(SP = paste0(Site_N, "-", Point)) %>% 
+  group_by(Year, Office) %>% 
+  summarise(Site_n = Site_N %>% unique %>% length,     #樣區數
+            Person_n = Name %>% unique %>% length) %>%  #人數
+  arrange(Office)%>% 
+  ungroup() %>% 
+  select(Office, Person_n) %>% 
+  bind_rows(List_surveyor %>%
+              summarise(Person_n = Name %>%
+                          unique %>% length) %>%
+              mutate(Office = "Total") ) %>% 
+  flextable(.) %>% 
+   width(., width = c(1,1)) %>% 
+  
+  align(.,j = 1:2, align = "center", part = "all") %>% 
+  
+
+  set_header_labels(
+    'Office' = "林管處",
+    'Person_n' = "調查者人數" ) 
+
+```
+  
+  
+### Part 2 刪疏失的資料  
+
+```
+刪除項目：
+1. 同一旅次超過7日才完成調查：同一旅次同一樣區內超過7日才完成調查，整個旅次的資料放棄。
+2. 開始時間晚於11點：時>=11的都刪。
+3. 調查未滿6分鐘刪。
+4. 不在預設樣點上：容許GPS誤差在50 m，調查位置座標離預設樣點距離>50m刪除。
+
+
+```
+
+
+整體的樣點次流變
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+M.data %>% 
+  filter(! is.na(Macaca_sur)) %>% 
+  summarise(
+    '1 收到' = n(),
+    '2 檢核後' = str_subset(analysis, "locate|6min|Toolate|7day", negate = T) %>% length,
+    '2-1 不足6分鐘' = str_subset(analysis, "6min") %>% length,
+    '2-2 晚於11時' = str_subset(analysis, "Toolate") %>% length,
+    '2-3 超過7日' = str_subset(analysis, "7day") %>% length,
+    '2-4 位置錯誤' = str_subset(analysis, "locate") %>% length,
+    
+    '3 不在3~6月內(3~6月以外、全海拔範圍、所有森林類型)' = str_subset(analysis, "^Y") %>% 
+      str_subset(., "month", negate = T) %>% length,
+    '4 低於50m(3~6月、<50m、所有森林類型)' =
+      str_subset(analysis, "^Y") %>% 
+      str_subset(., "50m", negate = T) %>% length,
+    '5 非森林用(3~6月、=>50m、非森林)' = 
+      str_subset(analysis, "^Y") %>% 
+      str_subset(., "NotForest", negate = T) %>% length,
+    '6 分析用(3~6月、=>50m、only森林)' = str_subset(analysis, "^Y$") %>% length
+  ) %>% 
+  
+  reshape2::melt(variable.name = "項目",
+                 value.name = "樣點次")%>% 
+  flextable(.) %>% 
+   width(., width = c(4,1)) %>% 
+  
+#  align(.,j = 2,
+#        align = "center", part = "all") %>% 
+   padding(., i=3:6, j=1, padding.left = 20)
+
+
+```
+
+
+ 
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#### 大於兩群的樣點 
 Group_than2<- M.data %>%
    filter(analysis %in% "Y") %>% 
-   filter(!(TypeName.1 %in% "非森林")) %>% 
    filter(Macaca_sur %in% 1) %>% 
    group_by(Year, Survey, Site_N) %>% 
      summarise(N = n()) %>% 
@@ -62,6 +150,9 @@ Group_than2<- M.data %>%
 
 Group_than2 %>% 
   mutate(Year = as.character(Year)) %>% 
+
+  reshape2::dcast(Year+Site_N ~ Survey,
+                  value.var = "N") %>% 
   arrange(Site_N) %>% 
   flextable(.) %>% 
    width(., width = c(1,1,2,1)) %>% 
@@ -75,13 +166,64 @@ Group_than2 %>%
     'N' = "猴群數" ) 
 
 ```
-\newpage
 
-猴群分布的森林類型
+樣區樣點的統計資料
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+M.data %>% 
+  filter(! is.na(Macaca_sur)) %>% 
+  group_by(Office, Survey) %>% 
+  summarise(
+    Point_n = n(),
+    Good_n = str_subset(analysis, "^Y") %>%length
+  ) %>% 
+  ungroup() %>%
+  
+  bind_rows(
+    M.data %>% 
+      filter(! is.na(Macaca_sur))%>% 
+      group_by(Survey) %>% 
+      summarise(
+        Point_n = n(),
+        Good_n = str_subset(analysis, "^Y") %>%length
+        ) %>% 
+      mutate(Office = "Total") %>% 
+      ungroup() 
+    ) %>% 
+  
+  mutate(prob = (100 * Good_n/Point_n) %>%  round(1)) %>%
+  reshape2::melt(id = 1:2) %>% 
+  reshape2::dcast(Office ~ Survey+variable) %>% 
+  mutate(Office = ordered(Office, c("羅東","新竹",
+                                    "東勢","南投",
+                                    "嘉義","屏東",
+                                    "花蓮","臺東",
+                                    "Total"))) %>% 
+  arrange(Office) %>% 
+  flextable(.) %>% 
+
+  set_header_labels(
+    "Office"="林管處",
+    "1_Point_n"="樣點",
+    "1_Good_n" = "無疏失的樣點",
+    "1_prob" = "正確率%",
+    "2_Point_n"="樣點",
+    "2_Good_n" = "無疏失的樣點",
+    "2_prob" = "正確率%") %>% 
+  add_header_row(., 
+                 values = c(" ","第1旅次", "第2旅次"),
+                 colwidths = c(1,3,3)) %>% 
+
+  theme_booktabs(.)%>% 
+  align(.,
+        align = "center", part = "header") 
+  
+```
+
+
+猴群分布的森林類型  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 Composition_Forest<- M.data %>% 
    filter(analysis %in% "Y") %>% 
-   filter(!(TypeName.1 %in% "非森林")) %>% 
    group_by(TypeName.1,TypeName) %>% 
    summarise(N = n(), m = sum(Macaca_sur))
 
@@ -99,13 +241,12 @@ Composition_Forest %>%
 
 ```
 
-各林管處的樣點、猴群、相對密度 (mean & se)
+各林管處的樣點、猴群、相對密度 (mean & se)  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 E_rate_Office<-
     M.data %>% 
     filter(analysis %in% "Y") %>% 
-    filter(!(TypeName.1 %in% "非森林")) %>%
     group_by(Year, Survey, Office) %>%
     summarise(N = n(),
               m = sum(Macaca_sur)) %>% 
@@ -143,35 +284,60 @@ E_rate_Office %>%
         align = "center", part = "all")  
 ```
 
+
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-
-tmp.forest <- 
-M.data %>%  #非森林的小計
-  filter(TypeName.1 %in%　"非森林") %>% 
-  group_by(Year, Survey, TypeName.1) %>% 
-  summarise(N = n(),
-            m = sum(Macaca_sur)) 
-
-tmp.alt <- 
-M.data %>%  #<50m & >=50m 分別森林的小計
-  filter(!TypeName.1 %in%　"非森林") %>%
-  mutate(TypeName.1 = ifelse(Altitude<50, "less50","Forest")) %>%
-  group_by(Year, Survey, TypeName.1) %>% 
-  summarise(N = n(),
-            m = sum(Macaca_sur)) 
-
 E_rate_Forest<-
-M.data %>% 
-  group_by(analysis, Year, Survey, TypeName.1) %>%
+
+#森林內的分別計
+M.data %>%  
+  filter(analysis %in%　"Y") %>%
+  group_by(Year, Survey, TypeName.1) %>% 
   summarise(N = n(),
-            m = sum(Macaca_sur)) %>%  
-  bind_rows(group_by(.,Year, Survey) %>% #增加total的部分，total的資料包含非森林及<50m
-              summarise(N=sum(N), m = sum(m)) %>%
-              mutate(TypeName.1='Total', analysis ="Y")) %>% 
-  filter(analysis =="Y") %>%   #移除 非森林及<50m
-  select(-analysis)%>% 
+            m = sum(Macaca_sur)) %>% 
   
-  bind_rows(., tmp.alt, tmp.forest) %>%  #增加是先算好 森林、非森林、<50的小計
+  bind_rows(  #森林的總計
+    M.data %>% 
+      filter(analysis %in%　"Y") %>%
+      group_by(Year, Survey) %>% 
+      summarise(N = n(),
+                m = sum(Macaca_sur))  %>% 
+      mutate(TypeName.1 = "Forest")
+  )%>% 
+  
+  bind_rows(  #非森林(包括<50m & >=50m )的總計
+    M.data %>% 
+      filter(analysis %in%　str_subset(analysis, "^Y")) %>%
+      filter(analysis %in%
+               str_subset(analysis, "month", negate = T)) %>%
+      filter(TypeName.1 %in%　"非森林") %>% 
+      group_by(Year, Survey, TypeName.1) %>% 
+      summarise(N = n(),
+                m = sum(Macaca_sur))  
+  )%>% 
+  
+  bind_rows(  #<50m 分別的小計
+    M.data %>% 
+      filter(analysis %in%　str_subset(analysis, "^Y")) %>%
+      filter(analysis %in%
+               str_subset(analysis, "50m", negate = F)) %>%
+ #     filter(Altitude < 50) %>%
+      group_by(Year, Survey) %>% 
+      summarise(N = n(),
+                m = sum(Macaca_sur))  %>% 
+      mutate(TypeName.1 = "less50")
+  )%>% 
+  
+    bind_rows(  #total小計
+    M.data %>% 
+      filter(analysis %in%　str_subset(analysis, "^Y")) %>%
+      filter(analysis %in%
+               str_subset(analysis, "month", negate = T)) %>%
+      group_by(Year, Survey) %>% 
+      summarise(N = n(),
+                m = sum(Macaca_sur)) %>% 
+      mutate(TypeName.1 = "Total") 
+  )%>%
   
   mutate(E = m/N) %>%
   ungroup() %>%
@@ -195,20 +361,27 @@ E_rate_Forest %>%
                                        'Total'))) %>% 
   arrange(TypeName.1) %>% 
   mutate(Mean_E = round(Mean_E,3)) %>% 
-  mutate(Se_E = round(Se_E,3)) %>% 
+  mutate(Se_E = round(Se_E,4)) %>% 
   flextable(.) %>%
   
   align(.,
         align = "center", part = "all") 
 
+
+
 ```
 
-非森林的樣點離森林的距離
+
+非森林的樣點離森林的距離 ( <50m + =>50m)  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 M.data_notForest <- 
 M.data %>%  
-  filter(TypeName.1 %in% "非森林") %>% 
+  filter(analysis %in%　str_subset(analysis, "^Y")) %>%
+  filter(analysis %in%
+           str_subset(analysis, "month", negate = T)) %>%
+  filter(TypeName.1 %in%　"非森林") %>% 
+  
   mutate(cut = cut(Distance, breaks = seq(20,240,10),
                    include.lowest = T, right = TRUE))
 
@@ -231,7 +404,7 @@ ggplot(M.data_notForest, aes(x = Distance))+
 
 ```
 
-林管處的Encounter_rate
+林管處的Encounter_rate  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
   filter(analysis %in% "Y") %>% 
@@ -253,7 +426,7 @@ M.data %>%
   )
 ```
 
-森林類型的Encounter_rate
+森林類型的Encounter_rate  
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -264,8 +437,8 @@ M.data %>%
   
   ggplot(., aes(x = TypeName.1, y = E)) +
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9))+
-  scale_y_continuous(breaks = seq(0,0.15,0.05), 
-                     limits = c(0,0.15))+
+#  scale_y_continuous(breaks = seq(0,0.15,0.05), 
+#                     limits = c(0,0.15))+
   labs(x = "森林類型", y = "Encounter_rate")+
   theme(
     text = element_text(family="serif"),
@@ -279,7 +452,7 @@ M.data %>%
 
 ```
 
-Altitude的Encounter_rate
+Altitude的Encounter_rate  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 Alt.d.n <-
   M.data %>% 
@@ -350,7 +523,7 @@ M.data %>%
 
 ```
 
-排除3000m以上，再畫一次
+排除3000m以上，再畫一次  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
   filter(analysis %in% "Y") %>%
@@ -406,7 +579,7 @@ M.data %>%
     summarise(mid = median(E))
 
 ```
-猴群分布的海拔 (max Alt = 3075)
+猴群分布的海拔 (max Alt = 3075)  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
     filter(analysis %in% "Y") %>% 
@@ -415,7 +588,8 @@ M.data %>%
   hist(breaks = c(seq(0,3200,100)))
 
 ```
-樣點的海拔分布
+
+可分析的樣點的海拔分布  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
  
   M.data %>% 
