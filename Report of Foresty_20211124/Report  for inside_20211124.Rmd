@@ -2,7 +2,10 @@
 title: "Data Summary of Foresty(內部資料)"
 author: '  '
 date: "`r format(Sys.time(), '%Y/%m/%d')`"
-output: html_document
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
 ---
 
 
