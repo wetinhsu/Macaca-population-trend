@@ -61,7 +61,71 @@ M.abc <- M.2 %>%
 
 M.data.1 <-
     M.data %>% 
-    
+  #exculde 重複記錄
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-A05-01" & Point %in% 4,
+                              0)) %>% 
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-E21-11" & Point %in% 5,
+                              0)) %>% 
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-F25-01" & Point %in% 4,
+                              0)) %>% 
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-G28-01" & Point %in% 3,
+                              0)) %>% 
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-G28-06" & Point %in% 5,
+                              0)) %>% 
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H31-04" & Point %in% c(2, 4),
+                              0)) %>% 
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H32-06" & Point %in% c(2, 4),
+                              0)) %>% 
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H33-01" & Point %in% 3,
+                              0)) %>% 
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H34-01" & Point %in% 5,
+                              0)) %>%
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H34-04" & Point %in% 2,
+                              0)) %>%
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H34-05" & Point %in% 2,
+                              0)) %>%
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H34-11" & Point %in% 4,
+                              0)) %>%
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-E21-11" & Point %in% c(3,5),
+                              0)) %>%
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-F25-11" & Point %in% 3,
+                              0)) %>%
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-G29-03" & Point %in% 2,
+                              0)) %>%
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-H31-04" & Point %in% 2,
+                              0)) %>%
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-H31-09" & Point %in% 2,
+                              0)) %>%
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-H31-13" & Point %in% 2,
+                              0)) %>%
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-H34-01" & Point %in% 5,
+                              0)) %>%
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MB-A01-06" & Point %in% 3,
+                              0)) %>%
+  mutate(Macaca_sur = replace(Macaca_sur,
+                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MB-B06-10" & Point %in% 6,
+                              0)) %>%  #exculde 重複記錄
+
     #exculde 重複記錄
     mutate(Macaca_sur = replace(Macaca_sur,
                             Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-A02-06" & Point %in% c(1,3),

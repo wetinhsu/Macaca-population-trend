@@ -88,8 +88,9 @@ List_surveyor %>%
     'Person_n' = "調查者人數" ) 
 
 ```
-<br/>   
-  
+<br/>  
+
+\newpage     
 ### Part 2 刪疏失的資料  
 
 ```
@@ -138,6 +139,7 @@ M.data %>%
 ```
 <br/> 
 
+\newpage   
 樣區樣點的統計資料
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
@@ -193,6 +195,8 @@ M.data %>%
 
 <br/>  
 <br/>  
+
+\newpage   
 各林管處各疏失資料類型的筆數
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -225,6 +229,7 @@ M.data %>%
 ```
 <br/>  
 
+\newpage   
 刪除疏失的資料後，各林管處的獼猴調查統計  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
@@ -250,8 +255,9 @@ M.data %>%
   align(.,
         align = "center", part = "all")
 ```
-<br/> 
-  
+<br/>   
+
+\newpage     
 ### Part 3 納入分析的資料    
 
 ```
@@ -296,8 +302,9 @@ M.data %>%
 刪除重複記錄前猴群有`r  nrow(M.data[M.data$analysis %in% "Y" & M.data$Macaca_dist != "C" &M.data$Macaca_sur.ori %in% 2,]) `群；刪除重複記錄後猴群有`r  sum(M.data[M.data$analysis %in% "Y",]$Macaca_sur) `群。  
 <br/>  
 <br/>  
-<br/> 
+<br/>    
 
+\newpage   
 位在海拔50 m以上森林的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -345,6 +352,7 @@ E_rate_Office %>%
 <br/>  
 <br/>  
 
+\newpage   
 各森林類型內的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 E_rate_Forest<-
@@ -433,6 +441,8 @@ E_rate_Forest %>%
 
 <br/>  
 <br/>  
+
+\newpage   
 林管處的Encounter_rate  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
@@ -457,6 +467,8 @@ M.data %>%
 
 <br/>  
 <br/>  
+
+\newpage   
 森林類型的Encounter_rate    
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -481,10 +493,11 @@ M.data %>%
   )
 
 ```
-
+  
 <br/>  
 <br/>  
 
+\newpage   
 Altitude的Encounter_rate  
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 Alt.d.n <-
@@ -516,8 +529,8 @@ Alt.d.n <-
   align(.,
         align = "center", part = "all")
 ```
-<br/>   
-<br/>  
+  
+
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
@@ -557,7 +570,7 @@ M.data %>%
 
 ```
 <br/>  
-<br/>  
+  
 排除3000m以上，再畫一次  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
@@ -598,8 +611,8 @@ M.data %>%
   )
 
 ```
-
-
+<br/>    
+\newpage   
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 
   M.data %>% 
@@ -642,7 +655,7 @@ ggplot(data = tmp,
 
 ```
 
-\newpage
+\newpage  
 #### 其他補充圖表
 
 

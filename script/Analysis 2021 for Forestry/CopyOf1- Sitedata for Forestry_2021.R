@@ -86,11 +86,11 @@ DF %>%
 Count_Point_Survey <- 
 DF %>% 
   filter(!is.na(Macaca_sur) ) %>% 
-  group_by(Office, Survey) %>% 
+  group_by(Office, Survey, Year) %>% 
   summarise(Site_n = Site_N %>% unique %>% length,
             Data_n = n()) %>% 
-  reshape2::melt(id = 1:2) %>% 
-  reshape2::dcast(Office ~ Survey + variable, guess_var = "value")
+  reshape2::melt(id = 1:3) %>% 
+  reshape2::dcast(Office + Year ~ Survey + variable, guess_var = "value")
 
 #有些樣點兩旅次做在不同位置上，所以data數不會剛好是point的兩倍
 #Data_n奇數筆原因是花蓮的長良林道，第1旅次7樣點，第2旅次刪除沒作，另設長良樣區(8樣點)只作1旅次。

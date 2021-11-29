@@ -11,9 +11,13 @@ library(MuMIn)
 
 M.data <- read_excel("./data/clean/for analysis Forestrydata_2021_V1.xlsx",
                      sheet="Data")  %>% 
+  mutate(Point = as.character(Point)) %>% 
     bind_rows(
-    read_excel("./data/clean/for analysis Forestrydata_V1.xlsx",
-                       sheet="Data"))  %>% 
+    read_excel("./data/clean/for analysis Forestrydata_2020_V2.xlsx",
+                       sheet="Data") %>% 
+      mutate(Point = as.character(Point))%>% 
+      mutate(Macaca_sur = as.numeric(Macaca_sur)) 
+    )  %>% 
   
   mutate(Office = ordered(Office,
                           levels = c("羅東", "新竹", "東勢", "南投",
@@ -21,7 +25,7 @@ M.data <- read_excel("./data/clean/for analysis Forestrydata_2021_V1.xlsx",
                           labels = c("Luodong", "Hsinchu", "Dougshih", "Nantou",
                                      "Chiayi", "Pingtung", "Hualien", "Taitung"))) %>% 
   
-  mutate_at(c("Year", "Survey","Point","Month",
+  mutate_at(c("Year", "Survey","Month",
               "Day", "Macaca_sur", "Distance"), as.numeric) %>% 
   
   mutate(TypeName.1 = case_when(
@@ -50,7 +54,7 @@ df <-
 
 #-------------------------------------------
 
-allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D + Office +  (1|Site_N) + (Year.re|Site_N), 
+allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D + Office +  (1|Site_N), 
              family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
 
 
@@ -58,7 +62,7 @@ allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D + Office +
 df$Altitude.1 <-  scale(df$Altitude,scale =T)
 df$julian.D.1 <-  scale(df$julian.D,scale =T)
 
-m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 + Office  + (1|Site_N)+ (Year.re|Site_N), 
+m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 + Office  + (1|Site_N), 
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 
@@ -84,7 +88,10 @@ importance(d1)
 sw(model.avg(d1, subset = delta < 2))
 
 
-
+m1.1 <- glmer(Macaca_sur ~   Year.re +  julian.D.1 + Office  + (1|Site_N), 
+            family = binomial, data = df,
+            control = glmerControl(optimizer = "bobyqa"))
+Anova(m1.1)
 #-------------------------------------------
 
 
@@ -94,7 +101,7 @@ summary(glht(m1, linfct = c("Year.re = 0",
                             "Altitude.1 = 0",
                             "julian.D.1 = 0"))) 
 
-par(mai=c(1,1,1.2,0.2))
+par(mai=c(1,1,1.5,0.2))
 glht(m1, linfct = mcp(Office = "Tukey")) %>% cld()  %>% plot
 
 par(mai=c(1,1.5,1,1))
@@ -102,4 +109,16 @@ glht(m1, linfct = mcp(Office = "Tukey")) %>% plot
 
 
 
-
+M.data %>% 
+  group_by(Year, Survey) %>% 
+  summarise(
+    N = n(),
+    m = Macaca_sur %>% as.numeric() %>% sum,
+    E = m/N
+  ) %>% 
+  ggplot(., aes(x = factor(Year), y = E)) +
+  geom_boxplot()+
+  scale_y_continuous(limits =  c(0, 0.1))+
+  labs(x = "Year",
+       y = "Encounter rate (troop/point)")+
+  theme_classic()
