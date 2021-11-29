@@ -1,9 +1,8 @@
 ---
-title: "Data Summary of Foresty(內部資料)"
+title: "Summary of 林務局"
 author: '  '
 date: "`r format(Sys.time(), '%Y/%m/%d')`"
 output:
-  pdf_document: default
   word_document: default
   html_document: default
 ---
@@ -89,7 +88,7 @@ List_surveyor %>%
     'Person_n' = "調查者人數" ) 
 
 ```
-  
+<br/>   
   
 ### Part 2 刪疏失的資料  
 
@@ -99,8 +98,6 @@ List_surveyor %>%
 2. 開始時間晚於11點：時>=11的都刪。
 3. 調查未滿6分鐘刪。
 4. 不在預設樣點上：容許GPS誤差在50 m，調查位置座標離預設樣點距離>50m刪除。
-
-
 ```
 
 
@@ -139,36 +136,7 @@ M.data %>%
 
 
 ```
-
-
- 
-```{r message=FALSE, warning=FALSE, include=FALSE}
-#### 大於兩群的樣點 
-Group_than2<- M.data %>%
-   filter(analysis %in% "Y") %>% 
-   filter(Macaca_sur %in% 1) %>% 
-   group_by(Year, Survey, Site_N) %>% 
-     summarise(N = n()) %>% 
-   filter(N>1)
-
-Group_than2 %>% 
-  mutate(Year = as.character(Year)) %>% 
-
-  reshape2::dcast(Year+Site_N ~ Survey,
-                  value.var = "N") %>% 
-  arrange(Site_N) %>% 
-  flextable(.) %>% 
-   width(., width = c(1,1,2,1)) %>% 
-  
-  align(.,j = 1:4,
-        align = "center", part = "all")  %>% 
-
-
-  set_header_labels(
-    'Site_N' = "樣區編號",
-    'N' = "猴群數" ) 
-
-```
+<br/> 
 
 樣區樣點的統計資料
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -221,30 +189,117 @@ M.data %>%
         align = "center", part = "header") 
   
 ```
+南投處：有4個樣區(共計40個樣點)，因洪水沖斷道路而無進行5月的調查。  
 
+<br/>  
+<br/>  
+各林管處各疏失資料類型的筆數
 
-猴群分布的森林類型  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-Composition_Forest<- M.data %>% 
-   filter(analysis %in% "Y") %>% 
-   group_by(TypeName.1,TypeName) %>% 
-   summarise(N = n(), m = sum(Macaca_sur))
 
-Composition_Forest %>% 
-  flextable(.) %>% 
-   width(., width = c(1,2,1,1))  %>%
+M.data %>% 
+  filter(! is.na(Macaca_sur)) %>% 
+  bind_rows(
+    M.data %>% 
+      filter(! is.na(Macaca_sur)) %>% 
+      mutate(Office = "Total")
+  ) %>% 
+  mutate(Office = ordered(Office, c("羅東","新竹",
+                                    "東勢","南投",
+                                    "嘉義","屏東",
+                                    "花蓮","臺東",
+                                    "Total"))) %>% 
+  group_by(Office, Survey) %>% 
+  summarise(
+    '樣點數' = n(),
+    '超過7日' = str_subset(analysis, "7day") %>% length,
+    '晚於11時' = str_subset(analysis, "Toolate") %>% length,
+    '不足6分鐘' = str_subset(analysis, "6min") %>% length,
+    '誤差超過50m' = str_subset(analysis, "locate") %>% length
+  ) %>% 
+  mutate_all(~str_replace_all(., '^0$', "-")) %>% 
   
+  flextable(.) %>% 
   align(.,
-        align = "center", part = "all") %>% 
-  set_header_labels(
-    'TypeName.1' = "森林類型",
-    'TypeName' = "森林類型(森林4th的圖層)",
-    'N' = "樣點數",
-    'm' = "猴群數" )
+        align = "center", part = "all")
+```
+<br/>  
+
+刪除疏失的資料後，各林管處的獼猴調查統計  
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+M.data %>% 
+  filter(analysis %in%　str_subset(analysis, "^Y")) %>%
+  bind_rows(
+    M.data %>% 
+      filter(! is.na(Macaca_sur)) %>% 
+      mutate(Office = "Total")
+  ) %>% 
+  mutate(Office = ordered(Office, c("羅東","新竹",
+                                    "東勢","南投",
+                                    "嘉義","屏東",
+                                    "花蓮","臺東",
+                                    "Total"))) %>% 
+  group_by(Office, Survey) %>% 
+  summarise(
+    樣點數 = n(), 
+    孤猴 = str_subset(Macaca_sur.ori, "1") %>% length, 
+    猴群 = str_subset(Macaca_sur.ori, "2") %>% length
+  )%>% 
+  
+  flextable(.) %>% 
+  align(.,
+        align = "center", part = "all")
+```
+<br/> 
+  
+### Part 3 納入分析的資料    
 
 ```
+不納入分析的情形：
+1. >100m的猴群不納入分析。(猴群改為0)
+2. 移除非森林。樣點座標距離森林圖層>20m者為非森林。
+3. 移除海拔<50m的樣點(及猴群)資料。
+4. 同一旅次同一樣區內兩猴群所在樣點的距離<300者，僅留1群。
+5. 移除3/1~6/30以前或以後的調查。
+```
+記錄到1~5群猴群的樣區的樣區數  
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  filter(Macaca_sur.ori %in% 2 & !Macaca_dist %in% "C")%>% 
+  group_by(Year, Survey, Site_N) %>% 
+  summarise(N = n()) %>% 
+  group_by(N) %>% 
+  summarise(N_befoer = n()) %>% 
+  
+  left_join(
+  M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  filter(Macaca_sur %in% 1) %>% 
+  group_by(Year, Survey, Site_N) %>% 
+  summarise(N = n()) %>% 
+   group_by(N) %>% 
+  summarise(N_after = n()) 
+    
+  )%>% 
+  mutate(N_after = ifelse(is.na(N_after), "-", N_after)) %>% 
+  flextable(.)  %>% 
+   width(., width = c(2,1.5,1.5)) %>% 
+  align(.,j = 1:3,
+        align = "center", part = "all")  %>%
+  set_header_labels(
+    'N' = "單一樣區內的猴群數",
+    'N_befoer' = "猴群數(刪除前)",
+    'N_after' = "猴群數(刪除後)" ) 
+  
+```
+刪除重複記錄前猴群有`r  nrow(M.data[M.data$analysis %in% "Y" & M.data$Macaca_dist != "C" &M.data$Macaca_sur.ori %in% 2,]) `群；刪除重複記錄後猴群有`r  sum(M.data[M.data$analysis %in% "Y",]$Macaca_sur) `群。  
+<br/>  
+<br/>  
+<br/> 
 
-各林管處的樣點、猴群、相對密度 (mean & se)  
+位在海拔50 m以上森林的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 E_rate_Office<-
@@ -287,8 +342,10 @@ E_rate_Office %>%
         align = "center", part = "all")  
 ```
 
+<br/>  
+<br/>  
 
-
+各森林類型內的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 E_rate_Forest<-
 
@@ -374,39 +431,8 @@ E_rate_Forest %>%
 
 ```
 
-
-非森林的樣點離森林的距離 ( <50m + =>50m)  
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-
-M.data_notForest <- 
-M.data %>%  
-  filter(analysis %in%　str_subset(analysis, "^Y")) %>%
-  filter(analysis %in%
-           str_subset(analysis, "month", negate = T)) %>%
-  filter(TypeName.1 %in%　"非森林") %>% 
-  
-  mutate(cut = cut(Distance, breaks = seq(20,240,10),
-                   include.lowest = T, right = TRUE))
-
-ggplot(M.data_notForest, aes(x = Distance))+
-  geom_histogram(fill = gray(0.8), col = "black", breaks = seq(20,240,10))+
-  stat_bin( geom="text", colour="black", size=3.5, breaks = seq(20,240,10),
-           aes(label=..count.., y=(..count..)+0.6))+
-  scale_x_continuous(breaks = seq(20,240,20),expand = c(0,0,0,5))+
-  scale_y_continuous(expand = c(0,0,0,5))+
-  labs(x = "Distance", y = "Count")+
-  theme(
-    text = element_text(family="serif"),
-    panel.grid = element_blank(),
-    panel.background = element_blank(),
-    axis.text = element_text(size = 14,colour = "black"),
-    axis.title = element_text(size = 18,colour = "black",
-                              vjust = -2, hjust = 0.5)
-  )
- 
-
-```
-
+<br/>  
+<br/>  
 林管處的Encounter_rate  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
@@ -429,8 +455,9 @@ M.data %>%
   )
 ```
 
-森林類型的Encounter_rate  
-
+<br/>  
+<br/>  
+森林類型的Encounter_rate    
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 M.data %>% 
@@ -455,8 +482,11 @@ M.data %>%
 
 ```
 
+<br/>  
+<br/>  
+
 Altitude的Encounter_rate  
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 Alt.d.n <-
   M.data %>% 
   filter(analysis %in% "Y") %>% 
@@ -486,7 +516,8 @@ Alt.d.n <-
   align(.,
         align = "center", part = "all")
 ```
-
+<br/>   
+<br/>  
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
@@ -525,7 +556,8 @@ M.data %>%
   )
 
 ```
-
+<br/>  
+<br/>  
 排除3000m以上，再畫一次  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
@@ -568,7 +600,7 @@ M.data %>%
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 
   M.data %>% 
     filter(analysis %in% "Y") %>% 
@@ -582,19 +614,127 @@ M.data %>%
     summarise(mid = median(E))
 
 ```
-猴群分布的海拔 (max Alt = 3075)  
+猴群分布的海拔 (max Elevation = 3075)  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+tmp <- 
 M.data %>% 
-    filter(analysis %in% "Y") %>% 
-  filter(Macaca_sur %in% 1) %>%
-  .$Altitude %>% 
-  hist(breaks = c(seq(0,3200,100)))
+    filter(analysis %in% "Y") %>%
+  mutate(Macaca_sur = factor(Macaca_sur,
+                         levels = c("1", "0")))%>% 
+    mutate(Altitude_f =cut(Altitude,
+                           breaks = c(seq(0,4000,200)),
+                           labels = c(seq(100,3900,200)),
+                           include.lowest = T) )  
+
+
+ggplot(data = tmp, 
+       aes(x = Altitude_f,
+           color = Macaca_sur,
+           fill = Macaca_sur))+
+    geom_bar(position="stack")+
+  labs(x = "Elevation")+
+  theme(
+    axis.text.x = element_text(angle = 270, vjust =0),
+    legend.position = "top",
+    axis.line = element_line(color = "black"),
+    panel.background = element_blank()
+  )
 
 ```
 
-可分析的樣點的海拔分布  
+\newpage
+#### 其他補充圖表
+
+
+非森林的樣點離森林的距離 ( 包含海拔小於50m的樣點)  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+M.data_notForest <- 
+M.data %>%  
+  filter(analysis %in%　str_subset(analysis, "^Y")) %>%
+  filter(analysis %in%
+           str_subset(analysis, "month", negate = T)) %>%
+  filter(TypeName.1 %in%　"非森林") %>% 
+  
+  mutate(cut = cut(Distance, breaks = seq(20,240,10),
+                   include.lowest = T, right = TRUE))
+
+ggplot(M.data_notForest, aes(x = Distance))+
+  geom_histogram(fill = gray(0.8), col = "black", breaks = seq(20,240,10))+
+  stat_bin( geom="text", colour="black", size=3.5, breaks = seq(20,240,10),
+           aes(label=..count.., y=(..count..)+0.6))+
+  scale_x_continuous(breaks = seq(20,240,20),expand = c(0,0,0,5))+
+  scale_y_continuous(expand = c(0,0,0,5))+
+  labs(x = "Distance", y = "Count")+
+  theme(
+    text = element_text(family="serif"),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5)
+  )
  
+
+```
+
+<br/>
+猴群分布的森林類型  
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 
+Composition_Forest<- 
+  M.data %>% 
+   filter(analysis %in% "Y") %>% 
+   group_by(TypeName.1,TypeName) %>% 
+   summarise(N = n(), m = sum(Macaca_sur))
+
+Composition_Forest %>% 
+  flextable(.) %>% 
+   width(., width = c(1,2,1,1))  %>%
+  
+  align(.,
+        align = "center", part = "all") %>% 
+  set_header_labels(
+    'TypeName.1' = "森林類型",
+    'TypeName' = "森林類型(4th森林圖層)",
+    'N' = "樣點數",
+    'm' = "猴群數" )
+
+```
+
+
+ 
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+#### 大於兩群的樣點 
+Group_than2<- M.data %>%
+   filter(analysis %in% "Y") %>% 
+   filter(Macaca_sur %in% 1) %>% 
+   group_by(Year, Survey, Site_N) %>% 
+     summarise(N = n()) %>% 
+   filter(N>1)
+
+Group_than2 %>% 
+  mutate(Year = as.character(Year)) %>% 
+
+  reshape2::dcast(Year+Site_N ~ Survey,
+                  value.var = "N") %>% 
+  arrange(Site_N) %>% 
+  flextable(.) %>% 
+   width(., width = c(1,1,2,1)) %>% 
+  
+  align(.,j = 1:4,
+        align = "center", part = "all")  %>% 
+
+
+  set_header_labels(
+    'Site_N' = "樣區編號",
+    'N' = "猴群數" ) 
+
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+ #可分析的樣點的海拔分布  
   M.data %>% 
     filter(analysis %in% "Y") %>% 
     mutate(Altitude_f =cut(Altitude,
@@ -609,4 +749,18 @@ M.data %>%
   
   
 ```
+  
 
+\newpage   
+  
+2021年位在海拔50 m以上森林的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。  
+
+\newpage  
+  
+2021年位在海拔50 m以上森林的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。   
+
+\newpage    
+  
+在海拔50 m以上森林的林務局和BBS的樣點分布圖。紅色點( )為林務局的樣點，藍色點( )為BBS的樣點。  
+
+\newpage  
