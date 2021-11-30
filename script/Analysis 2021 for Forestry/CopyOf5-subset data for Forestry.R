@@ -255,6 +255,7 @@ NOTE <- data.frame(
 
 write_xlsx( list('NOTE' = NOTE,
                  'Point_Summary' = point_summary,
-                 'Data' = M.data.2), "./data/clean/for analysis Forestrydata_2021_V1.xlsx")
+                 'Data' = M.data.2), 
+            paste0("./data/clean/Forestry/for analysis/for analysis Forestrydata_2021_V1.xlsx"))
 
 

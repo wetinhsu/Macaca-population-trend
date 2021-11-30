@@ -253,7 +253,7 @@ DF.3 <-
      ))
  
  
-  write_xlsx( list('NOTE' = NOTE, 'Data' = M.data), "./data/clean/full_combind_Forestrydata_2021_V2.xlsx")
+  write_xlsx( list('NOTE' = NOTE, 'Data' = M.data), "./data/clean/Forestry/full_combind/full_combind_Forestrydata_2021_V2.xlsx")
  
  #Part 3 可納入分析的資料----------------
 #(僅留下 距離A、B、海拔50m以上、森林、300m的猴群)---------- 

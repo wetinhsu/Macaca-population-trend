@@ -27,8 +27,12 @@ library(ftExtra)
 ```{r include=FALSE}
 
 M.data <- 
-  read_excel(here("data/clean/for analysis Forestrydata_2021_V1.xlsx"),
-             sheet="Data")  %>%
+  here("./data/clean/Forestry/for analysis/") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2021)) %>% #如果只要2020~2021年，就寫2020:2021
+  lapply(., read_excel, sheet="Data") %>% 
+  bind_rows() %>% 
+
 
   mutate(Office = ordered(Office, 
                           c("羅東", "新竹", "東勢", "南投",

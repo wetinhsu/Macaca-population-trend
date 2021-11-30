@@ -9,21 +9,19 @@ library(MuMIn)
 #------------------------------------------------
 #Original data---- 
 
-M.data <- read_excel("./data/clean/for analysis Forestrydata_2021_V1.xlsx",
-                     sheet="Data")  %>% 
-  mutate(Point = as.character(Point)) %>% 
-    bind_rows(
-    read_excel("./data/clean/for analysis Forestrydata_2020_V2.xlsx",
-                       sheet="Data") %>% 
-      mutate(Point = as.character(Point))%>% 
-      mutate(Macaca_sur = as.numeric(Macaca_sur)) 
-    )  %>% 
+M.data <- 
+  list.files("./data/clean/Forestry/for analysis/", full.names = T) %>% 
+  lapply(., read_excel, sheet="Data") %>% 
+  bind_rows() %>% 
   
-  mutate(Office = ordered(Office,
-                          levels = c("羅東", "新竹", "東勢", "南投",
-                                     "嘉義", "屏東", "花蓮", "臺東"),
-                          labels = c("Luodong", "Hsinchu", "Dougshih", "Nantou",
-                                     "Chiayi", "Pingtung", "Hualien", "Taitung"))) %>% 
+  mutate(Office = 
+           ordered(Office,
+                   levels = c("羅東", "新竹", "東勢", "南投",
+                              "嘉義", "屏東", "花蓮", "臺東"),
+                   labels = c("Luodong", "Hsinchu", "Dougshih", "Nantou",
+                              "Chiayi", "Pingtung", "Hualien", "Taitung")
+                   )
+         ) %>% 
   
   mutate_at(c("Year", "Survey","Month",
               "Day", "Macaca_sur", "Distance"), as.numeric) %>% 
@@ -35,8 +33,6 @@ M.data <- read_excel("./data/clean/for analysis Forestrydata_2021_V1.xlsx",
     TypeName.1 %in% "混淆林" ~ "mixed",
     TypeName.1 %in% "非森林" ~ "Not forest"
   )) %>% 
-
-  
   
   filter(analysis %in% "Y")
 
@@ -92,10 +88,14 @@ m1.1 <- glmer(Macaca_sur ~   Year.re +  julian.D.1 + Office  + (1|Site_N),
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 Anova(m1.1)
+
 #-------------------------------------------
 
 
-summary(glht(m1, linfct = mcp(Office = "Tukey")))
+#summary(glht(m1, linfct = mcp(Office = "Tukey")))  
+#2021年有跳出warning，所以找新的指令，也是事後檢定
+
+summary(as.glht(pairs(emmeans(m1.1, ~Office))), test=adjusted("free"))
 
 summary(glht(m1, linfct = c("Year.re = 0",
                             "Altitude.1 = 0",
@@ -118,7 +118,43 @@ M.data %>%
   ) %>% 
   ggplot(., aes(x = factor(Year), y = E)) +
   geom_boxplot()+
-  scale_y_continuous(limits =  c(0, 0.1))+
+  scale_y_continuous(limits =  c(0, 0.1),
+                     breaks = seq(0,0.1,0.02))+
   labs(x = "Year",
        y = "Encounter rate (troop/point)")+
   theme_classic()
+
+
+
+M.data %>% 
+  group_by(Office, Survey) %>% 
+  summarise(
+    N = n(),
+    m = Macaca_sur %>% as.numeric() %>% sum,
+    E = m/N
+  ) %>% 
+  ggplot(., aes(x = factor(Office), y = E)) +
+  geom_boxplot()+
+  scale_y_continuous(limits =  c(0, 0.12),
+                     breaks = seq(0,0.12,0.02))+
+  labs(x = "Year",
+       y = "Encounter rate (troop/point)")+
+  theme_classic()
+
+M.data %>% 
+  group_by(TypeName.1, Survey) %>% 
+  summarise(
+    N = n(),
+    m = Macaca_sur %>% as.numeric() %>% sum,
+    E = m/N
+  ) %>% 
+  ggplot(., aes(x = factor(TypeName.1), y = E)) +
+  geom_boxplot()+
+  scale_y_continuous(limits =  c(0, 0.06),
+                     breaks = seq(0,0.06,0.02))+
+  labs(x = "Year",
+       y = "Encounter rate (troop/point)")+
+  theme_classic()
+
+
+emmip(m1, Office ~ Year.re)
