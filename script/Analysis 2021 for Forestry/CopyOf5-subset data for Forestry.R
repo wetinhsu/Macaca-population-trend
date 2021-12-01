@@ -7,7 +7,7 @@ library(writexl)
 library(sf)
 
 #------------
-M.data <- read_excel("./data/clean/full_combind_Forestrydata_2021_V2.xlsx", sheet = "Data")%>% 
+M.data <- read_excel("./data/clean/Forestry/full_combind/full_combind_Forestrydata_2021_V2.xlsx", sheet = "Data")%>% 
   select(-Macaca_voice, -Habitat ) %>% 
   mutate(Macaca_sur = ifelse(Macaca_dist %in% "C" , 0, Macaca_sur)) 
 
@@ -236,11 +236,6 @@ M.data.2 %>%
                  value.name = "樣點次")
 
 
-
-M.data.2 %>%  
-  group_by(Year, Survey, Site_N, Point) %>% 
-  summarise(N = n()) %>% 
-  filter(N >1)
 
 NOTE <- data.frame(
   說明 = c(

@@ -5,6 +5,7 @@ library(tidyverse)
 library(readxl)
 library(writexl)
 library(sf)
+library(lubridate)
 
 #------------
 
@@ -231,9 +232,11 @@ DF.3 <-
    setNames(., str_replace(colnames(.), "^地點.*", "Name")) %>% 
    setNames(., str_replace(colnames(.), "^join_TypeName$", "TypeName")) %>% 
    setNames(., str_replace(colnames(.), "^distance$", "Distance")) %>% 
-   arrange(Office, Site_N, Survey, Point)
+   arrange(Office, Site_N, Survey, Point) %>% 
    
-
+   
+    mutate(Date = as.character(Date)) 
+ 
 
 
  #猴群、孤猴的統計資料             
