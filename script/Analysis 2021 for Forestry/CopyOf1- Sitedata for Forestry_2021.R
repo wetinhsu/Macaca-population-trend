@@ -105,27 +105,20 @@ DF %>%
   DF %>% 
   add_column(analysis = "Y", .before = "Office") %>% 
   
-  split(., .$Site_N) %>% 
-  lapply(., function(x){  #檢核時間
-    x %>% 
-      split(., .$Survey) %>% 
-      lapply(., function(y){
-        
-        y %>% 
-          arrange(Date) %>% 
-          mutate(time_2=  c(Date[2: n()], NA))%>% 
-          mutate(time_diff = difftime(time_2, Date, units='mins') %>% 
-                as.numeric())  %>% 
-          
-          select(-time_2) %>% 
-          
-          mutate(day_diff = difftime(Date[n()], Date[1], units='days') %>% 
-                as.numeric() %>% round(.,0))  
-        }) %>% 
-      bind_rows()
-    }) %>%   
-  bind_rows() %>%
+  #檢核時間
+  group_by(Site_N, Survey) %>% 
+  arrange(Date, .by_group = T) %>%  #group內排序
+  mutate(time_2=  c(Date[2: n()], NA))%>% 
+  mutate(time_diff = difftime(time_2, Date, units='mins') %>% 
+           as.numeric())  %>% 
+  select(-time_2) %>% 
+  
+  mutate(day_diff = difftime(Date[n()], Date[1], units='days') %>% 
+           as.numeric() %>% round(.,0)) %>%
+  
+  ungroup() %>% 
 
+  #檢核位置
   left_join(M.Point,
             by = c("Site_N" = "Macaca_Site",
                    "Point" = "樣點代號"),
@@ -134,15 +127,16 @@ DF %>%
   split(. ,rownames(.)) %>% 
   lapply(., function(x){
     
-    P.sur <- #調查位置
-    x %>%
-      mutate(X = as.numeric(TWD97_X.ori)) %>% 
-      mutate(Y = as.numeric(TWD97_Y.ori)) %>% 
-      st_as_sf(., coords = c("X", "Y"), crs = 3826)
-    
     if(is.na(x$TWD97_X)| is.na(x$TWD97_Y)){
       x$point_diff <- NA
     }else{
+      
+      P.sur <- #調查位置
+       x %>%
+       mutate(X = as.numeric(TWD97_X.ori)) %>% 
+       mutate(Y = as.numeric(TWD97_Y.ori)) %>% 
+        st_as_sf(., coords = c("X", "Y"), crs = 3826)
+      
       P.set <- #表定位置
         x %>% 
         mutate(X = as.numeric(TWD97_X)) %>% 
@@ -173,7 +167,7 @@ DF.3 <-
   mutate(analysis = ifelse(day_diff > 7, 
                            paste0(analysis, ", 7day"), analysis)) %>% 
   
-  mutate(analysis = ifelse(as.numeric(Hour) >= 11, 
+  mutate(analysis = ifelse(data.table::as.ITime(Date) > data.table::as.ITime("10:54"), 
                            paste0(analysis, ", Toolate"), analysis))%>% 
   
   mutate(analysis = case_when(
@@ -252,6 +246,11 @@ DF.3 <-
    說明 = c(
      "1. 欄位名有.ori 為調查者所填的原始數字",
      "2. 欄位名有.diff 為輔助欄位，用於計算時間差及位置偏差 ",
+     "3. analysis中，
+     Toolate為10:54之後才開始調查的樣點；
+     locate為調查位置偏離表定座標50m以上的樣點；
+     6min為調查時間不足6分鐘的樣點；
+     7day為該旅次該樣區超過7天才完成調查。",
      "本資料集為林務局獼猴調查資料的合併檔，並已完成清理動作。"
      ))
  

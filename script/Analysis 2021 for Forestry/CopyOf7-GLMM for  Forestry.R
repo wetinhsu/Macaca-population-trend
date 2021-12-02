@@ -6,6 +6,7 @@ library(car)
 library(multcomp)
 library(readxl)
 library(MuMIn)
+library(emmeans)
 #------------------------------------------------
 #Original data---- 
 
@@ -122,7 +123,10 @@ M.data %>%
                      breaks = seq(0,0.1,0.02))+
   labs(x = "Year",
        y = "Encounter rate (troop/point)")+
-  theme_classic()
+  theme_classic()+
+  theme(
+    panel.border = element_blank()
+  )
 
 
 
@@ -139,7 +143,10 @@ M.data %>%
                      breaks = seq(0,0.12,0.02))+
   labs(x = "Year",
        y = "Encounter rate (troop/point)")+
-  theme_classic()
+  theme_classic()+
+  theme(
+    panel.border = element_blank()
+  )
 
 M.data %>% 
   group_by(TypeName.1, Survey) %>% 
@@ -157,4 +164,4 @@ M.data %>%
   theme_classic()
 
 
-emmip(m1, Office ~ Year.re)
+emmip(m1, TypeName.1 ~ Office)
