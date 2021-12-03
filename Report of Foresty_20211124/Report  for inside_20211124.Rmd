@@ -144,9 +144,9 @@ M.data %>%
     '2-3 超過7日' = str_subset(analysis, "7day") %>% length,
     '2-4 位置錯誤' = str_subset(analysis, "locate") %>% length,
     
-    '3 不在3~6月內(3~6月以外、全海拔範圍、所有森林類型)' = str_subset(analysis, "^Y") %>% 
+    '3 刪掉不在3~6月內(3~6月以外、全海拔範圍、所有棲地類型)' = str_subset(analysis, "^Y") %>% 
       str_subset(., "month", negate = T) %>% length,
-    '4 低於50m(3~6月、<50m、所有森林類型)' =
+    '4 刪掉低於50m(3~6月、<50m、所有棲地類型)' =
       str_subset(analysis, "^Y")%>% 
       str_subset(., "month", negate = T) %>% 
       str_subset(., "50m", negate = T) %>% length,
@@ -256,34 +256,31 @@ M.data %>%
   
   mutate(prob = (100 * Good_n/Point_n) %>%  round(1)) %>%
   reshape2::melt(id = 1:2) %>% 
-  reshape2::dcast(Office ~ Year + variable, value.var = "value") %>% 
-  mutate(Office = ordered(Office, c("羅東","新竹",
-                                    "東勢","南投",
-                                    "嘉義","屏東",
-                                    "花蓮","臺東",
-                                    "Total"))) %>% 
-  arrange(Office) %>% 
-  flextable(.)  %>% 
+  reshape2::dcast(Office ~ Year + variable, value.var = "value") %>%
+  mutate(level2 = ifelse(Office %in% "Total", 2, 1)) %>% 
 
+  arrange(level2, desc(`2021_prob`) )%>% 
+  
+  mutate(prob_diff = paste0(`2021_prob`, "(",
+                            round( `2021_prob`-`2020_prob`, 1), ")")
+         ) %>% 
+  
+  select(-`level2`, -starts_with("2020"), -`2021_prob`) %>% 
+  flextable(.)  %>% 
+  
   set_header_labels(
     "Office"="林管處",
-    "2020_Point_n"="樣點",
-    "2020_Good_n" = "無疏失的樣點",
-    "2020_prob" = "正確率%",
     "2021_Point_n"="樣點",
     "2021_Good_n" = "無疏失的樣點",
-    "2021_prob" = "正確率%") %>% 
+    "prob_diff" = "正確率%") %>% 
   add_header_row(., 
-                 values = c(" ","2020", "2021"),
-                 colwidths = c(1,3,3)) %>% 
+                 values = c(" ", "2021"),
+                 colwidths = c(1,3)) %>% 
+  
 
   theme_booktabs(.)%>% 
   align(.,
-        align = "center", part = "header")%>% 
-
-  theme_booktabs(.)%>% 
-  align(.,
-        align = "center", part = "header") 
+        align = "center", part = "all")
   
 
 
@@ -346,7 +343,6 @@ M.data %>%
                                     "Total"))) %>% 
   group_by(Office, Year) %>% 
   summarise(
-    '樣點數' = n(),
     '超過7日' = str_subset(analysis, "7day") %>% length,
     '晚於11時' = str_subset(analysis, "Toolate") %>% length ,
     '不足6分鐘' = str_subset(analysis, "6min") %>% length ,
@@ -363,19 +359,17 @@ M.data %>%
 
   set_header_labels(
     "Office"="林管處",
-    "2020_樣點數"="樣點次",
     "2020_超過7日" = "超過7日",
     "2020_晚於11時" = "晚於11時",
     "2020_不足6分鐘"="不足6分鐘",
     "2020_誤差超過50m" = "誤差超過50m",
-    "2021_樣點數"="樣點次",
     "2021_超過7日" = "超過7日",
     "2021_晚於11時" = "晚於11時",
     "2021_不足6分鐘"="不足6分鐘",
     "2021_誤差超過50m" = "誤差超過50m") %>% 
   add_header_row(., 
                  values = c(" ","2020", "2021"),
-                 colwidths = c(1,5,5)) %>% 
+                 colwidths = c(1,4,4)) %>% 
   align(.,
         align = "center", part = "all")
 ```
@@ -383,7 +377,7 @@ M.data %>%
 
 
 \newpage   
-刪除疏失的資料後，各林管處的獼猴調查統計  
+篩選後的資料後，各林管處的獼猴調查統計  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
   filter(Year == 2021) %>% 
@@ -915,27 +909,43 @@ Group_than2<- M.data %>%
   filter(!Macaca_dist %in% "C") %>% 
    filter(Macaca_sur.ori %in% 2) %>% 
    group_by(Year, Survey, Site_N, Name) %>% 
-     summarise(N = n()) %>% 
-   filter(N>2)
+     summarise(N_befor = n(),
+               N_after = sum(Macaca_sur)) %>% 
+   filter(N_befor>2)
 
 Group_than2 %>% 
-  mutate(Year = as.character(Year)) %>% 
+  left_join(M.data) %>% 
+  select(Year,Station, Site_N, Name, Survey, Surveyor, N_befor, N_after) %>% 
+  unique() %>% 
+  mutate(Year = as.character(Year)) %>%
+  mutate(Survey = as.character(Survey)) %>%
+  
+  reshape2::melt(id = 1:5) %>% 
+  
 
-  reshape2::dcast(Year+Site_N+Name ~ Survey,
-                  value.var = "N") %>% 
+  reshape2::dcast(Year+ Station + Site_N+Name ~ Survey + variable,
+                  value.var = "value") %>% 
   arrange(Site_N) %>% 
   flextable(.) %>% 
-   width(., width = c(1,1,2,1,1)) %>% 
+   width(., width = c(1,1,2,2.5,3,1,1,3,1,1)) %>% 
   
-  align(.,j = 1:5,
+  add_header_row(., 
+                 values = c(" "," "," "," ","第1旅次", "第2旅次"),
+                 colwidths = c(1,1,1,1,3,3)) %>% 
+  
+  align(.,
         align = "center", part = "all")  %>% 
 
 
   set_header_labels(
     'Name' = "樣區名稱",
     'Site_N' = "樣區編號",
-    '1' = "第1旅次",
-    '2' = "第2旅次" ) 
+    '1_Surveyor' = "調查者",
+    '1_N_befor' = "刪除前",
+    '1_N_after' = "刪除後",
+    '2_Surveyor' = "調查者",
+    '2_N_befor' = "刪除前",
+    '2_N_after' = "刪除後" ) 
 
 ```
 單位：群   
@@ -958,6 +968,30 @@ Group_than2 %>%
   
   
 ```
+  
+  
+```{r}
+ 
+M.data %>% 
+  filter(Year == 2021) %>% 
+  filter(!is.na(Macaca_sur)) %>% 
+    filter(!analysis %in%  str_subset(analysis, "^Y") ) %>% 
+  select(analysis, Site_N, Surveyor, Station) %>% 
+  unique() %>% 
+  group_by(Station, Site_N, Surveyor) %>% 
+  summarise(
+    pp = paste0(analysis, collapse = ", ") %>% 
+      str_split(., ", ", simplify = TRUE) %>%
+      .[1,] %>% unique() %>% 
+      paste0(collapse = ", ") 
+  ) %>% 
+  arrange(str_sub(Site_N,4,1), Site_N) %>% 
+  flextable(.) 
+
+
+
+```
+  
   
 
 \newpage   
