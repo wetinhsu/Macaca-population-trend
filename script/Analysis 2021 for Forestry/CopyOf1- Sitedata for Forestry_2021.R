@@ -5,7 +5,6 @@ library(tidyverse)
 library(readxl)
 library(writexl)
 library(sf)
-library(lubridate)
 
 #------------
 
@@ -123,35 +122,25 @@ DF %>%
             by = c("Site_N" = "Macaca_Site",
                    "Point" = "樣點代號"),
             suffix = c(".ori", "")) %>% 
-  mutate(point_diff = NA) %>% 
-  split(. ,rownames(.)) %>% 
-  lapply(., function(x){
-    
-    if(is.na(x$TWD97_X)| is.na(x$TWD97_Y)){
-      x$point_diff <- NA
-    }else{
+  
+  #為了計算距離，先轉成"數字格式"
+  mutate_at(c("TWD97_X", "TWD97_Y", "TWD97_X.ori", "TWD97_Y.ori"), as.numeric) %>% 
+  
+
+  #計算距離
+  mutate(point_diff = ifelse(
+    is.na(TWD97_X)| is.na(TWD97_Y), NA,
+    st_distance(
+      st_as_sf(., coords = c("TWD97_X.ori", "TWD97_Y.ori"),
+               crs = 3826, remove = F, na.fail = F),#調查位置
       
-      P.sur <- #調查位置
-       x %>%
-       mutate(X = as.numeric(TWD97_X.ori)) %>% 
-       mutate(Y = as.numeric(TWD97_Y.ori)) %>% 
-        st_as_sf(., coords = c("X", "Y"), crs = 3826)
-      
-      P.set <- #表定位置
-        x %>% 
-        mutate(X = as.numeric(TWD97_X)) %>% 
-        mutate(Y = as.numeric(TWD97_Y)) %>% 
-        st_as_sf(., coords = c("X", "Y"), crs = 3826)
-      
-      x$point_diff <- 
-        st_distance(P.sur, P.set,
-                    by_element = TRUE) %>% 
-        as.numeric()
-    }
-    x
-   
-    }) %>% 
-  bind_rows() %>% 
+      st_as_sf(., coords = c("TWD97_X", "TWD97_Y"),
+               crs = 3826, remove = F, na.fail = F),#表定位置
+      by_element = TRUE) %>% 
+      as.numeric()
+    )) %>% 
+  #再轉回"文字格式"
+  mutate_at(c("TWD97_X", "TWD97_Y", "TWD97_X.ori", "TWD97_Y.ori"), as.character) %>% 
   
   mutate(Macaca_sur.ori = Macaca_sur) %>% 
   mutate(Macaca_sur = ifelse(Macaca_sur %in% "1" & !is.na(Macaca_sur), 0,
