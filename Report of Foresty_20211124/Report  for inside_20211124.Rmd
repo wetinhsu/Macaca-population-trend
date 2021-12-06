@@ -7,7 +7,6 @@ output:
   html_document: default
 ---
 
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -22,7 +21,6 @@ library(here)
 library(flextable)
 library(ftExtra)
 ```
-
 
 ```{r include=FALSE}
 
@@ -45,12 +43,11 @@ M.data <-
   
 ```
 
-### Part 1 最初的資料  
-```
-說明：收到的資料，尚未刪減任何資料。  
-```
-各林管處的調查人員人數
+### Part 1 最初的資料
 
+    說明：收到的資料，尚未刪減任何資料。  
+
+各林管處的調查人員人數
 
 ```{r 調查者的統計資料, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -112,25 +109,24 @@ List_surveyor %>%
   align(.,j = 1:5, align = "center", part = "all") 
 
 ```
-屏東處：2021年較去年多了一個"中壽山"樣區。  
-花蓮處：2021年較去年少一個樣區"苳苳園西山"樣區，"苳苳園西山"去年僅在調查第1旅次後就放棄，並在改設"長良"樣區且有進行調查。  
 
+屏東處：2021年較去年多了一個"中壽山"樣區。\
+花蓮處：2021年較去年少一個樣區"苳苳園西山"樣區，"苳苳園西山"去年僅在調查第1旅次後就放棄，並在改設"長良"樣區且有進行調查。
 
-<br/>  
+<br/>
 
-\newpage     
-### Part 2 刪疏失的資料  
+\newpage
 
-```
-刪除項目：
-1. 同一旅次超過7日才完成調查：同一旅次同一樣區內超過7日才完成調查，整個旅次的資料放棄。
-2. 開始時間晚於11點：時>=11的都刪。
-3. 調查未滿6分鐘刪。
-4. 不在預設樣點上：容許GPS誤差在50 m，調查位置座標離預設樣點距離>50m刪除。
-```
+### Part 2 刪疏失的資料
 
+    刪除項目：
+    1. 同一旅次超過7日才完成調查：同一旅次同一樣區內超過7日才完成調查，整個旅次的資料放棄。
+    2. 開始時間晚於10點54分。
+    3. 調查未滿6分鐘刪。
+    4. 不在預設樣點上：容許GPS誤差在50 m，調查位置座標離預設樣點距離>50m刪除。
 
 整體的樣點次流變
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 M.data %>% 
@@ -165,10 +161,13 @@ M.data %>%
 
 
 ```
-<br/> 
 
-\newpage   
+<br/>
+
+\newpage
+
 樣區樣點的統計資料
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
   filter(! is.na(Macaca_sur)) %>% 
@@ -224,10 +223,11 @@ M.data %>%
         align = "center", part = "header") 
   
 ```
-南投處：有4個樣區(共計40個樣點)，因洪水沖斷道路而無進行5月的調查。  
 
-<br/>  
-<br/> 
+南投處：有4個樣區(共計40個樣點)，因洪水沖斷道路而無進行5月的調查。
+
+<br/>\
+<br/>
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
@@ -286,12 +286,12 @@ M.data %>%
 
 ```
 
-
-<br/>  
+<br/>\
 <br/>
 
-\newpage   
-各林管處各疏失資料類型的筆數
+\newpage
+
+2021年各林管處各疏失資料類型的筆數
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -323,7 +323,8 @@ M.data %>%
   align(.,
         align = "center", part = "all")
 ```
-<br/>  
+
+<br/>
 
 \newpage
 
@@ -373,11 +374,13 @@ M.data %>%
   align(.,
         align = "center", part = "all")
 ```
-<br/>  
 
+<br/>
 
-\newpage   
-篩選後的資料後，各林管處的獼猴調查統計  
+\newpage
+
+篩選後的資料後，各林管處的獼猴調查統計
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
   filter(Year == 2021) %>% 
@@ -405,22 +408,23 @@ M.data %>%
   align(.,
         align = "center", part = "all")
 ```
-<br/>   
 
-\newpage     
-### Part 3 納入分析的資料    
+<br/>
 
-```
-不納入分析的情形：
+\newpage
 
-1. 移除非森林。樣點座標距離森林圖層>20m者為非森林。
-2. 移除海拔<50m的樣點(及猴群)資料。
-3. 移除3/1~6/30以前或以後的調查。
-4. >100m的猴群不納入分析。(猴群改為0)
-5. 同一旅次同一樣區內兩猴群所在樣點的距離<300者，僅留1群。
+### Part 3 納入分析的資料
 
-```
-記錄到1~5群猴群的樣區的樣區數  
+    不納入分析的情形：
+
+    1. 移除非森林。樣點座標距離森林圖層>20m者為非森林。
+    2. 移除海拔<50m的樣點(及猴群)資料。
+    3. 移除3/1~6/30以前或以後的調查。
+    4. >100m的猴群不納入分析。(猴群改為0)
+    5. 同一旅次同一樣區內兩猴群所在樣點的距離<300者，僅留1群。
+
+記錄到1\~5群猴群的樣區的樣區數
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
   filter(Year == 2021) %>% 
@@ -453,13 +457,15 @@ M.data %>%
     'N_after' = "樣區數 (刪除後)" ) 
   
 ```
-刪除重複記錄前猴群有`r  nrow(M.data[M.data$Year %in% 2021 & M.data$analysis %in% "Y" & M.data$Macaca_dist != "C" &M.data$Macaca_sur.ori %in% 2,]) `群；刪除重複記錄後猴群有`r  sum(M.data[M.data$Year %in% 2021 & M.data$analysis %in% "Y",]$Macaca_sur) `群。  
-<br/>  
-<br/>  
-<br/>    
 
-\newpage   
-位在海拔50 m以上森林的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
+刪除重複記錄前猴群有`r  nrow(M.data[M.data$Year %in% 2021 & M.data$analysis %in% "Y" & M.data$Macaca_dist != "C" &M.data$Macaca_sur.ori %in% 2,])`群；刪除重複記錄後猴群有`r  sum(M.data[M.data$Year %in% 2021 & M.data$analysis %in% "Y",]$Macaca_sur)`群。\
+<br/>\
+<br/>\
+<br/>
+
+\newpage
+
+2021年位在海拔50 m以上森林的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -504,11 +510,13 @@ E_rate_Office %>%
         align = "center", part = "all")  
 ```
 
-<br/>  
-<br/>  
+<br/>\
+<br/>
 
-\newpage   
-各森林類型內的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
+\newpage
+
+2021年各森林類型內的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 E_rate_Forest<-
 
@@ -599,11 +607,13 @@ E_rate_Forest %>%
 
 ```
 
-<br/>  
-<br/>  
+<br/>\
+<br/>
 
-\newpage   
-林管處的Encounter_rate  
+\newpage
+
+林管處的Encounter_rate
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
 #  filter(Year == 2021) %>% 
@@ -628,11 +638,13 @@ M.data %>%
   )
 ```
 
-<br/>  
-<br/>  
+<br/>\
+<br/>
 
-\newpage   
-森林類型的Encounter_rate    
+\newpage
+
+森林類型的Encounter_rate
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 M.data %>% 
@@ -659,12 +671,14 @@ M.data %>%
   )
 
 ```
-  
-<br/>  
-<br/>  
 
-\newpage   
-Altitude的Encounter_rate  
+<br/>\
+<br/>
+
+\newpage
+
+Altitude的Encounter_rate
+
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 Alt.d.n <-
   M.data %>% 
@@ -698,8 +712,6 @@ Alt.d.n <-
   align(.,
         align = "center", part = "all")
 ```
-  
-
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
@@ -743,9 +755,11 @@ M.data %>%
   )
 
 ```
-<br/>  
-  
-排除3000m以上，再畫一次  
+
+<br/>
+
+排除3000m以上，再畫一次
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
 #   filter(Year == 2021) %>% 
@@ -788,8 +802,10 @@ M.data %>%
   )
 
 ```
-<br/>    
+
+<br/>\
 \newpage   
+
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 
   M.data %>% 
@@ -806,11 +822,12 @@ M.data %>%
 
 ```
 
-\newpage  
+\newpage
+
 #### 其他補充圖表
 
+非森林的樣點離森林的距離 ( 包含海拔小於50m的樣點)
 
-非森林的樣點離森林的距離 ( 包含海拔小於50m的樣點)  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 M.data_notForest <- 
@@ -842,8 +859,9 @@ ggplot(M.data_notForest, aes(x = Distance))+
 
 ```
 
-<br/>  
-猴群分布的森林類型  
+<br/>\
+猴群分布的森林類型
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # 
 Composition_Forest<- 
@@ -867,9 +885,10 @@ Composition_Forest %>%
 
 ```
 
-    
-\newpage  
-猴群分布的海拔 (max Elevation = `r max(M.data[M.data$Year == 2021 & M.data $Macaca_sur==1 & M.data$analysis == "Y", ]$Altitude, na.rm = T)`)  
+\newpage
+
+猴群分布的海拔 (max Elevation = `r max(M.data[M.data$Year == 2021 & M.data $Macaca_sur==1 & M.data$analysis == "Y", ]$Altitude, na.rm = T)`)
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 tmp <- 
 M.data %>% 
@@ -897,10 +916,11 @@ ggplot(data = tmp,
   )
 
 ```
-    
+
 \newpage
 
-(刪除重複猴群前)大於兩群的樣區列表  
+(刪除重複猴群前)大於兩群的樣區列表
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ####
 Group_than2<- M.data %>%
@@ -927,7 +947,7 @@ Group_than2 %>%
                   value.var = "value") %>% 
   arrange(Site_N) %>% 
   flextable(.) %>% 
-   width(., width = c(1,1,2,2.5,3,1,1,3,1,1)) %>% 
+#   width(., width = c(1,1,2,2.5,3,1,1,3,1,1)) %>% 
   
   add_header_row(., 
                  values = c(" "," "," "," ","第1旅次", "第2旅次"),
@@ -948,8 +968,10 @@ Group_than2 %>%
     '2_N_after' = "刪除後" ) 
 
 ```
-單位：群   
 
+單位：群
+
+\newpage
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
  #可分析的樣點的海拔分布  
@@ -968,37 +990,44 @@ Group_than2 %>%
   
   
 ```
-  
-  
-```{r}
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
  
 M.data %>% 
   filter(Year == 2021) %>% 
   filter(!is.na(Macaca_sur)) %>% 
     filter(!analysis %in%  str_subset(analysis, "^Y") ) %>% 
-  select(analysis, Site_N, Surveyor, Station) %>% 
+  select(Office,analysis, Site_N, Name, Surveyor, Station, Survey) %>% 
   unique() %>% 
-  group_by(Station, Site_N, Surveyor) %>% 
+  group_by(Office, Station, Surveyor, Site_N,Name) %>% 
   summarise(
     pp = paste0(analysis, collapse = ", ") %>% 
       str_split(., ", ", simplify = TRUE) %>%
       .[1,] %>% unique() %>% 
+      paste0(collapse = ", ") ,
+    xx = paste0(Survey, collapse = ", ") %>% 
+      str_split(., ", ", simplify = TRUE) %>%
+      .[1,] %>% unique() %>% 
       paste0(collapse = ", ") 
   ) %>% 
-  arrange(str_sub(Site_N,4,1), Site_N) %>% 
-  flextable(.) 
+  mutate(pp = str_replace_all(pp, "6min", "未滿6分鐘")) %>%
+  mutate(pp = str_replace_all(pp, "Toolate", "晚於11時")) %>%
+  mutate(pp = str_replace_all(pp, "locate", "位置偏離")) %>%
+  mutate(pp = str_replace_all(pp, "7day", "超過7日完成")) %>%
+  mutate(pp = str_replace_all(pp, ",", "、")) %>%
+  arrange(Office, Station, Surveyor) %>% 
+  setNames(., c("林管處","工作站", "調查者","樣區編號","樣區名稱","疏失類型", "旅次")) %>% 
+  writexl::write_xlsx(., here("./Report of Foresty_20211124/調查疏失名單.xlsx"))
+  
 
 
 
 ```
-  
-  
 
-\newpage   
-  
-2021年位在海拔50 m以上森林的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。  
+\newpage
 
-\newpage  
-  
-2021年位在海拔50 m以上森林的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。   
+2021年位在海拔50 m以上森林的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。
 
+\newpage
+
+2021年位在海拔50 m以上森林的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。
