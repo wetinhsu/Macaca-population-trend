@@ -1026,6 +1026,19 @@ M.data %>%
 
 \newpage
 
+```{r eval=FALSE, include=FALSE}
+M.data %>% 
+      group_by(Year,Site_N) %>% 
+      summarise(pp = sum(point_diff)) %>% 
+  filter(pp == 0) %>% 
+  left_join(., M.data) %>% 
+  filter(! is.na(analysis)) %>% 
+   writexl::write_xlsx(., here("./Report of Foresty_20211124/填表定座標的清單.xlsx"))
+
+```
+
+\newpage
+
 2021年位在海拔50 m以上森林的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。
 
 \newpage
