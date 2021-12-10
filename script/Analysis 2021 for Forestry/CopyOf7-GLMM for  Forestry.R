@@ -12,7 +12,7 @@ library(emmeans)
 
 M.data <- 
   list.files("./data/clean/Forestry/for analysis/", full.names = T) %>% 
-  lapply(., read_excel, sheet="Data") %>% 
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
   bind_rows() %>% 
   
   mutate(Office = 
@@ -25,7 +25,7 @@ M.data <-
          ) %>% 
   
   mutate_at(c("Year", "Survey","Month",
-              "Day", "Macaca_sur", "Distance"), as.numeric) %>% 
+              "Day", "Macaca_sur", "Distance", "julian.D", "Altitude"), as.numeric) %>% 
   
   mutate(TypeName.1 = case_when(
     TypeName.1 %in% "闊葉林" ~ "broad_leaved",
