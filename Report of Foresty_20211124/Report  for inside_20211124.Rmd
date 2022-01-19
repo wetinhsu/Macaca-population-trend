@@ -28,7 +28,7 @@ M.data <-
   here("./data/clean/Forestry/for analysis/") %>% 
   list.files(., full.names = T) %>% 
   str_subset(paste0(2020:2021)) %>% #如果只要2020~2021年，就寫2020:2021
-  lapply(., read_excel, sheet="Data") %>% 
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
   bind_rows() %>% 
 
 
@@ -39,7 +39,7 @@ M.data <-
                               c("闊葉林", "針葉林", "竹林",
                                 "混淆林", "非森林"))) %>% 
   mutate_at(c("Year", "Survey","Month",
-              "Day", "Macaca_sur", "Distance"), as.numeric) 
+              "Day", "Macaca_sur", "Distance", "Altitude", "julian.D"), as.numeric) 
   
 ```
 
@@ -175,7 +175,7 @@ M.data %>%
   group_by(Office, Survey) %>% 
   summarise(
     Point_n = n(),
-    Good_n = str_subset(analysis, "^Y") %>%length
+    Good_n = str_subset(analysis, "^Y$|\\d{2}m|\\({1}\\w{9}\\)") %>%length
   ) %>% 
   ungroup() %>%
   
@@ -189,7 +189,7 @@ M.data %>%
       group_by(Survey) %>% 
       summarise(
         Point_n = n(),
-        Good_n = str_subset(analysis, "^Y") %>%length
+        Good_n = str_subset(analysis, "^Y$|\\d{2}m|\\({1}\\w{9}\\)") %>%length
         ) %>% 
       mutate(Office = "Total") %>% 
       ungroup() 
@@ -235,7 +235,7 @@ M.data %>%
   group_by(Office, Year) %>% 
   summarise(
     Point_n = n(),
-    Good_n = str_subset(analysis, "^Y") %>%length
+    Good_n = str_subset(analysis, "^Y$|\\d{2}m|\\({1}\\w{9}\\)") %>%length
   ) %>% 
   ungroup() %>%
   
@@ -248,7 +248,7 @@ M.data %>%
       group_by(Year) %>% 
       summarise(
         Point_n = n(),
-        Good_n = str_subset(analysis, "^Y") %>%length
+        Good_n = str_subset(analysis, "^Y$|\\d{2}m|\\({1}\\w{9}\\)") %>%length
         ) %>% 
       mutate(Office = "Total") %>% 
       ungroup() 
@@ -315,7 +315,8 @@ M.data %>%
     '超過7日' = str_subset(analysis, "7day") %>% length,
     '晚於11時' = str_subset(analysis, "Toolate") %>% length,
     '不足6分鐘' = str_subset(analysis, "6min") %>% length,
-    '誤差超過50m' = str_subset(analysis, "locate") %>% length
+    '誤差超過50m' = str_subset(analysis, "locate") %>% length,
+    '不在3~6月內' = str_subset(analysis, "month") %>% length
   ) %>% 
   mutate_all(~str_replace_all(., '^0$', "-")) %>% 
   
@@ -347,7 +348,8 @@ M.data %>%
     '超過7日' = str_subset(analysis, "7day") %>% length,
     '晚於11時' = str_subset(analysis, "Toolate") %>% length ,
     '不足6分鐘' = str_subset(analysis, "6min") %>% length ,
-    '誤差超過50m' = str_subset(analysis, "locate") %>% length
+    '誤差超過50m' = str_subset(analysis, "locate") %>% length,
+    '不在3~6月內' = str_subset(analysis, "month") %>% length
     
   ) %>% 
 
@@ -364,13 +366,15 @@ M.data %>%
     "2020_晚於11時" = "晚於11時",
     "2020_不足6分鐘"="不足6分鐘",
     "2020_誤差超過50m" = "誤差超過50m",
+    "2020_不在3~6月內" = "不在3~6月內",
     "2021_超過7日" = "超過7日",
     "2021_晚於11時" = "晚於11時",
     "2021_不足6分鐘"="不足6分鐘",
-    "2021_誤差超過50m" = "誤差超過50m") %>% 
+    "2021_誤差超過50m" = "誤差超過50m",
+    "2020_不在3~6月內" = "不在3~6月內") %>% 
   add_header_row(., 
                  values = c(" ","2020", "2021"),
-                 colwidths = c(1,4,4)) %>% 
+                 colwidths = c(1,5,5)) %>% 
   align(.,
         align = "center", part = "all")
 ```
@@ -701,6 +705,7 @@ Alt.d.n <-
   M.data %>%
  #   filter(Year == 2021) %>% 
   filter(analysis %in% "Y") %>% 
+    mutate(Altitude = as.numeric(Altitude)) %>% 
   mutate(Altitude_f =cut(Altitude,
                          breaks = c(seq(0,4000,500)),
                          labels = c(seq(250,3750,500)),
