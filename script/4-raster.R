@@ -16,7 +16,7 @@ s <- stack(imported_raster)
 
 
 
-S.all<- read_xlsx( "./data/clean/forest_combind_data_V2.xlsx") %>% 
+S.all<- read_xlsx( "./data/clean/forest_combind_data_1521.xlsx") %>% 
   filter(! is.na(Month)| ! is.na(Day)| ! is.na(Hour)| ! is.na(Minute)) %>% 
   add_column(NO = 1:nrow(.))
 
@@ -47,4 +47,4 @@ S.all <-
   left_join(pp, by = c("NO")) %>% 
   dplyr::select(-"NO")
 
-write_xlsx(S.all, "./data/clean/full_combind_data_V2.xlsx")
+write_xlsx(S.all, "./data/clean/full_combind_data_1521.xlsx")

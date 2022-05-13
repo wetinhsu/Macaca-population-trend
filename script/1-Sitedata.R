@@ -7,7 +7,7 @@ library(readxl)
 library(writexl)
 #------------------------
 #最新版本的樣點表
-xy.new<- read_excel("./data/raw/BBSpointXY/all_20210312.xlsx",
+xy.new<- read_excel("./data/raw/BBSpointXY/all_20220504.xlsx",
                     sheet="樣點表") %>% setDT %>% 
   .[, list(樣區編號, 樣點代號, 縣市, X_經度, Y_緯度)] %>% 
   setnames(., c("Site_N", "Point", "County", "X", "Y")) %>% 
@@ -55,6 +55,60 @@ xy.del<- #update後的刪除後樣點
   select(-X, -Y, -County) %>% 
   setnames(., c("Site_N", "Point", "County", "X", "Y")) %>% 
   bind_rows(xy.del ,.)
+
+
+#--------
+
+#2021
+S21 <- 
+  lapply(paste0("./data/raw/"), function(x){
+    list.files(x, pattern = "BBSdata_2021", full.names = T) %>%  
+      read_xlsx(., sheet = "birddata", cell_cols("D:AF"), col_types ="text") %>% 
+      setDT %>%
+      #.[時段 %in% c("0-3minutes", "3-6minutes"),] %>%
+      .[!(時段 %in% "Supplementary"),] %>%
+      .[調查旅次編號 %in% c("1","2")] %>%
+      .[!鳥種 %in% c("無法調查")] %>%
+      #.[ 分析 %in% "Y",] %>% 
+      .[ ! 樣點編號 %in% paste0("X",1:10),] %>% 
+      .[,list(年, 樣區編號, 樣點編號, 調查旅次編號, 月, 日, `開始時間（時）`, `開始時間（分）`)] %>%
+      setnames(., c("Year", "Site_N", "Point",  "Survey", "Month", "Day", "Hour", "Minute")) %>%
+      .[!duplicated(.)]  
+  } ) %>% 
+  do.call(rbind, .) %>% 
+  data.table%>%
+  .[, Site_N := as.character(Site_N)] %>%
+  .[, Point := as.numeric(Point)] %>%
+  
+  #debug~
+  
+  
+  
+  #~debug
+  
+  .[, DATE := as.IDate(paste(Year, Month, Day, sep = "/"))] %>% 
+  .[, DD := as.ITime(paste(Hour, Minute,sep = ":"))] %>% 
+  .[, Time:= as.ITime(min(DD)), by = list(Year, Site_N, Point, DATE)] %>%
+  .[, Survey := as.numeric(Survey)] %>%
+  .[, Month := as.numeric(Month)] %>%
+  .[, Day := as.numeric(Day)] %>%
+  .[, Hour := as.numeric(hour(Time))] %>%
+  .[, Minute := as.numeric(minute(Time))] %>%
+  .[, c("DD", "DATE", "Time") := NULL] %>%
+  .[!duplicated(.)]
+S21 %>% setDT %>% .[, .N, by =  list(Year, Site_N, Point)] %>% .[N>2,]  #check N<=2 
+
+S21 %<>% 
+  left_join(xy.new, by = c("Site_N", "Point"), suffix = c("", ".y")) %>% 
+  left_join(xy.del, by = c("Site_N", "Point"), suffix = c("", ".y")) %>%
+  setDT  %>%  
+  .[is.na(X), X := X.y] %>%
+  .[is.na(Y), Y := Y.y] %>%
+  .[is.na(County), County := County.y] %>%
+  
+  .[, c("X.y", "Y.y", "County.y") := NULL]
+
+write_xlsx(S21, "data/clean/Site/Site_2021_v1.xlsx")
 
 
 
