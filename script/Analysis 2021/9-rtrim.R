@@ -13,7 +13,7 @@ library(readxl)
 
 #Original data---- 
 
-M.data <- read_excel("./data/clean/for analysis_V2.xlsx",
+M.data <- read_excel("./data/clean/for analysis_1521.xlsx",
                      sheet=1) %>% setDT %>% 
 
   .[, Year := as.numeric(Year)] %>% 
@@ -132,7 +132,7 @@ index(m1, covars = F) %>% plot(., pct=F)
 
 
 plot(overall(m1, "imputed"), axes = F)
-axis(1, at = 2015:2019, cex.axis=1.5)
+axis(1, at = 2015:2021, cex.axis=1.5)
 axis(2, cex.axis=1.5)
 box()
 title( "imputed" ) 
@@ -153,7 +153,7 @@ ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed)) +
   geom_point(colour='black', size = 5, shape = 21, fill='red',stroke = 2) +
   geom_hline(yintercept=1, colour = "grey", linetype = 3)+
   expand_limits(y = 0) +
-  scale_x_continuous(breaks = 2015:2019)+
+  scale_x_continuous(breaks = 2015:2021)+
   scale_y_continuous(breaks = c(-1000,1,1000,2000,3000))+
   coord_cartesian(ylim=c(-1500,3000)) +
   labs(x= "Year", y = "Index") + 

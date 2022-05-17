@@ -2,17 +2,19 @@
 title: "SUMMARY of BBS"
 date: "`r format(Sys.time(), '%Y-%m-%d')`"
 output:
-  pdf_document: default
   word_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
-                      fig.width=6,
-                      fig.height=6,
-                      message=FALSE,
-                      warning=FALSE
-                    )
+fig.width=6,
+fig.height=6,
+message=FALSE,
+warning=FALSE)
+```
+
+
+```{r include=FALSE}
 library(data.table)
 library(tidyverse)
 library(readxl)
@@ -21,10 +23,7 @@ library(writexl)
 library(here)
 library(flextable)
 library(ftExtra)
-```
 
-
-```{r setup, include=FALSE}
 here::here() 
 ```
 
@@ -496,7 +495,7 @@ output.9 %>%
 list(
   TypeName_point = output.1,
   Year_point= output.8,
-  Region_point= tl_E_rate_Region,
+  Region_point= E_rate_Region,
   County_point= output.9,
   
   group_County = output.4,
@@ -625,6 +624,7 @@ Alt.d.n <-
   Alt.d %>% 
   .[,.(mean_N = sum(N)/10, y = quantile(Encounter_rate,0.75)), by = list(Altitude_f)]
 
+p <- 
 ggplot(data = Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
                outlier.size = 3) +
@@ -651,11 +651,14 @@ ggplot(data = Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
     panel.grid = element_blank(),
     plot.margin = margin(30,30,20,20)
   )
+
+p
 ```
 
 ```{r eval=FALSE, include=FALSE}
+
 ggsave("pic1.png",
-       path = "./result_2021",
+       path = here("./result_2021/"),
        width = 15,
        height = 15,
        units = "cm")

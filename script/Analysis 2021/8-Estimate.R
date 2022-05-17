@@ -10,7 +10,7 @@ library(readxl)
 
 #Original data---- 
 
-M.data <- read_excel("./data/clean/for analysis_V1.xlsx",
+M.data <- read_excel("./data/clean/for analysis_1521.xlsx",
                      sheet=1) %>% setDT %>% 
   .[analysis %in% "Y",] %>% 
   .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
