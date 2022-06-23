@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="for analysis Forestrydata_20-21-Sheet 1">
+        <SrcDataSource relativeToVRT="1">for analysis Forestrydata_20-21.xlsx</SrcDataSource>
+        <!--Header=False-->
+        <SrcLayer>Sheet 1</SrcLayer>
+        <Field name="analysis" src="analysis" type="String"/>
+        <Field name="Office" src="Office" type="String"/>
+        <Field name="Station" src="Station" type="String"/>
+        <Field name="Name" src="Name" type="String"/>
+        <Field name="Site_N" src="Site_N" type="String"/>
+        <Field name="Year" src="Year" type="Integer"/>
+        <Field name="Month" src="Month" type="Integer"/>
+        <Field name="Day" src="Day" type="Integer"/>
+        <Field name="Survey" src="Survey" type="Integer"/>
+        <Field name="Surveyor" src="Surveyor" type="String"/>
+        <Field name="Point" src="Point" type="String"/>
+        <Field name="Hour" src="Hour" type="String"/>
+        <Field name="Minute" src="Minute" type="String"/>
+        <Field name="Macaca_sur" src="Macaca_sur" type="Integer"/>
+        <Field name="Macaca_dist" src="Macaca_dist" type="String"/>
+        <Field name="Date" src="Date" type="String"/>
+        <Field name="座標校正說明" src="座標校正說明" type="String"/>
+        <Field name="地點 (樣區名稱)" src="地點 (樣區名稱)" type="String"/>
+        <Field name="distance" src="distance" type="String"/>
+        <Field name="join_TypeName" src="join_TypeName" type="String"/>
+        <Field name="TypeName.1" src="TypeName.1" type="String"/>
+        <Field name="Altitude" src="Altitude" type="Integer"/>
+        <Field name="備註" src="備註" type="String"/>
+        <Field name="TWD97_X.ori" src="TWD97_X.ori" type="String"/>
+        <Field name="TWD97_Y.ori" src="TWD97_Y.ori" type="String"/>
+        <Field name="Macaca_sur.ori" src="Macaca_sur.ori" type="String"/>
+        <Field name="經校正_TWD97_X.ori" src="經校正_TWD97_X.ori" type="String"/>
+        <Field name="經校正_TWD97_Y.ori" src="經校正_TWD97_Y.ori" type="String"/>
+        <Field name="time_diff" src="time_diff" type="String"/>
+        <Field name="day_diff" src="day_diff" type="String"/>
+        <Field name="point_diff" src="point_diff" type="String"/>
+        <Field name="julian.D" src="julian.D" type="Integer"/>
+        <Field name="Distance" src="Distance" type="Real"/>
+        <Field name="TypeName" src="TypeName" type="String"/>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>EPSG:3826</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="TWD97_X" y="TWD97_Y"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>

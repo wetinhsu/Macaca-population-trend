@@ -49,6 +49,9 @@ DF<-
 #調查者的統計資料
 List_surveyor <- 
   DF %>%
+  mutate(Surveyor = str_replace_all(Surveyor,"宋曉菁胡耀華", "宋曉菁、胡耀華")) %>% 
+  mutate(Surveyor = str_replace_all(Surveyor,"撒伊滿拉旺", "撒伊．滿拉旺")) %>% 
+  
   separate(.,Surveyor,
            into = paste0("Surveyor","_",0:10),
            sep ="、|,", extra = "drop", fill = "right") %>% 
@@ -64,3 +67,10 @@ List_surveyor %>%
             Person_n = Name %>% unique %>% length) %>%  #人數
   arrange(Office)
 
+List_surveyor %>% 
+  select(Office, Name) %>% 
+  unique() %>% 
+  arrange(Name) %>% 
+ writexl::write_xlsx(., "./林務局年報2020-2021/調查者名單.xlsx")
+  
+  

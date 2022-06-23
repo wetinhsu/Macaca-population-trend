@@ -83,7 +83,7 @@ M.all <- read_excel("./data/clean/Macaca/Macaca_1521_v1.xlsx", col_types = "text
   .[, Year := as.character(Year)]
 
 M.data<- M.all %>% 
-  full_join(S.all, by = c("Year", "Site_N", "Point", "Survey")) %>% 
+  full_join(S.all, by = c("Year", "Site_N", "Point", "Survey", "Month")) %>% 
   setDT %>% 
   .[order(Year,Site_N),] %>% 
   .[, X := as.numeric(X)] %>% 

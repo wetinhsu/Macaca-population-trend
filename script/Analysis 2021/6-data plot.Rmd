@@ -1,18 +1,3 @@
----
-title: "SUMMARY of BBS"
-date: "`r format(Sys.time(), '%Y-%m-%d')`"
-output:
-  word_document: default
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-fig.width=6,
-fig.height=6,
-message=FALSE,
-warning=FALSE)
-```
-
 
 ```{r include=FALSE}
 library(data.table)
@@ -72,16 +57,18 @@ M.data <- read_excel(here("./data/clean/for analysis_1521.xlsx"),
 ```{r echo=FALSE}
 output.4<- M.data %>%  
     .[Macaca_sur %in% 1,] %>%
-    .[,.(筆數=length(Macaca_sur),
-         樣區數=length(unique(Site_N)),
-         樣點數=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>% 
+    .[,.('筆數'=length(Macaca_sur),
+           '樣區數'=length(unique(Site_N)),
+           '樣點數'=length(unique(paste0(Site_N,"-",Point)))),
+      by = list(Year,  County)]%>%
   
   bind_rows(
     M.data %>%  
     .[Macaca_sur %in% 1,] %>%
-    .[,.(筆數=length(Macaca_sur),
-         樣區數=length(unique(Site_N)),
-         樣點數=length(unique(paste0(Site_N,"-",Point)))), by = list(Year)] %>% 
+    .[,.('筆數'=length(Macaca_sur),
+         '樣區數'=length(unique(Site_N)),
+         '樣點數'=length(unique(paste0(Site_N,"-",Point)))),
+      by = list(Year)] %>% 
       .[, County := "Total"]
     
   ) %>% 
@@ -109,16 +96,18 @@ output.4<- M.data %>%
 ```{r echo=FALSE}
 output.5<- M.data %>%   
     .[Macaca_sur %in% 0 & !is.na(Macaca_dist),] %>% 
-    .[,.(筆數=length(Macaca_sur),
-         樣區數=length(unique(Site_N)),
-         樣點數=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
+    .[,.('筆數'=length(Macaca_sur),
+         '樣區數'=length(unique(Site_N)),
+         '樣點數'=length(unique(paste0(Site_N,"-",Point)))),
+      by = list(Year,  County)]%>%
   
     bind_rows(
     M.data %>%  
     .[Macaca_sur %in% 0 & !is.na(Macaca_dist),] %>%
-    .[,.(筆數=length(Macaca_sur),
-         樣區數=length(unique(Site_N)),
-         樣點數=length(unique(paste0(Site_N,"-",Point)))), by = list(Year)] %>% 
+    .[,.('筆數'=length(Macaca_sur),
+         '樣區數'=length(unique(Site_N)),
+         '樣點數'=length(unique(paste0(Site_N,"-",Point)))),
+      by = list(Year)] %>% 
       .[, County := "Total"]
     
   ) %>%  
@@ -153,7 +142,8 @@ output.4.1<- M.data %>%
     .[!(TypeName.1 %in% "非森林"),] %>% 
     .[,.(筆數=length(Macaca_sur),
          樣區數=length(unique(Site_N)),
-         樣點數=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>% 
+         樣點數=length(unique(paste0(Site_N,"-",Point)))),
+      by = list(Year,  County)]%>% 
   
     bind_rows(
     M.data %>%  
@@ -162,7 +152,8 @@ output.4.1<- M.data %>%
     .[!(TypeName.1 %in% "非森林"),] %>% 
     .[,.(筆數=length(Macaca_sur),
          樣區數=length(unique(Site_N)),
-         樣點數=length(unique(paste0(Site_N,"-",Point)))), by = list(Year)] %>% 
+         樣點數=length(unique(paste0(Site_N,"-",Point)))),
+      by = list(Year)] %>% 
       .[, County := "Total"]
     
   ) %>% 
@@ -193,7 +184,8 @@ output.5.1<- M.data %>%
     .[!(TypeName.1 %in% "非森林"),] %>% 
     .[,.(筆數=length(Macaca_sur),
          樣區數=length(unique(Site_N)),
-         樣點數=length(unique(paste0(Site_N,"-",Point)))), by = list(Year,  County)]%>%
+         樣點數=length(unique(paste0(Site_N,"-",Point)))),
+      by = list(Year,  County)]%>%
   
     bind_rows(
     M.data %>%  
@@ -202,7 +194,8 @@ output.5.1<- M.data %>%
     .[!(TypeName.1 %in% "非森林"),] %>%
     .[,.(筆數=length(Macaca_sur),
          樣區數=length(unique(Site_N)),
-         樣點數=length(unique(paste0(Site_N,"-",Point)))), by = list(Year)] %>% 
+         樣點數=length(unique(paste0(Site_N,"-",Point)))),
+      by = list(Year)] %>% 
       .[, County := "Total"]
     
   ) %>%  
@@ -253,7 +246,7 @@ output.1<- M.data %>%
 
 Region、猴群數、樣區數
 
-```{r echo=FALSE}
+```{r warning=FALSE, include=FALSE}
 E_rate_Region<- 
     M.data %>% setDT %>%  
     filter(analysis %in% "Y") %>% 
@@ -303,9 +296,11 @@ E_rate_Region<-
                                       "Hualien","Taitung",
                                       "TW"))) %>% 
   arrange(Region2)
+```
 
 
-  E_rate_Region %>% 
+```{r echo=FALSE, warning=FALSE}
+E_rate_Region %>% 
     flextable(., ) %>%
      span_header(.,sep = "[_\\.]")%>%
     merge_v(., j = c("Region2") ) %>% 
@@ -321,8 +316,7 @@ E_rate_Region<-
 \newpage
 
 TypeName、猴群數、樣區數
-```{r echo=FALSE}
-
+```{r include=FALSE}
 E_rate_Forest<-
  M.data %>%  #非森林的小計
   filter(! Month  %in% c(2, 7) & !is.na(X)) %>% 
@@ -385,9 +379,11 @@ E_rate_Forest<-
                                              "非森林",
                                              "Total"))) %>% 
   arrange(TypeName.1)
+```
 
 
-  E_rate_Forest %>% 
+```{r echo=FALSE}
+E_rate_Forest %>% 
     flextable(., ) %>%
     span_header(.,sep = "[_]")%>%
     font(part = "all",fontname = "Arial Unicode MS") %>% 
@@ -421,7 +417,7 @@ output.7<- M.data %>%
 \newpage
 
 每年的猴群數、樣點數及相對密度
-```{r echo=FALSE}
+```{r include=FALSE}
 output.8<-
   M.data %>% 
     .[analysis %in% "Y",] %>% 
@@ -448,11 +444,12 @@ output.8<-
     )
   )) %>% 
   reshape2::dcast(Year ~ variable + variable2) %>% 
-  select(-`E_Sum`) 
-  
+  select(-`E_Sum`)
+```
 
 
-   output.8 %>% 
+```{r echo=FALSE}
+output.8 %>% 
      flextable(.) %>% 
      span_header(.,sep = "[_\\.]") %>%
      font(part = "all",fontname = "Arial Unicode MS")  %>% 
@@ -531,9 +528,9 @@ M.data %>%
   summarise(N = n())
 ```
 
-```{r echo=FALSE}
+```{r include=FALSE}
 #--------------------------
-
+E_year <- 
 M.data %>% 
   .[analysis %in% "Y",] %>% 
   .[!(TypeName.1 %in% "非森林"),] %>% 
@@ -543,9 +540,12 @@ M.data %>%
   .[, .(V1 = sum(V1),
         N = sum(N),
         Encounter_rate = mean(Encounter_rate),
-        Se = sd(Encounter_rate)/sqrt(length(Encounter_rate))), by= list(Year)] %>% 
-  
-  ggplot(. , aes( Year, Encounter_rate)) +
+        Se = sd(Encounter_rate)/sqrt(length(Encounter_rate))), by= list(Year)] 
+```
+
+
+```{r echo=FALSE}
+ggplot(E_year , aes( Year, Encounter_rate)) +
   geom_point(size = 4)+
   geom_line(size = 1) +
   geom_errorbar(aes(ymin = (Encounter_rate - Se),
@@ -574,15 +574,19 @@ M.data %>%
 ```
 
 
-```{r echo=FALSE}
-
+```{r include=FALSE}
+E2_year <- 
 M.data %>% 
   filter(analysis %in% "Y") %>% 
   group_by(Year, Survey) %>% 
   summarise(N = n(),
             m = sum(Macaca_sur, na.rm=T),
-            Encounter_rate = m/N) %>% 
-  ggplot(., aes(x = Year, y = Encounter_rate, group = Year))+
+            Encounter_rate = m/N)
+```
+
+
+```{r echo=FALSE}
+ggplot(E2_year, aes(x = Year, y = Encounter_rate, group = Year))+
   geom_boxplot(width = 0.3, fill= gray(.9))+
   theme_classic() + 
   scale_y_continuous(limits = c(0,0.03),expand = c(0, 0.002, 0, 0))+

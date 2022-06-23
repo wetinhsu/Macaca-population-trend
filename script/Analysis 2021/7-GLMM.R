@@ -8,10 +8,11 @@ library(multcomp)
 library(ggplot2)
 library(readxl)
 library(MuMIn)
+library(here)
 #------------------------------------------------
 #Original data---- 
 
-M.data <- read_excel("./data/clean/for analysis_1521.xlsx",
+M.data <- read_excel(here("data/clean/for analysis_1521.xlsx"),
                      sheet=1) %>% setDT %>% 
   .[analysis %in% "Y",] %>% 
   
