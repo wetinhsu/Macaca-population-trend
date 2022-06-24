@@ -8,12 +8,12 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
                       root.dir = "../",
-                      fig.width = 8,
+                      fig.width = 6,
                       fig.asp = 1)
 library(here)
 ```
 
-```{r child = here::here("script", "Analysis 2021","6-data plot.Rmd") }
+```{r child = here::here("script", "Analysis 2021","6-data plot_try.Rmd") }
 
 ```
 

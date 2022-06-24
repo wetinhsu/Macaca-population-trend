@@ -11,7 +11,7 @@ library(emmeans)
 #Original data---- 
 
 M.data <- 
-  list.files("./data/clean/Forestry/for analysis/", full.names = T) %>% 
+  list.files("./data/clean/Forestry/for analysis/", full.names = T,pattern = "xlsx$|xls$") %>% 
   lapply(., read_excel, sheet="Data", col_types = "text") %>% 
   bind_rows() %>% 
   
