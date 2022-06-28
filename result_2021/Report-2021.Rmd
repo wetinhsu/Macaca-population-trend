@@ -5,6 +5,7 @@ output:
   word_document: default
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
                       root.dir = "../",
@@ -13,9 +14,28 @@ knitr::opts_chunk$set(echo = TRUE,
 library(here)
 ```
 
-```{r child = here::here("script", "Analysis 2021","6-data plot_try.Rmd") }
+資料統整  
+
+
+```{r child = here::here("script", "Analysis 2021","6-data plot.Rmd") }
+
+```
+
+\newpage
+ GLMM
+
+
+\newpage
+ Estimate  
+
+```{r child = here::here("script", "Analysis 2021","8-Estimate.Rmd")}
 
 ```
 
 
+\newpage
+ Trim  
 
+```{r child = here::here("script", "Analysis 2021","9-rtrim.Rmd")}
+
+```
