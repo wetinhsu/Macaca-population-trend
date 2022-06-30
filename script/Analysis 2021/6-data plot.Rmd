@@ -5,7 +5,10 @@ library(writexl)
 library(here)
 library(flextable)
 library(ftExtra)
+library(showtext)
 
+showtext_auto()
+font_add("Microsoft JhengHei", "msjh.ttc")
 here::here() 
 
 ```
@@ -37,6 +40,7 @@ M.data <- read_excel(here("./data/clean/for analysis_1521.xlsx"),
   mutate(County = ordered(County,conty_order)) 
   
 ```
+
 
 ### **原始資料**
 
@@ -180,9 +184,11 @@ output.1<-
 
 \newpage
 
-Region、猴群數、樣區數
+
 
 ```{r warning=FALSE, include=FALSE}
+#  Region、猴群數、樣區數
+
 E_rate_Region<- 
   M.data %>%
   bind_rows( M.data %>% mutate(Region2='TW') ) %>%
@@ -227,7 +233,7 @@ E_rate_Region<-
   arrange(Region2)
 ```
 
-```{r echo=FALSE, warning=FALSE}
+```{r warning=FALSE, include=FALSE}
 #畫表
 
 E_rate_Region %>% 
@@ -329,16 +335,29 @@ M.data %>%
   summarise(N = n(),
             m = sum(Macaca_sur, na.rm=T),
             Encounter_rate = m/N)
+
+mean_N <- 
+E_year %>% 
+  group_by(Year) %>% 
+  summarise(mean_N = mean(N),
+            position = quantile(Encounter_rate, 0.75))
+
 ```
 
 ```{r echo=FALSE}
 ggplot(E_year, aes(x = Year, y = Encounter_rate, group = Year))+
   geom_boxplot(width = 0.3, fill= gray(.9))+
+  geom_text(data = mean_N,
+             aes( x = Year, y = position, label = mean_N),
+            size = 3, nudge_x = 0.3, nudge_y = 0.001)+
+  
   theme_classic() + 
-  scale_y_continuous(limits = c(0,0.03),expand = c(0, 0.002, 0, 0))+
+  scale_x_continuous(breaks = 2015:2021, labels = 2015:2021)+
+  scale_y_continuous(limits = c(0,0.03),
+                     expand = c(0, 0.002, 0, 0))+
   labs(x = "Year", y = "Encounter rate (troop/point)" )+
   theme(
-    text = element_text(family="serif"),
+    text = element_text(family="Microsoft JhengHei"),
     aspect.ratio = 1,
     panel.border = element_rect(size = 1.5,fill = NA),
     axis.line = element_line(size = 1, colour = "black"),
@@ -376,12 +395,13 @@ ggplot(. , aes( Year, E)) +
                     ymax = (E + Se)),
                 width = 0.1,size = 1) +
   #  annotate("text",x=2015.5, y=0.03,label=paste0("mean ± se"),
-  #           vjust=0,  color="red", size=8,family="serif")+
+  #           vjust=0,  color="red", size=8,family="Microsoft JhengHei")+
   theme_classic() + 
+  scale_x_continuous(breaks = 2015:2021, labels = 2015:2021)+
   scale_y_continuous(limits = c(0,0.03),expand = c(0, 0.002, 0, 0))+
   labs(x = "Year", y = "Encounter rate (troop/point)" ) +
   theme(
-    text = element_text(family="serif"),
+    text = element_text(family="Microsoft JhengHei"),
     aspect.ratio = 1,
    # panel.border = element_rect(size = 1.5,fill = NA),
     axis.line = element_line(size = 1, colour = "black"),
@@ -396,6 +416,9 @@ ggplot(. , aes( Year, E)) +
     plot.margin = margin(30,30,20,20)
   )
 ```
+
+\newpage
+
 
 
 海拔的相對密度
@@ -416,7 +439,7 @@ Alt.d <-
 Alt.d.n <-
   Alt.d %>%
   group_by(Altitude_f) %>% 
-  summarise(mean_N = sum(N)/10,
+  summarise(mean_N = mean(N, na.rm = T)%>% round(.,1),
             y = quantile(Encounter_rate,0.75))
 
 ```
@@ -425,18 +448,23 @@ Alt.d.n <-
 ```{r Altitude, echo=FALSE}
 
 ggplot(data = Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
-  geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
+  geom_boxplot(#size = 1,
+               width = 0.4, fill= gray(.9),
                outlier.size = 3) +
-  geom_text(data = Alt.d.n, aes(y = y+0.0018,label = paste0(mean_N,c("","","","","","","",""))),
-            size = 3,
-            hjust = -0.1,
-            position = position_dodge(0.9))+
   
-  labs(x = "Elevation (m)", y = "Encounter rate (troop/point)") +
+  geom_text(data = Alt.d.n,
+            aes( x = Altitude_f, y = y, label = mean_N),
+            size = 3,
+            nudge_x = 0.3, nudge_y = 0.0018)+
+
+  
+  labs(x = "Elevation (m)",
+       y = "Encounter rate (troop/point)") +
   theme_classic() +
-  scale_y_continuous(limits = c(0,0.08),expand = c(0, 0.002, 0, 0))+
+  scale_y_continuous(limits = c(0,0.08),
+                     expand = c(0, 0.002, 0, 0))+
   theme(
-    text = element_text(family="serif"),
+    text = element_text(family="Microsoft JhengHei"),
     aspect.ratio = 1,
     panel.border = element_rect(size = 1.5,fill = NA),
     axis.line = element_line(size = 1, colour = "black"),
@@ -454,9 +482,9 @@ ggplot(data = Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
 
 ```
 
-only 闊葉林的Altitude
-```{r echo=FALSE, message=FALSE, warning=FALSE}
 
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# only 闊葉林的Altitude
   M.data %>% 
   filter(analysis %in% "Y") %>% 
   filter(TypeName.1 %in% "闊葉林") %>% 
@@ -478,7 +506,7 @@ only 闊葉林的Altitude
   theme_classic() +
   scale_y_continuous(limits = c(0,0.08),expand = c(0, 0.002, 0, 0))+
   theme(
-    text = element_text(family="serif"),
+    text = element_text(family="Microsoft JhengHei"),
     aspect.ratio = 1,
     panel.border = element_rect(size = 1.5,fill = NA),
     axis.line = element_line(size = 1, colour = "black"),
@@ -496,24 +524,35 @@ only 闊葉林的Altitude
 
 ```
 
+\newpage
+
+
 Region的相對密度
 ```{r include=FALSE}
 Rgn.d <- 
   M.data %>% 
   filter(analysis %in% "Y") %>% 
   mutate( Region2 = ordered(Region2,
-                            c("North","Center", "Southwest",
-                              "South","Hualien", "Taitung" ))) %>% 
+                            c("North","Center",  "South", "Southwest",
+                             "Hualien", "Taitung" ))) %>% 
   group_by(Year, Survey, Region2) %>% 
   
   summarise(N = n(),
             m = sum(Macaca_sur, na.rm=T),
             Encounter_rate = m/N) 
 
+
+Rgn.d.n <-
+  Rgn.d %>%
+  group_by(Region2) %>% 
+  summarise(mean_N = mean(N, na.rm = T)%>% round(.,1),
+            y = quantile(Encounter_rate,0.75))
+
+
 ```
 
 
-```{r echo=FALSE}
+```{r eval=FALSE, include=FALSE}
 ggplot(Rgn.d, aes( Region2, Encounter_rate))+
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
                outlier.size = 3)+
@@ -525,7 +564,7 @@ ggplot(Rgn.d, aes( Region2, Encounter_rate))+
                                         "Hualien" = "H",
                                         "Taitung" = "T"))+
   theme(
-    text = element_text(family="serif"),
+    text = element_text(family="Microsoft JhengHei"),
     aspect.ratio = 1,
     panel.border = element_rect(size = 1.5,fill = NA),
     axis.line = element_line(size = 1, colour = "black"),
@@ -543,6 +582,49 @@ ggplot(Rgn.d, aes( Region2, Encounter_rate))+
 ```
 
 
+```{r echo=FALSE}
+ggplot(Rgn.d, aes( Region2, Encounter_rate))+
+  geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
+               outlier.size = 3)+
+  
+    geom_text(data = Rgn.d.n,
+            aes( x = Region2, y = y, label = mean_N),
+            size = 3,
+            nudge_x = 0.3, nudge_y = 0.002)+
+
+  
+  theme_bw()+
+  scale_x_discrete("Region", labels = c("North" = "N",
+                                        "Center" = "C",
+                                        "Southwest" = "SW",
+                                        "South" = "S",
+                                        "Hualien" = "H",
+                                        "Taitung" = "T"))+
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 18,colour = "black"),
+    axis.title = element_text(size = 23,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+
+```
+
+
+\newpage
+
+
+Julian Day的相對密度
+
+Julian Day = 60，係指第60~74天，Julian Day = 75，係指第75~89天，以此類推，僅Julian Day = 180，係指第180~182天
 
 ```{r warning=FALSE, include=FALSE}
 Jd.d <- 
@@ -551,12 +633,14 @@ Jd.d <-
 
   mutate(julian.D_f = cut(julian.D,
                         breaks = c(seq(60,210,15)),
+                        labels = seq(60,195,15),
                         include.lowest = T)) %>% 
   
   group_by(Year, Survey, julian.D_f) %>% 
   summarise(N = n(),
             m = sum(Macaca_sur, na.rm=T),
             Encounter_rate = m/N) 
+
 
 ```
 
@@ -566,20 +650,14 @@ ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
                outlier.size = 3) +
   theme_bw() + 
-  scale_x_discrete("Julian day",
-                   labels = c("[60,75]",paste0(
-                     "(",c(seq(75,180,15)),
-                     ",",c(seq(90,180,15),182),
-                     "]"
-                   )))+
+  scale_x_discrete("Julian day")+
   theme(
-    text = element_text(family="serif"),
+    text = element_text(family="Microsoft JhengHei"),
     aspect.ratio = 1,
     panel.border = element_rect(size = 1.5,fill = NA),
     axis.line = element_line(size = 1, colour = "black"),
     axis.ticks = element_line(size = 1),
-    axis.text = element_text(size = 18,colour = "black"),
-    axis.text.x = element_text(angle = 315, hjust = -0.10),
+    axis.text = element_text(size = 11,colour = "black"),
     axis.title = element_text(size = 23,colour = "black",
                               vjust = -2, hjust = 0.5),
     axis.title.x.bottom = element_text(vjust = -2),
@@ -589,6 +667,12 @@ ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
     plot.margin = margin(30,30,20,20)
   )
 ```
+
+\newpage
+
+
+
+森林類型的相對密度
 
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
@@ -602,6 +686,11 @@ Type.d <-
             m = sum(Macaca_sur, na.rm=T),
             Encounter_rate = m/N)
 
+Type.d.n <-
+  Type.d %>%
+  group_by(TypeName.1) %>% 
+  summarise(mean_N = mean(N, na.rm = T) %>% round(.,1),
+            y = quantile(Encounter_rate,0.75))
 ```
 
 
@@ -609,15 +698,22 @@ Type.d <-
 ggplot(Type.d, aes(TypeName.1, Encounter_rate))+
   geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
                outlier.size = 3) +
-  theme_bw() + 
+  
+    geom_text(data = Type.d.n,
+            aes( x = TypeName.1, y = y, label = mean_N),
+            size = 3,
+            nudge_x = 0.3, nudge_y = 0.0018)+
+  
+  
+  theme_bw() +
   xlab("Forest type")+
   theme(
-    text = element_text(family="serif"),
+    text = element_text(family="Microsoft JhengHei"),
     aspect.ratio = 1,
     panel.border = element_rect(size = 1.5,fill = NA),
     axis.line = element_line(size = 1, colour = "black"),
     axis.ticks = element_line(size = 1),
-    axis.text = element_text(size = 18,colour = "black"),
+    axis.text = element_text(size = 16,colour = "black"),
     axis.title = element_text(size = 23,colour = "black",
                               vjust = -2, hjust = 0.5),
     axis.title.x.bottom = element_text(vjust = -2),
@@ -629,7 +725,39 @@ ggplot(Type.d, aes(TypeName.1, Encounter_rate))+
 ```
 
 
-```{r echo=FALSE}
+```{r eval=FALSE, include=FALSE}
+library(RColorBrewer)
+ggplot(Type.d, aes(TypeName.1, Encounter_rate,
+                        fill = TypeName.1))+
+  geom_boxplot(size = 1, width = 0.4,
+               outlier.size = 3, show.legend = F) +
+  scale_fill_brewer(palette = "Set3")+
+  
+  theme_bw() +
+  xlab("Forest type")+
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 16,colour = "black"),
+    axis.title = element_text(size = 23,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+        
+```
+
+
+
+
+
+```{r include=FALSE}
 M.data %>%
   filter(Macaca_sur %in% 1) %>% 
   mutate(DD = cut(Distance, breaks = seq(0,100,10),

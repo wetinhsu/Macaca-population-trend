@@ -10,7 +10,7 @@ library(rtrim)
 library(readxl)
 library(here)
 library(flextable)
- 
+library(RColorBrewer) 
 ```
 
 
@@ -165,7 +165,7 @@ overall(m1,"imputed") %>%
 ```
 
 overall  
-```{r echo=FALSE}
+```{r include=FALSE}
 plot(overall(m1, "imputed"), axes = F)
 axis(1, at = 2015:2021, cex.axis=1.5)
 axis(2, cex.axis=1.5)
@@ -174,20 +174,22 @@ title( "imputed" )
 ```
 
 heatmap
-```{r echo=FALSE}
+```{r include=FALSE}
 heatmap(m1, "imputed", cex.axis=1.5) 
 title( "imputed" )
 ```
 
 index
-```{r echo=FALSE}
+```{r include=FALSE}
 idx <- index(m1, "imputed", covars = T)  %>% setDT %>%
   .[,list(covariate, category, time, imputed = imputed, se_imp = se_imp)] 
 
 
 
 ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed*100)) +
-      geom_errorbar(aes(ymin=100*(imputed-se_imp), ymax=100*(imputed+se_imp)), width=.1, color = gray(0.7), size = .09) +
+      geom_errorbar(aes(ymin=100*(imputed-se_imp),
+                        ymax=100*(imputed+se_imp)),
+                    width=.1, color = gray(0.7), size = .09) +
   geom_line(colour = 'black', size = 1, linetype = 5) +
   geom_point(colour='black', size = 5, shape = 21, fill='red',stroke = 2) +
   geom_hline(yintercept=1, colour = "grey", linetype = 3)+
@@ -196,7 +198,9 @@ ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed*100)) +
 #  scale_y_continuous(breaks = c(-1000,1,1000,2000,3000))+
 #  coord_cartesian(ylim=c(-1500,3000)) +
   labs(x= "Year", y = "Index") + 
+  
   #theme with white background
+  scale_color_brewer(palette = "Set3")+
   theme_bw()+
   
   #eliminates background, gridlines, and chart border
@@ -215,4 +219,42 @@ ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed*100)) +
   )
 ```
 
+```{r echo=FALSE}
+idx <- index(m1, "imputed", covars = T)  %>% setDT %>%
+  .[,list(covariate, category, time, imputed = imputed, se_imp = se_imp)] 
+
+
+
+ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed*100)) +
+      geom_errorbar(aes(ymin=100*(imputed-se_imp),
+                        ymax=100*(imputed+se_imp), color = "A"),
+                    width=.1,  size = .09) +
+  geom_line( size = 1, linetype = 1,aes(color = "B") ) +
+  geom_point(aes(fill="D", color = "D"),size = 5, shape = 21, stroke = 2) +
+  geom_hline(aes(yintercept=100, color = "D"), linetype = 3)+
+  expand_limits(y = 0) +
+  scale_x_continuous(breaks = 2015:2021)+
+
+  labs(x= "Year", y = "Index") + 
+  
+  #theme with white background
+  scale_colour_brewer(palette = "Set2")+
+  scale_fill_brewer(palette = "Set3")+
+  theme_bw()+
+  
+  #eliminates background, gridlines, and chart border
+  theme(
+    legend.position = "none",
+    plot.margin = margin(30,30,20,20),
+    plot.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    
+    axis.title = element_blank(),
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    text = element_text(size=20),
+    axis.line = element_line(size = .1)
+  )
+```
 

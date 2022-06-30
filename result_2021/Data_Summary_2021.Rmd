@@ -1,5 +1,5 @@
 ---
-title: "Report"
+title: "Macaca Data Summary 2021"
 date: "`r format(Sys.time(), '%Y-%m-%d')`"
 output:
   word_document: default
@@ -13,6 +13,8 @@ knitr::opts_chunk$set(echo = TRUE,
                       fig.asp = 1)
 library(here)
 ```
+
+\newpage
 
 資料統整  
 
