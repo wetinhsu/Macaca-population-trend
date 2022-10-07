@@ -233,7 +233,7 @@ E_rate_Region<-
   arrange(Region2)
 ```
 
-```{r warning=FALSE, include=FALSE}
+```{r echo=FALSE, warning=FALSE}
 #畫表
 
 E_rate_Region %>% 
@@ -251,6 +251,62 @@ E_rate_Region %>%
 
 ```
 
+
+```{r}
+aaaaaa <- 
+  M.data %>%
+  bind_rows( M.data %>% mutate(Region2='TW') ) %>%
+  
+  filter(analysis %in% "Y") %>%
+  group_by(Year, Survey, Region2) %>% 
+  summarise(
+    N= n(),
+    m = sum(Macaca_sur,na.rm=T) )  %>% 
+  mutate(E = (m/N) %>% round(.,3)) %>%
+  ungroup() %>% 
+  reshape2::melt(id = 1:3) %>% 
+  reshape2::dcast(Region2 + variable ~ Year + Survey,
+                  value.var = "value") %>% 
+  reshape2::melt(id = 1:2, variable.name = "variable2")  %>% 
+  
+  
+  mutate(variable = ordered(variable,
+                            levels = c("N","m", "E"),
+                            labels = c("樣點","猴群", "相對密度"))) %>% 
+  
+  
+  mutate(Region2 = ordered(Region2,levels = c("North","Center",
+                                      "Southwest","South",
+                                      "Hualien","Taitung",
+                                      "TW"),
+                           labels = c("N","C",
+                                      "SW","S",
+                                      "H","T",
+                                      "TW"))) 
+  
+
+  ggplot(aaaaaa, aes(x = Region2, y = value))+
+#  geom_boxplot(width = .3)+
+#  geom_point(
+#    data = aaaaaa[aaaaaa$variable2 %in% c("2021_1", "2021_2"),],
+#    aes(x = Region2, y = value), col = "blue")+
+  stat_summary(fun = "mean",
+               geom = "point",
+               pch = 16, col = "red")+
+  
+  stat_summary(fun.data = "mean_se", 
+               geom = "errorbar", col = "red", 
+               width = .1)+
+
+
+
+  facet_wrap (~ variable, scales="free")
+
+
+```
+
+
+
 \newpage
 
 TypeName、猴群數、樣區數
@@ -265,12 +321,20 @@ E_rate_Forest<-
      M.data %>%  #<50m & >=50m 分別森林的小計
        filter(! Month  %in% c(2, 7) & !is.na(X)) %>% 
        filter(!TypeName.1 %in% "非森林") %>%
-       mutate(TypeName.1 = ifelse(Altitude<50, "less50","Forest")) 
+       mutate(TypeName.1 = ifelse(Altitude<50,
+                                  "Forest (EL<50m)",
+                                  "Forest (EL>50m)")) 
    )%>% 
   
    bind_rows(
      M.data %>%  #>=50m 
        filter(analysis %in% "Y") 
+   ) %>% 
+  
+   bind_rows(
+     M.data %>%  #all 
+       filter(! Month  %in% c(2, 7) & !is.na(X)) %>% 
+       mutate(TypeName.1 = "Total")
    ) %>%
   
   
@@ -298,10 +362,10 @@ E_rate_Forest<-
   
   
   reshape2::dcast(TypeName.1 ~ variable + variable2) %>% 
-   mutate(TypeName.1 = ordered(TypeName.1, c("Forest",
+   mutate(TypeName.1 = ordered(TypeName.1, c("Forest (EL>50m)",
                                              "闊葉林", "針葉林",
                                              "混淆林", "竹林",
-                                             "less50",
+                                             "Forest (EL<50m)",
                                              "非森林",
                                              "Total"))) %>% 
   arrange(TypeName.1)

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="2020~2021繁殖鳥調查樣區清單-工作表1">
+        <SrcDataSource relativeToVRT="1">2020~2021繁殖鳥調查樣區清單.xlsx</SrcDataSource>
+        <!--Header=True-->
+        <SrcSql dialect="sqlite">SELECT * FROM '工作表1' LIMIT 34 OFFSET 1</SrcSql>
+        <Field name="樣區編號" src="Field1" type="String"/>
+        <Field name="2020" src="Field2" type="String"/>
+        <Field name="2021" src="Field3" type="String"/>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>EPSG:4326</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="Field4" y="Field5"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>

@@ -72,7 +72,12 @@ m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 +  Regi
 ```{r}
 Anova(m1)
 
+```
 
+```{r}
+df %>% 
+  filter(Macaca_sur ==1) %>% 
+  dim
 ```
 
 
@@ -87,9 +92,11 @@ summary(m1)
 options(na.action = "na.fail")
 d1<- dredge(m1, trace = F)  
 #trace = T的話，是把過程都show出來，看有幾種組合。
+```
 
 
-d1[d1$delta<2,]
+```{r include=FALSE}
+d1[d1$delta<2,] 
 
 ```
 
@@ -145,6 +152,12 @@ summary(glht(m2, linfct = c("Year.re = 0",
 ```{r eval=FALSE, include=FALSE}
 par(mai=c(1,1.5,1,1))
 glht(m2, linfct = mcp(Region2 = "Tukey")) %>% plot
+
+
+par(mai=c(1,1.5,1,1))
+glht(m2, linfct = mcp(Region2 = "Tukey")) %>% 
+  cld(.,level=0.05) %>% 
+plot(.,col="lightgrey")
 ```
 
 

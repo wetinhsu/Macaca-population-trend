@@ -11,6 +11,8 @@ library(readxl)
 library(here)
 library(flextable)
 library(RColorBrewer) 
+library(magrittr)
+
 ```
 
 
@@ -127,19 +129,42 @@ m1 <- trim(
 
 
 ```{r include=FALSE}
-summary(m1)
+  gof(m1) %>% 
+  print(.) 
 ```
 
 wald
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-wald(m1) %>% 
-  .$covar %>% 
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+wald(m1) %>%
+  .$covar %>%  
   print %>% 
   flextable(.) %>% 
   autofit() %>% 
   align(align = "center", part = "all") %>% 
   colformat_num(x = .,  big.mark="",  digits = 2)
 ```
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+wald(m1) %>% 
+  print %>% 
+  flextable(.) %>% 
+  autofit() %>% 
+  align(align = "center", part = "all") %>% 
+  colformat_num(x = .,  big.mark="",  digits = 2)
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+wald(m1) %>% 
+  print %>% 
+  flextable() %>% 
+  autofit() %>% 
+  align(align = "center", part = "all") %>% 
+  colformat_num(x = .,  big.mark="",  digits = 2)
+```
+
 
 
 Index  
@@ -257,4 +282,5 @@ ggplot(idx[idx$covariate %in% "Overall",], aes(x=time, y=imputed*100)) +
     axis.line = element_line(size = .1)
   )
 ```
+
 

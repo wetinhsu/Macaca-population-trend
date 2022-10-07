@@ -28,16 +28,18 @@ library(here)
 
 
 \newpage
+ Trim  
+
+```{r child = here::here("script", "Analysis 2021","9-rtrim.Rmd")}
+
+```
+
+
+
+\newpage
  Estimate  
 
 ```{r child = here::here("script", "Analysis 2021","8-Estimate.Rmd")}
 
 ```
 
-
-\newpage
- Trim  
-
-```{r child = here::here("script", "Analysis 2021","9-rtrim.Rmd")}
-
-```

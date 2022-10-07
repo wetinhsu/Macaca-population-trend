@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="for analysis_1519-Sheet1">
+        <SrcDataSource relativeToVRT="1">for analysis_1519.xlsx</SrcDataSource>
+        <!--Header=False-->
+        <SrcLayer>Sheet1</SrcLayer>
+        <Field name="Year" src="Year" type="String"/>
+        <Field name="Site_N" src="Site_N" type="String"/>
+        <Field name="Point" src="Point" type="String"/>
+        <Field name="Survey" src="Survey" type="String"/>
+        <Field name="Macaca_sur" src="Macaca_sur" type="String"/>
+        <Field name="Macaca_dist" src="Macaca_dist" type="String"/>
+        <Field name="Time" src="Time" type="String"/>
+        <Field name="Month" src="Month" type="String"/>
+        <Field name="Day" src="Day" type="String"/>
+        <Field name="Hour" src="Hour" type="String"/>
+        <Field name="Minute" src="Minute" type="String"/>
+        <Field name="County" src="County" type="String"/>
+        <Field name="TypeName" src="TypeName" type="String"/>
+        <Field name="Distance" src="Distance" type="Real"/>
+        <Field name="Altitude" src="Altitude" type="Integer"/>
+        <Field name="DATE" src="DATE" type="Date"/>
+        <Field name="TypeName.n" src="TypeName.n" type="String"/>
+        <Field name="TypeName.1" src="TypeName.1" type="String"/>
+        <Field name="Region" src="Region" type="String"/>
+        <Field name="julian.D" src="julian.D" type="Integer"/>
+        <Field name="Altitude_c" src="Altitude_c" type="String"/>
+        <Field name="Region2" src="Region2" type="String"/>
+        <Field name="analysis" src="analysis" type="String"/>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>EPSG:4326</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="X" y="Y"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>

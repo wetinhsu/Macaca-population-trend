@@ -25,7 +25,8 @@ M.data %>%
     axis.text = element_text(colour = "black")
   )
 
-
+ggsave("Year.png",
+       path ="./林務局年報2020-2021/")
 
 #--------------
 
@@ -61,3 +62,6 @@ M.data %>%
     axis.text = element_text(colour = "black")
   )
 
+
+ggsave("Office.png",
+       path ="./林務局年報2020-2021/")
