@@ -223,6 +223,9 @@ M.data.1 <-
                             0)) %>% 
   mutate(Macaca_sur = replace(Macaca_sur,
                             Year %in% 2022 & Survey %in% 2 & Site_N %in% "MB-D18-06" & Point %in% c(6),
+                            0)) %>% 
+  mutate(Macaca_sur = replace(Macaca_sur,
+                            Year %in% 2022 & Survey %in% 2 & Site_N %in% "MB-B07-08" & Point %in% c(6),
                             0)) 
   
 
