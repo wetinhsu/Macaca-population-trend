@@ -1,4 +1,4 @@
-```{r}
+```{r include=FALSE}
 # data analysis
 
 library(tidyverse)
@@ -9,7 +9,10 @@ library(readxl)
 library(MuMIn)
 library(emmeans)
 library(here)
+library(showtext)
 
+library(flextable)
+library(ftExtra)
 
 showtext_auto()
 font_add("Microsoft JhengHei", "msjh.ttc")
@@ -17,7 +20,7 @@ here::here()
 ```
 
 
-```{r}
+```{r include=FALSE}
 #------------------------------------------------
 #Original data---- 
 
@@ -51,7 +54,8 @@ M.data <-
 ```
 
 
-```{r}
+
+```{r include=FALSE}
 #---------------------------------------------------------------------
 
 M.data <- M.data %>% 
@@ -59,14 +63,26 @@ M.data <- M.data %>%
 ```
 
 
-```{r}
+```{r include=FALSE}
 #==============================================
 df <- 
   M.data
 ```
 
 
-```{r}
+Full model:   
+m1 <- glmer(猴群數 ~ 年 + 森林類型 + 海拔 + 調查日 + 林管處 + (1|Site_N), family = binomial, data = df)  
+
+說明：  
+1.	森林類型為類別變數：分別為闊葉林、針葉林、混淆林、竹林等4 種。  
+2.	海拔為連續變數，範圍海拔50m以上。  
+3.	調查日為連續變數：調查日為當年度的第n天。僅分析3~6月內的調查資料。  
+4.	樣區為隨機變數  
+5. 	分析總筆數：`r  nrow(df)` 筆；猴群`r  nrow(df[df$Macaca_sur %in% 1,])`群。  
+
+
+
+```{r eval=FALSE, include=FALSE}
 #-------------------------------------------
 
 allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D + Office +  (1|Site_N), 
@@ -74,51 +90,54 @@ allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D + Office +
 ```
 
 
-```{r}
+```{r include=FALSE}
 df$Altitude.1 <-  scale(df$Altitude,scale =T)
 df$julian.D.1 <-  scale(df$julian.D,scale =T)
 ```
 
 
-```{r}
+```{r include=FALSE}
 m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 + Office  + (1|Site_N), 
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 ```
 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 Anova(m1)
 ```
 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 summary(m1)
 ```
 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 qqnorm(resid(m1))
 qqline(resid(m1))
 plot(fitted(m1),resid(m1))
 ```
 
 
-```{r}
+```{r include=FALSE}
 #AICc==============================================
 options(na.action = "na.fail")
 d1<- dredge(m1,  trace = T)
-
-d1
 ```
 
 
 ```{r}
+d1[d1$delta<2,]
+```
+
+
+```{r include=FALSE}
 summary(model.avg(d1))
 ```
 
 
-```{r}
+```{r include=FALSE}
 summary(model.avg(d1, subset = delta < 2))
 ```
 
@@ -129,49 +148,113 @@ sw(d1)
 
 
 ```{r}
-sw(model.avg(d1, subset = delta < 2))
+sw(model.avg(d1, subset = delta < 2)) 
 ```
 
 
 ```{r}
-m1.1 <- glmer(Macaca_sur ~   Year.re +  julian.D.1 + Office  + (1|Site_N), 
+m1.1 <- glmer(Macaca_sur ~   Year.re + Altitude.1 +  julian.D.1 + Office  + (1|Site_N), 
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
-Anova(m1.1)
 ```
 
 
-```{r}
+
+```{r echo=FALSE}
+
+Anova(m1.1) 
+```
+
+
+```{r eval=FALSE, include=FALSE}
 #-------------------------------------------
 
 
-summary(glht(m1, linfct = mcp(Office = "Tukey")))  
+summary(glht(m1.1, linfct = mcp(Office = "Tukey")))
 #2021年有跳出warning，所以找新的指令，也是事後檢定
 
 #summary(as.glht(pairs(emmeans(m1.1, ~Office))), test=adjusted("free"))
 ```
 
 
-```{r}
-summary(glht(m1, linfct = c("Year.re = 0",
+```{r echo=FALSE}
+glht(m1.1, linfct = mcp(Office = "Tukey")) %>%  
+  summary %>% 
+  broom::tidy(.) %>%
+  
+  mutate(signif = gtools::stars.pval(adj.p.value)) %>% 
+  mutate_at(c('estimate', 'std.error','statistic','adj.p.value'),
+            function(x)round(x,3)) %>% 
+
+  flextable() %>% 
+  autofit()
+```
+
+
+```{r echo=FALSE}
+summary(glht(m1.1, linfct = c("Year.re = 0",
                             "Altitude.1 = 0",
-                            "julian.D.1 = 0")))
+                            "julian.D.1 = 0")))%>% 
+  broom::tidy(.) %>%
+  
+  mutate(signif = gtools::stars.pval(adj.p.value)) %>% 
+  mutate_at(c('estimate', 'std.error','statistic','adj.p.value'),
+            function(x)round(x,3)) %>% 
+
+  flextable() %>% 
+  autofit()
 ```
 
 
-```{r}
+```{r include=FALSE}
 par(mai=c(1,1,1.5,0.2))
-glht(m1, linfct = mcp(Office = "Tukey")) %>% cld()  %>% plot
+glht(m1.1, linfct = mcp(Office = "Tukey")) %>% cld()  %>% plot
 ```
 
 
-```{r}
+```{r include=FALSE}
 par(mai=c(1,1.5,1,1))
-glht(m1, linfct = mcp(Office = "Tukey")) %>% plot
+glht(m1.1, linfct = mcp(Office = "Tukey")) %>% plot
+
+glht(m1.1, linfct = mcp(Office = "Tukey")) %>% 
+  confint %>% 
+  broom::tidy(.) %>% 
+  arrange(estimate) %>% 
+  mutate(color_e = ifelse(`conf.high`>0 & `conf.low`<0, 1, 0)) %>% 
+  mutate(lhs = factor(contrast, levels=unique(contrast))) %>%   # unique() returns values in the order they first appear in the data
+  ggplot(aes(x=lhs, y=estimate)) +
+  geom_hline(yintercept=0, linetype="11", colour="grey60") +
+  geom_segment(aes(xend=lhs, y=conf.low, yend=conf.high, color = factor(color_e)),
+               size=0.4,
+               arrow=arrow(ends="both",
+                           length=unit(0.05, "inches"), angle=70),
+               show.legend = F) + 
+  labs(x = "", y = "estimate")+
+  geom_point() +
+  coord_flip() +
+  theme_classic()
+```
+
+```{r}
+glht(m1.1, linfct = c("Year.re = 0",
+                      "Altitude.1 = 0",
+                      "julian.D.1 = 0")) %>%
+  confint() %>% 
+  broom::tidy(.) %>% 
+  arrange(estimate) %>% 
+  mutate(lhs = factor(contrast, levels=unique(contrast))) %>%   # unique() returns values in the order they first appear in the data
+  ggplot(aes(x=lhs, y=estimate)) +
+  geom_hline(yintercept=0, linetype="11", colour="grey60") +
+  geom_segment(aes(xend=lhs, y=conf.low, yend=conf.high), size=0.4, 
+               arrow=arrow(ends="both", length=unit(0.05, "inches"), angle=70)) + 
+  geom_point() +
+  coord_flip() +
+  labs(x = "", y = "estimate")+
+  theme_classic()
 ```
 
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
   group_by(Year, Survey) %>% 
   summarise(
@@ -193,9 +276,9 @@ M.data %>%
 ```
 
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
-  group_by(Office, Survey) %>% 
+  group_by(Office,Year, Survey) %>% 
   summarise(
     N = n(),
     m = Macaca_sur %>% as.numeric() %>% sum,
@@ -223,9 +306,9 @@ M.data %>%
 ```
 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 M.data %>% 
-  group_by(TypeName.1, Survey) %>% 
+  group_by(TypeName.1, Year, Survey) %>% 
   summarise(
     N = n(),
     m = Macaca_sur %>% as.numeric() %>% sum,
@@ -233,16 +316,16 @@ M.data %>%
   ) %>% 
   ggplot(., aes(x = factor(TypeName.1), y = E)) +
   geom_boxplot()+
-  scale_y_continuous(limits =  c(0, 0.06),
-                     breaks = seq(0,0.06,0.02))+
+  scale_y_continuous(limits =  c(0, 0.08),
+                     breaks = seq(0,0.08,0.02))+
   labs(x = "Year",
        y = "Encounter rate (troop/point)")+
   theme_classic()
 ```
 
 
-```{r}
-emmip(m1, TypeName.1 ~ Office)
+```{r eval=FALSE, include=FALSE}
+emmip(m1, Office ~ TypeName.1, Is =T)
 
 ```
 

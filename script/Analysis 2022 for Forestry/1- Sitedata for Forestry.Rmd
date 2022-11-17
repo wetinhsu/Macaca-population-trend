@@ -45,7 +45,9 @@ DF %>%
   mutate(NN = paste0('(樣點',pp,')\n\n',備註)) %>% 
   reshape2::dcast(林管處+工作站+樣區名稱+樣區編號 ~ 旅次, value = NN) %>% 
   arrange(str_sub(樣區編號, 4,9)) %>% 
-  flextable::flextable(.)
+#  flextable::flextable(.)
+  write_xlsx(here("Report of Foresty_20221024/因故未調查樣區.xlsx"))
+
 
 ```
 
@@ -184,7 +186,7 @@ DF.3 <-
   DF.2 %>% 
   mutate(analysis = ifelse(time_diff<6 & !is.na(time_diff),
                            paste0(analysis, ", 6min"), analysis)) %>% 
-  mutate(analysis = ifelse(day_diff > 7, 
+  mutate(analysis = ifelse(day_diff > 7 & !is.na(day_diff), 
                            paste0(analysis, ", 7day"), analysis)) %>% 
   
   mutate(analysis = ifelse(data.table::as.ITime(Date) > data.table::as.ITime("10:54"), 
