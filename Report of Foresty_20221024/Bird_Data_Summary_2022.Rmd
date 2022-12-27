@@ -1,0 +1,25 @@
+---
+title: "Bird_Data_Summary"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+output:
+  officedown::rdocx_document
+
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      root.dir = "../",
+                      fig.width = 6,
+                      fig.asp = 1)
+library(here)
+```
+
+
+
+```{r child = "D:/R/test/Foresty_clean/Foresty_clean/script/Bird/1_Result_Birddata.Rmd"}
+
+```
+  
+
+

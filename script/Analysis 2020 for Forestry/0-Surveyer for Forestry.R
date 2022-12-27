@@ -73,4 +73,20 @@ List_surveyor %>%
   arrange(Name) %>% 
  writexl::write_xlsx(., "./林務局年報2020-2021/調查者名單.xlsx")
   
+
+DF %>%
+  mutate(Surveyor = str_replace_all(Surveyor,"宋曉菁胡耀華", "宋曉菁、胡耀華")) %>% 
+  mutate(Surveyor = str_replace_all(Surveyor,"撒伊滿拉旺", "撒伊．滿拉旺")) %>% 
   
+  separate(.,Surveyor,
+           into = paste0("Surveyor","_",0:10),
+           sep ="、|,", extra = "drop", fill = "right") %>% 
+  reshape2::melt(., id.vars = c("Office", "Station","Year", "Site_N", "Point",  "Survey"),
+                 measure.vars = paste0("Surveyor","_",0:10),
+                 variable.name = "Surveyor", value.name = "Name",)%>% 
+  filter(!is.na(Name))  %>% 
+  
+  select(Office,Station,  Name) %>% 
+  unique() %>% 
+  arrange(Office,Station) %>% 
+  writexl::write_xlsx(., "./林務局年報2020-2021/調查者名單2.xlsx")
