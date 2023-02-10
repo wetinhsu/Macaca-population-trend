@@ -1,0 +1,32 @@
+---
+title: "Macaca Data Summary "
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+output:
+  word_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      root.dir = "../",
+                      fig.width = 6,
+                      fig.asp = 1)
+library(here)
+```
+
+\newpage
+
+資料統整  
+
+
+```{r child = here::here("研討會_202307","script", "6-data plot.Rmd") }
+
+```
+
+\newpage
+ GLMM
+
+
+```{r child = here::here("研討會_202307","script", "7-GLMM.Rmd") }
+
+```
