@@ -1,0 +1,158 @@
+---
+title: '2023'
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(sf)
+library(here)
+
+library(flextable)
+library(ftExtra)
+library(showtext)
+
+showtext_auto()
+font_add("Microsoft JhengHei", "msjh.ttc")
+here::here() 
+
+```
+
+#林務局_3年資料
+```{r}
+M.data <- 
+  here("./data/clean/Forestry/for analysis/") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2020:2022)) %>% #如果只要2020~2022年，就寫2020:2022
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  lapply(., function(x){
+    x %>% 
+      setNames(str_replace_all(colnames(.), c("^distance" =  "Distance",
+                                              "^join_" = "")))
+    }) %>% 
+  bind_rows() %>% 
+  
+  filter(!is.na(analysis)) %>% 
+  mutate_at(c("Year" ), as.character) %>% 
+  mutate_at(c("Survey","Point","Month",
+              "Day", "Macaca_sur", "Distance", "Altitude", "julian.D"),
+            function(x){x %>%  as.character %>% as.numeric}) %>% 
+  mutate(data_source = "Foresty") %>% 
+  filter(analysis == "Y")
+```
+
+#BBS_7年資料
+```{r}
+BBS.data <- read_excel(here("./data/clean/for analysis_1521.xlsx"),
+                     sheet=1) %>% 
+  mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0,Macaca_sur)) %>% 
+  mutate_at(c("Year" ), as.character) %>% 
+  mutate_at(c("Survey", "Point", "Macaca_sur",
+              "Month", "Day", "Distance", "Altitude", "julian.D"), as.numeric) %>% 
+  mutate(data_source = "BBS") %>% 
+  filter(analysis == "Y")
+```
+
+
+```{r}
+bind_rows(M.data, BBS.data) %>% 
+  group_by(data_source, Year, Survey) %>% 
+  summarise(E = sum(Macaca_sur)/length(Macaca_sur)) %>% 
+  
+  ggplot(., aes(x = Year, y = E), groups = data_source) +
+  geom_boxplot(aes(col = data_source), width = 0.6)+
+  
+  theme_classic() + 
+  scale_y_continuous(limits = c(0, 0.1), expand = c(0, 0, 0, 0))+
+  labs(x = "Year", y = "Encounter rate (troop/point)" )+
+  
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+#    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+  
+```
+
+```{r}
+bind_rows(M.data, BBS.data) %>% 
+  group_by(data_source, Year, Survey, TypeName.1) %>% 
+  summarise(E = sum(Macaca_sur)/length(Macaca_sur)) %>% 
+  
+  ggplot(., aes(x =TypeName.1, y = E), groups = data_source) +
+  geom_boxplot(aes(col = data_source), width = 0.6)+
+  
+  theme_classic() + 
+  scale_y_continuous(limits = c(0, 0.1), expand = c(0, 0, 0, 0))+
+  labs(x = "TypeName.1", y = "Encounter rate (troop/point)" )+
+  
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+#    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+  
+```
+
+
+
+```{r}
+bind_rows(M.data, BBS.data) %>% 
+  mutate(Altitude_f = cut(Altitude,
+                        breaks = c(seq(0,4000,500)),
+                        labels = c(seq(250,3750,500)),
+                        include.lowest = T)) %>% 
+  
+  group_by(data_source, Year, Survey, Altitude_f) %>% 
+  summarise(E = sum(Macaca_sur)/length(Macaca_sur)) %>% 
+  
+  ggplot(., aes(x =Altitude_f, y = E), groups = data_source) +
+  geom_boxplot(aes(col = data_source), width = 0.6)+
+  
+  theme_classic() + 
+  scale_y_continuous(limits = c(0, 0.1), expand = c(0, 0, 0, 0))+
+  labs(x = "Altitude_f", y = "Encounter rate (troop/point)" )+
+  
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+#    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+  
+```
+

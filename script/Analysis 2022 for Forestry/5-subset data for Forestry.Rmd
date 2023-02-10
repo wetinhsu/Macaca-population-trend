@@ -280,7 +280,7 @@ M.data.1 %>%
 M.data.2 <-
   M.data.1 %>% 
   mutate(analysis = ifelse(analysis == "Y" &( Month < 3 | Month > 6), 
-                           "Y(month)", analysis)) %>%   #刪除調查季(包含緩衝期)以外的資料
+                           "month", analysis)) %>%   #刪除調查季(包含緩衝期)以外的資料
   mutate(analysis = ifelse(analysis == "Y" &  Altitude<50, 
                            "Y(50m)", analysis)) %>%  
   mutate(analysis = ifelse(analysis == "Y" &  TypeName.1 %in% "非森林", 
@@ -297,11 +297,11 @@ M.data.2 %>%
     '2-2 Toolate' = str_subset(analysis, "Toolate") %>% length,
     '2-3 7day' = str_subset(analysis, "7day") %>% length,
     '2-4 locate' = str_subset(analysis, "locate") %>% length,
-    'end of 2' = str_subset(analysis, "locate|6min|Toolate|7day", negate = T) %>% length,
-    '3 不在3~6月內' = str_subset(analysis, "month") %>% length,
-    '4 低於50m' = str_subset(analysis, "50m") %>% length,
-    '5 非森林' = str_subset(analysis, "NotForest") %>% length,
-    '6 分析用' = str_subset(analysis, "^Y$") %>% length
+    '2-5 不在3~6月內' = str_subset(analysis, "month") %>% length,
+    'end of 2' = str_subset(analysis, "locate|6min|Toolate|7day|month", negate = T) %>% length,
+    '3 低於50m' = str_subset(analysis, "50m") %>% length,
+    '4 非森林' = str_subset(analysis, "NotForest") %>% length,
+    '5 分析用' = str_subset(analysis, "^Y$") %>% length
   ) %>% 
   
   reshape2::melt(variable.name = "項目",

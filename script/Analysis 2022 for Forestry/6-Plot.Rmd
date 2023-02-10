@@ -632,6 +632,100 @@ E_rate_Forest %>%
 <br/>\
 <br/>
 
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# 2020~年各森林類型內的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
+
+E_rate_Forest<-
+
+#森林內的分別計
+M.data %>%  
+  filter(analysis %in% "Y") %>%
+  group_by(Year, Survey, TypeName.1) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur)) %>% 
+  
+  bind_rows(  #森林的總計
+    M.data %>% 
+      filter(analysis %in% "Y") %>%
+      group_by(Year, Survey) %>% 
+      summarise(N = n(),
+                m = sum(Macaca_sur))  %>% 
+      mutate(TypeName.1 = "Forest")
+  )%>% 
+  
+  bind_rows(  #非森林(包括<50m & >=50m )的總計
+    M.data %>% 
+      filter(analysis %in% str_subset(analysis, "^Y")) %>%
+      filter(analysis %in%
+               str_subset(analysis, "month", negate = T)) %>%
+      filter(TypeName.1 %in% "非森林") %>% 
+      group_by(Year, Survey, TypeName.1) %>% 
+      summarise(N = n(),
+                m = sum(Macaca_sur))  
+  )%>% 
+  
+  bind_rows(  #<50m 分別的小計
+    M.data %>% 
+      filter(analysis %in% str_subset(analysis, "^Y")) %>%
+      filter(analysis %in%
+               str_subset(analysis, "50m", negate = F)) %>%
+ #     filter(Altitude < 50) %>%
+      group_by(Year, Survey) %>% 
+      summarise(N = n(),
+                m = sum(Macaca_sur))  %>% 
+      mutate(TypeName.1 = "less50")
+  )%>% 
+  
+    bind_rows(  #total小計
+    M.data %>% 
+      filter(analysis %in% str_subset(analysis, "^Y")) %>%
+      filter(analysis %in%
+               str_subset(analysis, "month", negate = T)) %>%
+      group_by(Year, Survey) %>% 
+      summarise(N = n(),
+                m = sum(Macaca_sur)) %>% 
+      mutate(TypeName.1 = "Total") 
+  )%>%
+  
+  mutate(E = m/N) %>%
+  ungroup() %>%
+  
+  group_by(TypeName.1) %>%
+  summarise(Mean_N = mean(N),
+            Se_N = sd(N)/sqrt(n()),
+            Mean_m = mean(m),
+            Se_m = sd(m)/sqrt(n()),
+            Mean_E = mean(E),
+            Se_E = sd(E)/sqrt(n())) 
+
+E_rate_Forest %>% 
+  mutate(TypeName.1 = ordered(TypeName.1, c('Forest',
+                                            '闊葉林',
+                                       '針葉林',
+                                       '竹林',
+                                       '混淆林',
+                                       'less50',
+                                       '非森林',
+                                       'Total'))) %>% 
+  arrange(TypeName.1) %>% 
+  mutate_at(c('Mean_N', 'Se_N', 'Mean_m', 'Se_m'), function(x)round(x,1)) %>% 
+  mutate(Mean_E = round(Mean_E,4)) %>% 
+  mutate(Se_E = round(Se_E,4)) %>% 
+  flextable(.) %>%
+  
+  align(.,
+        align = "center", part = "all") 
+
+
+
+```
+
+<br/>\
+<br/>
+
+
 \newpage
 
 Year的Encounter_rate
