@@ -53,6 +53,13 @@ spieces_info <-
       setNames(., str_replace_all(colnames(.), "Site_N", "site"))
 
 
-write.csv(spieces_info,
-          "./研討會_202307/data/clean/BBS_Monkey_1521.csv",
-          row.names = F)
+ write.csv(spieces_info,
+           "./研討會_202307/data/clean/BBS_Monkey_1521_0214.csv",
+           row.names = F)
+
+
+spieces_info %>% 
+  reshape2::melt(id = "site", variable.name = "year", value.name = "count") %>% 
+write.csv(., 
+          "./研討會_202307/data/clean/BBS_Monkey_1521_0214.csv",
+      row.names = F)

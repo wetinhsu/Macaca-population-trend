@@ -9,14 +9,11 @@ library(writexl)
 str_name<-'D:/R/test/不分幅_全台及澎湖/dem_20m.tif' 
 imported_raster=raster(str_name )
 
-
-plot(imported_raster)
-
 s <- stack(imported_raster)
 
 
 
-S.all<- read_xlsx( "./研討會_202307/data/clean/forest_combind_data_1521.xlsx") %>% 
+S.all<- read_xlsx( "./研討會_202307/data/clean/Distance500_1521.xlsx") %>% 
   filter(! is.na(Month)| ! is.na(Day)| ! is.na(Hour)| ! is.na(Minute)) %>% 
   add_column(NO = 1:nrow(.))
 
@@ -47,4 +44,4 @@ S.all <-
   left_join(pp, by = c("NO")) %>% 
   dplyr::select(-"NO")
 
-write_xlsx(S.all, "./研討會_202307/data/clean/Altitude_combind_data_1521.xlsx")
+write_xlsx(S.all, "./研討會_202307/data/clean/full_combind_data_1521.xlsx")
