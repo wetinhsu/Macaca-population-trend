@@ -25,7 +25,7 @@ Ch5_matrix_line_site <-
   read_xlsx("./研討會_202307/data/refer/Dali/Ch5_matrix_line_site.xlsx")
 
 
-M.data <- read_excel(here("./研討會_202307/data/clean/for analysis_1521.xlsx"),
+M.data <- read_excel(here("./研討會_202307/data/clean/for analysis_1521_v2.xlsx"),
                      sheet=1) %>% 
   
   mutate_at(c("Year", "Survey", "Point", "Macaca_sur",
@@ -121,9 +121,16 @@ model2 <- glmmTMB(
 
 summary(model2)
 
-write.csv(Df,"./研討會_202307/data/clean/Df.csv",
+write.csv(Df,"./研討會_202307/data/clean/Df_0222.csv",
           row.names = F)
+
+Df <- read.csv("./研討會_202307/data/clean/Df_0222.csv" )%>% 
+  mutate_at(c("elevation","edge","P_forest",
+              "P_farmland", "Shannon", "edge_length"),scale)
 #--------------------
 
-ggplot(Df, aes(x = edge, y = Macaca_sur))+
-  geom_point(pch = 1)
+ggplot(Df, aes(x = P_farmland, y = Macaca_sur))+
+  geom_point(pch = 1)+
+  geom_smooth(method = "glm",
+              method.args = list(family = "binomial"),
+              se = F)

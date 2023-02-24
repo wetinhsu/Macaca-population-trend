@@ -1,0 +1,47 @@
+
+    model
+    {
+      # define prior distribution for parameters
+    	for(i in 1:3){
+    	   tau[i] ~ dgamma(0.01, 0.01)
+    	   sd[i] <- sqrt(1/tau[i])
+    	}
+    
+    	yr[1] ~ dnorm(0, 0.001)
+    	yr[2] ~ dnorm(0, 0.001)	
+    	
+    	# define overall year effect
+    	for(i in 3:Years){
+    	   m.yr[i] <- 2*yr[i-1] - yr[i-2]
+    	   yr[i] ~ dnorm(m.yr[i], tau[1])
+    	}
+    	
+    	# define site effect
+    	for(i in 1:N.site){
+    	   st[i] ~ dnorm(0, tau[2])
+    	}    	
+      
+      
+      # fit data to the model
+    	for(i in 1:N.data){
+    	
+         # site-specific year effect
+    	   yr.st[SITE[i], YEAR[i]] ~ dnorm(yr[YEAR[i]], tau[3])
+         
+         # log expected count equals site-specific year effect + site effect 
+    	   log(lamda[SITE[i], YEAR[i]]) <- yr.st[SITE[i], YEAR[i]] + st[SITE[i]]
+    	   
+    	   # count derived from poisson distribution 
+    	   Y[i] ~ dpois(lamda[SITE[i], YEAR[i]])
+    	   
+    	}
+    	
+    	# calculate index (index in the first year = 100)
+    	for(i in 1:Years){	   
+    	   ind[i] <- 100*(exp(yr[i]))/(exp(yr[1]))	   
+    	}
+    	      # calculate % changes over the last  10 years
+    	chg[1] <- 100*(ind[Years] - ind[Years-3])/ind[Years-3]
+      
+    }
+    

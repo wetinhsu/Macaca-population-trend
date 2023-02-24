@@ -11,6 +11,7 @@ here::here()
 
 
 M.data <- read_excel(here("./研討會_202307/data/clean/merge_data_1521.xlsx") ) %>% 
+  mutate(Macaca_sur.o = Macaca_sur) %>% 
   mutate(Macaca_sur = ifelse(Macaca_sur %in% 1 & Macaca_dist %in% "C" , NA, Macaca_sur)) 
 
 

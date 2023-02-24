@@ -83,6 +83,16 @@ left_join(xy.new, by = c("Site_N",
   mutate(X = ifelse(is.na(X),  X.y, X)) %>% 
   mutate(Y = ifelse(is.na(Y),  Y.y, Y)) %>%
   mutate(County = ifelse(is.na(County),  County.y, County)) %>%
-  select(-ends_with(".y"))  
+  select(-ends_with(".y"))  %>% 
+  mutate(YSSP = paste(Year, Survey, Site_N, Point, sep = "_")) %>% 
+  split(., .$YSSP) %>% 
+  map(., function(x){
+    x %>% 
+      arrange(Hour, Minute) %>% 
+      slice(1)
+  }) %>% 
+  bind_rows() %>% 
+  select(-YSSP)
+  
 
 write_xlsx(S1521, "研討會_202307/data/clean/Site_1521_v1.xlsx")

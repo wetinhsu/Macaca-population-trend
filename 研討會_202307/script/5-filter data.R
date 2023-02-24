@@ -10,9 +10,7 @@ here::here()
 
 
 
-M.data <- read_excel(here("./研討會_202307/data/clean/full_combind_data_1521.xlsx") ) %>% 
-  mutate(Macaca_sur = ifelse(Macaca_sur %in% 1 & Macaca_dist %in% "C" , NA, Macaca_sur)) 
-
+M.data <- read_excel(here("./研討會_202307/data/clean/full_combind_data_1521.xlsx") ) 
 
 
 
@@ -27,9 +25,9 @@ M.data.2 <-
   mutate(analysis = ifelse(Month >= 3 & Month <= 6,  
                            analysis,
                            "N")) %>% 
-  mutate(analysis = ifelse(Altitude<50,
-                           "N",
-                           analysis))%>% 
+#  mutate(analysis = ifelse(Altitude<50,
+#                           "N",
+#                           analysis))%>% 
   mutate(analysis = ifelse(is.na(X) & is.na(Y),  
                            "N",
                            analysis)) %>% 
@@ -38,7 +36,20 @@ M.data.2 <-
                            analysis)) 
 
 
-write_xlsx(M.data.2, here("./研討會_202307/data/clean/for analysis_1521.xlsx"))
+#-------------------
+site_list <- 
+  read_xlsx("//10.40.1.138/Bird Research/BBSTW (20170612)/01_調查/分層隨機取樣的樣區清單 _20221031.xlsx",
+            sheet = "樣區表") 
+
+M.data.3 <-
+  M.data.2%>%
+  filter(Site_N %in% site_list$樣區編號) %>% 
+  filter(!(Year %in% 2020 & Survey %in% 3)) %>%
+  filter(!(Site_N %in% "A09-17" & Year %in% c(2016:2019) & Point %in% c(11,12))) %>% 
+  filter(analysis == "Y")
+
+write_xlsx(M.data.3, here("./研討會_202307/data/clean/for analysis_1521_v2.xlsx"))
 
 
 
+M.data.3 %>% .$Site_N %>% unique() %>% length

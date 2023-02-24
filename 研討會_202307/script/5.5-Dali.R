@@ -12,7 +12,7 @@ site_list <-
 #read point data
 
 
-df <- read_excel("研討會_202307/data/clean/for analysis_1521.xlsx", col_types = "text") 
+df <- read_excel("研討會_202307/data/clean/for analysis_1521_v2.xlsx", col_types = "text") 
   
 #ifelse(`結群` == "Y", 1, 0)
 
@@ -54,12 +54,11 @@ spieces_info <-
 
 
  write.csv(spieces_info,
-           "./研討會_202307/data/clean/BBS_Monkey_1521_0214.csv",
+           "./研討會_202307/data/clean/BBS_Monkey_1521_0222.csv",
            row.names = F)
 
 
 spieces_info %>% 
   reshape2::melt(id = "site", variable.name = "year", value.name = "count") %>% 
-write.csv(., 
-          "./研討會_202307/data/clean/BBS_Monkey_1521_0214.csv",
-      row.names = F)
+  reshape2::dcast(count~year, length)
+

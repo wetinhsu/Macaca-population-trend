@@ -42,14 +42,13 @@ site_list <-
 ```
 
 ```{r read_data, include=FALSE}
-M.data <- read_excel(here("./研討會_202307/data/clean/for analysis_1521_V2.xlsx"),
+M.data <- read_excel(here("./研討會_202307/data/clean/for analysis_1521.xlsx"),
                      sheet=1) %>% 
   
   mutate_at(c("Year", "Survey", "Point", "Macaca_sur",
-              "Month", "Day", "Distance", "Altitude", "julian.D"), as.numeric) %>% 
+              "Month", "Day",  "Altitude", "julian.D"), as.numeric) %>% 
   
-  mutate(TypeName.1 = ordered(TypeName.1, TypeName_order)) %>% 
-  mutate(County = ordered(County,conty_order)) %>% 
+  
   
    filter(Site_N %in% site_list$`site_list`) %>% 
   
