@@ -15,7 +15,7 @@ sapply(usepackage, library, character.only = TRUE)
 # library(ggplot2)
 
 # input file (*.csv) and create output directory
-f_name <- dir(pattern = "BBS_Monkey.*_0222.csv")
+f_name <- dir(pattern = "BBS_Monkey.*.csv")
 d_name <- f_name %>% gsub("(^.*).csv$", "\\1", x = .)
 sapply(d_name, dir.create)
 
@@ -142,12 +142,12 @@ for (fi_name in f_name) {
   
   # draw index
   summaryindex <- MCMCsummary(res, params="ind")[,c("2.5%","50%","97.5%")]
-  summaryindex$Year <- 2015:2021
+  summaryindex$Year <- 2015:2022
   colnames(summaryindex)[1:3] <- c("LowerCI","Median","UpperCI")
   
   p <- ggplot(summaryindex, aes(Year)) + 
     geom_line(aes(y=Median), colour="red", linewidth=1.5) + 
-    scale_x_continuous(breaks = c(2015:20217)) +
+    scale_x_continuous(breaks = c(2015:2022)) +
     geom_ribbon(aes(ymin=LowerCI, ymax=UpperCI), alpha=0.2) +
     ylab("Index (100 in 2015)") + theme_bw() + 
     theme(text = element_text(size = 18),

@@ -1,0 +1,3 @@
+切出目前這個圖層的方法：
+現在的樣點->融合 by樣區->畫100m buffer -> buffer_100m  cut 國土利用104 ->
+ 融合 by LCODE_C2 ->增加 add geometry attributes (面積跟周長)

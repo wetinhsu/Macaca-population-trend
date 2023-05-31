@@ -7,39 +7,22 @@ library(sf)
 #-----------------------------
 #read point data
 
-S.all<- "D:/R/test/Macaca-population-trend/研討會_202307/data/clean/Site_1521_v1.xlsx" %>%
-  read_xlsx(., sheet = 1, cell_cols("A:K"), col_types = "text")%>% 
-  mutate(Year = as.character(Year))%>% 
-  mutate_at(c("X", "Y"), as.numeric)  
-
-#transform to spatial data
-st.all<- 
-  S.all %>% 
-  filter(!is.na(X)|!is.na(Y)) %>% 
-  dplyr::select(X, Y) %>% 
-  unique %>% 
-  mutate(NO = 1 : nrow(.)) %>% 
-  mutate_at(c("X", "Y"), as.numeric)
-
-
+S.all<- "./研討會_202307/data/clean/Site_1522_v1.xlsx" %>%
+  read_xlsx(., sheet = 1, col_types = "text")
 
 
 
 #--------------------------------
-#combind distance to point data
-
-S.all <- 
-st.all %>%
-  
-  left_join(S.all, .,  by = c("X", "Y")) %>% 
-  dplyr::select(-NO)
 
 
-M.all <- read_excel("./研討會_202307/data/clean/Macaca_1521_v1.xlsx", col_types = "text")
+M.all <- read_excel("./研討會_202307/data/clean/Macaca_1522_v1.xlsx", col_types = "text")
 
-M.data<- M.all %>% 
+M.data <- M.all %>% 
   full_join(S.all, by = c("Year", "Site_N", "Point", "Survey")) %>% 
-  mutate_at(c("X", "Y"), as.numeric) %>% 
+  
+  filter(! str_detect(Site_N, "KIN")) %>% #exculde kiman
+  filter(!(Site_N %in%  paste0("A08-0", 1:9) )) %>% #exclude蘭嶼
+  filter(! is.na(X_97)) %>%
   arrange(Year,Site_N)
 
 M.data %>%  #確認每一旅次內的每一個樣點資料只有1筆
@@ -47,4 +30,4 @@ M.data %>%  #確認每一旅次內的每一個樣點資料只有1筆
   summarise( n=n()) %>% 
   filter(n >1) 
 
-write_xlsx(M.data, "./研討會_202307/data/clean/merge_data_1521.xlsx")
+write_xlsx(M.data, "./研討會_202307/data/clean/merge_data_1522.xlsx")

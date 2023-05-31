@@ -1,93 +1,91 @@
-#---- load library
 
-library(data.table)
-library(readxl)
-library(writexl)
 library(tidyverse)
 library(sf)
+library(DBI)
+library(dbx)
 
-#-----------------------------
-#read point data
+#--------------------------------------------------------------------
+n_nest <- 
+  function(x, y){  #st_point, nc.b,
+    
+    nearest <- 
+      st_nearest_feature(x, y, by_element = TRUE) 
+    
+    y %>% 
+      slice(nearest) %>%
+      select(TypeName)%>% 
+      mutate(Distance = st_distance(x, ., by_element = TRUE)%>% 
+               as.numeric(.))%>% 
+      st_drop_geometry 
+    
+    
+  }
 
-S.all<- list.files("./data/clean/Site/", pattern = "Site_", full.names = T) %>% 
-  lapply(., function(x){
-    read_xlsx(x, sheet = 1, cell_cols("A:K"), col_types = "text") %>% 
-      setDT
-  }) %>% 
-  do.call(rbind, .) %>% 
-  setDT  %>% 
-  .[, Year := as.character(Year)]
+#--------------------------------------------------------------------
+#read BBS Point XYdata
+con <- dbxConnect(adapter="sqlite", dbname="D:/R/test/DB/P_BBS.db")
+list_Point<-
+  dbReadTable(con, "list_Point") %>% 
+  arrange(樣區編號, 獼猴樣區編號,as.numeric(樣點代號)) 
 
-#transform to spatial data
-st.all<- 
-  S.all %>% 
-  .[!is.na(X)|!is.na(Y),] %>% 
-  .[, list(x=X, y=Y, X, Y)] %>% 
-  unique %>% 
-  .[, NO := 1 : nrow(.)] %>% 
-  .[, X := as.numeric(X)] %>% 
-  .[, Y := as.numeric(Y)] %>% 
-  st_as_sf(., coords = c("X", "Y"), crs = 4326) %>% 
-  st_transform(., 3826)
 
-#st.all %<>% add_column(TypeName = NA) %>% add_column(Distance = NA) 
+dbDisconnect(con)
 
-#----------------
-#read forest spatial data, merge polgons by TypeName, area by TypeName
+
+dfo  <- data.table::fread("D:/R/test/bbs_handover_temp_v20190123 - WT/dfs2.csv",
+                          head=T, encoding = "UTF-8", na.strings = "")   #UTF-8
+#--------------------------------------------------------------------
+#read forest spatial data
 
 path <- "D:/R/test/第四次森林資源調查全島森林林型分布圖"
 
-nc <- st_read(paste0(path,"/","全島森林林型分布圖.shp"),
-              crs=3826) %>% 
-  dplyr::arrange(TypeName, st_geometry_type(geometry), FunctionTy,Function)
+nc.b <- st_read(paste0(path,"/","全島森林林型分布圖.shp"), crs=3826) %>% 
+  arrange(TypeName, st_geometry_type(geometry), FunctionTy,Function) %>% 
+  filter(!TypeName %in% c("待成林地", "裸露地", "陰影"))
 
 
-nc.b <- 
-  nc %>% 
-  dplyr::filter(!TypeName %in% c("待成林地", "裸露地", "陰影"))
+#--------------------------------------------------------------------
+# filter and transform to spatial data
+st_point <- 
+  list_Point %>% 
+  filter(!is.na(樣區編號)) %>% 
+  select(ID, X_97, Y_97) %>% 
+  filter(!is.na(X_97)|!is.na(Y_97))%>% 
+  filter(!X_97%in% "")%>% 
+  mutate_at(c("X_97", "Y_97"), as.numeric) %>% 
+  st_as_sf(., coords = c("X_97", "Y_97"), crs = 3826) 
 
-
-#---------------------
+#--------------------------------------------------------------------
 #calculate distance
-
-
-Sys.time()
-nearest <-
-  st_nearest_feature(st.all, nc.b,
-                     by_element = TRUE)
-Sys.time()
-dist <-  
-  st_distance(st.all, nc.b[nearest,],
-              by_element = TRUE) %>% 
-  as.numeric(.)
 Sys.time()
 
+st_point_1 <- 
+  st_point %>% 
+  mutate(n_nest (.,  nc.b))%>%
+  st_drop_geometry 
 
+Sys.time()
 
-#--------------------------------
-#combind distance to point data
+#--------------------------------------------------------------------
+library(readxl)
+M.all <- read_excel("./data/clean/Macaca/Macaca_1522_v1.xlsx", col_types = "text") 
 
 S.all <- 
-st.all %>%
-  st_drop_geometry %>% 
-  mutate(Distance = dist) %>% 
-  bind_cols(nc.b[nearest,] %>% 
-              st_drop_geometry %>%
-              select(TypeName) ) %>% 
-  left_join(S.all, .,  by = c("X" = "x", "Y" = "y")) %>% 
-  select(-NO)
+  read_excel("data/clean/Site/Site_2022_v1.xlsx", col_types = "text") %>% 
+  
+  bind_rows(
+    
+    S1521%>% mutate_if(is.numeric, as.character)
+    
+  )
 
 
-M.all <- read_excel("./data/clean/Macaca/Macaca_1521_v1.xlsx", col_types = "text") %>% 
-  setDT %>% 
-  .[, Year := as.character(Year)]
-
-M.data<- M.all %>% 
-  full_join(S.all, by = c("Year", "Site_N", "Point", "Survey", "Month")) %>% 
-  setDT %>% 
-  .[order(Year,Site_N),] %>% 
-  .[, X := as.numeric(X)] %>% 
-  .[, Y := as.numeric(Y)]
+M.data <- 
+  M.all %>% 
+  full_join(.,S.all, by = c("Year", "Site_N", "Point", "Survey")) %>% 
+  mutate(ID = as.integer(ID)) %>% 
+  left_join(.,st_point_1 , by = "ID") 
 
 
-write_xlsx(M.data, "./data/clean/forest_combind_data_1521.xlsx")
+write_xlsx(M.data, "./data/clean/forest_combind_data_1522.xlsx")
+

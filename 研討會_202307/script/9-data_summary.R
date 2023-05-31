@@ -6,22 +6,36 @@ library(here)
 #---------------------------
 
 
-df <- read_excel("研討會_202307/data/clean/for analysis_1521_v2.xlsx", col_types = "text") 
-
+df <- read_excel("研討會_202307/data/clean/for analysis_1522_v1.xlsx",
+                 col_types = "text") 
+#全部的樣區數
 df%>%
   summarise(
     length = Site_N %>% unique() %>% length
   ) 
 
-
+#每次的樣區數
 df%>%
-group_by(Year,  Survey) %>% 
+  group_by(Year,  Survey) %>% 
   summarise(
     n_Site_N = Site_N %>% unique() %>% length,
   ) %>% 
   summary()
 
+tb1 <- 
+df%>%
+  group_by(Year) %>% 
+  summarise(
+    n_Site_N = Site_N %>% unique() %>% length
+  ) 
 
+  ggplot(data = tb1, aes(x = Year, y =  n_Site_N)) +
+    geom_col(width = 0.5)+
+    scale_y_continuous("Count of Transects",limit = c(0,250))+
+  theme_classic()
+
+
+#每次有猴群的樣區數
 df%>%
   filter(Macaca_sur == 1) %>% 
   group_by(Year, Site_N, Survey) %>% 
@@ -30,7 +44,7 @@ df%>%
   summarise(NN_survey = NN %>% as.numeric() %>% sum) %>% 
   summary
 
-
+#總猴群數
 df%>%
   filter(Macaca_sur == 1) %>% 
   summarise(NN = Macaca_sur %>% length)
@@ -43,52 +57,55 @@ df%>%
   select(Site_N, Year,Survey) %>% 
   unique() %>% 
   reshape2::dcast(Site_N ~ Year, length) %>% 
-  mutate(total = `2015`+`2016`+`2017`+`2018`+`2019`+`2020`+`2021`) 
+  mutate(total = `2015`+`2016`+`2017`+`2018`+`2019`+`2020`+`2021`+`2022`) 
 
 
 mmm$total %>% table #猴子的聚集地A33-08、A18-01 
 #其實不是我們想像中出現猴群的就是那幾個樣區
 
 #-------------
-site_list <- 
-  read_xlsx("//10.40.1.138/Bird Research/BBSTW (20170612)/01_調查/分層隨機取樣的樣區清單 _20221031.xlsx",
-            sheet = "樣區表") 
 
-source(here("./研討會_202307/script/1-Sitedata.R"))
 Surveyer <- 
-dfo %>% 
-  filter(年 %in% 2015:2021) %>% 
-  filter(!(年 %in% 2020 & 調查旅次編號 %in% 3)) %>% 
-  select(年, 樣區編號,樣點編號, 調查旅次編號,調查者) %>% 
+  df %>% 
+  select(Year, Site_N, Point,  Survey,Surveyor) %>% 
   unique() %>%
   
-  separate(.,調查者,
-           into = paste0("Surveyer","_",0:10),
+  separate(.,Surveyor,
+           into = paste0("Surveyor","_",0:10),
            sep ="、", extra = "drop", fill = "right") %>% 
-  reshape2::melt(.,id.vars = c("年", "樣區編號", "樣點編號",  "調查旅次編號"),
+  reshape2::melt(.,id.vars = c("Year", "Site_N", "Point",  "Survey"),
                  variable.name = "Surveyer", value.name = "Name",) %>% 
   filter(!is.na(Name)) %>% 
-  select(-樣點編號) %>% 
+  select(-Point) %>% 
   unique(.) 
 
 
-
+#每次調查者人數
 Surveyer %>% 
-  filter(樣區編號 %in% df$Site_N) %>% 
   
-  group_by(年,調查旅次編號) %>% 
+  group_by(Year, Survey) %>% 
   summarise(NN=Name %>% unique() %>% length) %>% 
   summary
+
+#總調查者人數
+Surveyer %>% 
+  summarise(NN=Name %>% unique() %>% length) 
+
+
+tb2 <- 
+Surveyer %>% 
+  group_by(Year) %>% 
+  summarise(NN=Name %>% unique() %>% length) 
 
 #----------------------------------------------------------------
 
 df %>% 
   group_by(Year, Site_N, Survey) %>% 
-  summarise(NN = length(Point)) %>% 
+  summarise(NN = Point %>% unique %>% length) %>% 
   .$NN %>% 
   table
 
-
+#2015~2022年間樣區被調查的次數的統計
 df %>% 
   group_by(Year, Site_N, Survey) %>% 
   summarise(NN = Site_N %>% unique()%>% length() ) %>% 
@@ -100,30 +117,12 @@ df %>%
 #-------------------------------------------------
 
 
-dfo %>% 
-  select(年, 樣區編號) %>% 
-  setnames(., c("Year", "Site_N")) %>% 
-  filter(Site_N %in% site_list$樣區編號) %>%
-  
-  filter(Year %in% c(2015:2021)) %>% 
-  unique() %>%
-  .$Site_N %>% unique() %>%length
-
-group_by(Site_N) %>% 
-  summarise(Count= n()) %>% 
-  .$Count %>%table
 
 
-dfo %>% 
-  select(年, 樣區編號) %>% 
-  setnames(., c("Year", "Site_N")) %>% 
-  filter(Year %in% c(2011:2019)) %>% 
-  filter(Site_N %in% site_list$樣區編號) %>%
-  
-  
-  unique() %>% 
+df %>% 
   group_by(Site_N) %>% 
-  summarise(Count=  length(Year) ) %>% View
-  filter(Count>=3)
+  summarise(Count=  Year %>% unique %>% length() ) %>% 
+  filter(Count>=3) %>% View
+    
   
   
