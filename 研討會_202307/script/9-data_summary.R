@@ -6,7 +6,7 @@ library(here)
 #---------------------------
 
 
-df <- read_excel("研討會_202307/data/clean/for analysis_1522_v1.xlsx",
+df <- read_excel("研討會_202307/有林務局資料/data/clean/for analysis_1522_v1.xlsx",
                  col_types = "text") 
 #全部的樣區數
 df%>%
@@ -31,23 +31,35 @@ df%>%
 
   ggplot(data = tb1, aes(x = Year, y =  n_Site_N)) +
     geom_col(width = 0.5)+
-    scale_y_continuous("Count of Transects",limit = c(0,250))+
+    scale_y_continuous("Count of Transects")+
   theme_classic()
 
 
 #每次有猴群的樣區數
+
 df%>%
   filter(Macaca_sur == 1) %>% 
   group_by(Year, Site_N, Survey) %>% 
-  summarise(NN = Macaca_sur %>% length) %>% 
+  summarise(NN = Site_N %>% unique() %>% length) %>% 
   group_by(Year, Survey) %>%
   summarise(NN_survey = NN %>% as.numeric() %>% sum) %>% 
   summary
+
+
+
 
 #總猴群數
 df%>%
   filter(Macaca_sur == 1) %>% 
   summarise(NN = Macaca_sur %>% length)
+
+
+#平均每次調查的猴群數
+df%>%
+  filter(Macaca_sur == 1) %>% 
+  group_by(Year, Survey) %>%
+  summarise(NN = Macaca_sur %>% length) %>% 
+  summary
 
 #-------------------
 mmm <- 
@@ -125,4 +137,18 @@ df %>%
   filter(Count>=3) %>% View
     
   
-  
+df %>% 
+  select(Site_N,Year, DataSource) %>%
+  mutate(Year = as.character(Year)) %>% 
+  unique() %>% 
+  reshape2::melt(id = c("Site_N", "Year")) %>% 
+  reshape2::dcast(Site_N+Year~ value)%>%
+#  View
+
+  write.csv(.,"研討會_202307/有林務局資料/data/clean/BBS&Forest.csv", row.names = F)
+
+
+inner_join(df[df$DataSource == "Foresty",], df[df$DataSource == "BBS",], by = c("Site_N")) %>% 
+  select(Site_N) %>% unique() %>% 
+
+  View

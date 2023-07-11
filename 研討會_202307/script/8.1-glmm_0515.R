@@ -53,20 +53,20 @@ Df <-
       filter(! is.na(Shannon))%>% 
       filter( count != 0)
   ) %>% 
-  select(transect,year, count, elevation,edge,P_forest,P_farmland,Shannon,edge_length) %>% 
+  select(transect,year, count, elevation,edge,P_forest,P_farmland,P_Orchard,Shannon,edge_length) %>% 
   
   mutate(year = year %>% as.numeric(.) %>% as.integer(.))%>% 
-  mutate_at(c("elevation","edge","P_forest",
+  mutate_at(c("elevation","edge","P_forest","P_Orchard",
               "P_farmland", "Shannon", "edge_length"),scale) %>% 
   data.frame(.) 
 
 
 
-write.csv(Df, "./研討會_202307/data/clean/Df_site_A-C_1522_0529.csv", row.names = F)
+#write.csv(Df, "./研討會_202307/data/clean/Df_site_A-C_1522_0601.csv", row.names = F)
 #----------------------------------
 library(car)
 
-vif(lm( count ~ year+ elevation+ edge + P_forest + P_farmland + Shannon  , Df))
+vif(lm( count ~ year+ elevation+ edge + P_forest + P_farmland  + Shannon  , Df))
 
 
 
@@ -83,9 +83,11 @@ corr <-
 
 
 ggcorrplot(corr, 
-           # method = "circle",
-           hc.order = TRUE,
-           type = "lower",
+       #     method = "circle",
+       #    hc.order = TRUE,
+           ggtheme = ggplot2::theme_gray,
+           colors = c("#6D9EC1", "white", "#E46726"),
+           type = "upper",
            lab = TRUE) #數字為correlation coefficient
 
 
@@ -108,13 +110,13 @@ summary(model2)
 
 #---------------------------------------------------
 
-ggplot(Df, aes(x = edge, y = count))+
+ggplot(Df, aes(x = Shannon, y = count))+
   geom_point(pch = 21, size = 2.5, col = "#1D3557", fill = "#457b9d")+
   geom_smooth(method = "glm",
               method.args = list(family = "binomial"),
               col = "red",
               se = F) + 
- # scale_x_continuous(name ="edge",limits = c(-1.9, 1.3))+
+#  scale_x_continuous(name ="Shannon",limits = c(-1.9, 1.3))+
   scale_y_continuous(name ="",limits = c(0, 1), breaks =c(0,1))+
   theme_classic()+
   theme(
