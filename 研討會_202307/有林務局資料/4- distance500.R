@@ -11,7 +11,12 @@ here::here()
 
 
 M.data <- read_excel(here("./研討會_202307/有林務局資料/data/clean/merge_data_1522.xlsx") ) %>% 
-  mutate(Macaca_sur.o = Macaca_sur) %>% 
+  mutate(Macaca_sur.o = Macaca_sur ) %>% 
+  mutate(Macaca_sur =case_when(
+    DataSource %in% "Foresty" & Macaca_sur %in%　2 ~ 1,
+    DataSource %in% "Foresty" & Macaca_sur %in%　1 ~ 0,
+    DataSource %in% "Foresty" & Macaca_sur %in%　0 ~ NA,
+    TRUE ~ as.numeric(Macaca_sur))) %>% 
   mutate(Macaca_sur = ifelse(Macaca_sur %in% 1 & Macaca_dist %in% "C" , NA, Macaca_sur)) 
 
 
@@ -91,6 +96,8 @@ remove.data <-
   filter(!( Year %in% 2018 & Survey %in% 1 & Site_N %in% "A35-15" & Base_point %in% c(2,7))) %>%
   filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "A35-15" & Base_point %in% 2)) %>%
   filter(!( Year %in% 2022 & Survey %in% 2 & Site_N %in% "A33-08" & Base_point %in% c(8))) %>%
+  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "B06-02" & Base_point %in% c(2,6))) %>%
+  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "B16-01" & Base_point %in% c(3,7))) %>%
   # ~手動
   select( -Nearest_point, -distance, -Y_S_S) %>% 
   unique()%>% 

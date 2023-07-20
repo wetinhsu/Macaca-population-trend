@@ -35,8 +35,10 @@ F.all <-
   read_excel("./研討會_202307/有林務局資料/data/OnlyForestydata_20-22.xlsx",
              col_types = "text") %>% 
   left_join(.,list_Point, by = c( 'Site_N'= '獼猴樣區編號', 'Point' = '樣點代號')) %>% 
+#  mutate(Macaca_sur = ifelse( Macaca_sur %in% '2', 1 ,0)) %>% 
   select(Year:Minute,Site_N = 樣區編號.x, Macaca_sur = Macaca_sur.ori, Macaca_dist,ID ,X_97, Y_97) %>% 
               mutate( ID = ID %>% as.character)
+  
 
 
 

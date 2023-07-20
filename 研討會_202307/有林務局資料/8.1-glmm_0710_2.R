@@ -64,8 +64,10 @@ Df <-
               "P_farmland", "Shannon", "edge_length"),scale) %>% 
   data.frame(.) 
 
-write.csv(Df, "./研討會_202307/有林務局資料/data/clean/Df_site_A-C_1522_0710_2.csv", row.names = F)
+#write.csv(Df, "./研討會_202307/有林務局資料/data/clean/Df_site_A-C_1522_0710_2.csv", row.names = F)
 
+Df <-
+read.csv("./研討會_202307/有林務局資料/data/clean/Df_site_A-C_1522_0710_2.csv")
 
 #-------------------------
 library(ggcorrplot)
@@ -137,7 +139,7 @@ ggplot(Df, aes(x = P_forest, y = count))+
               method.args = list(family = "binomial"),
               col = "red",
               se = F) + 
-  #  scale_x_continuous(name ="Shannon",limits = c(-1.9, 1.3))+
+    scale_x_continuous(name ="Forest")+
   scale_y_continuous(name ="",limits = c(0, 1), breaks =c(0,1))+
   theme_classic()+
   theme(
@@ -151,7 +153,37 @@ ggplot(Df, aes(x = P_farmland, y = count))+
               method.args = list(family = "binomial"),
               col = "red",
               se = F) + 
-  #  scale_x_continuous(name ="Shannon",limits = c(-1.9, 1.3))+
+    scale_x_continuous(name ="Farmland")+
+  scale_y_continuous(name ="",limits = c(0, 1), breaks =c(0,1))+
+  theme_classic()+
+  theme(
+    aspect.ratio = 2,
+    text = element_text(size = 14)
+    
+  )
+
+ggplot(Df, aes(x = edge, y = count))+
+  geom_point(pch = 21, size = 2.5, col = "#1D3557", fill = "#457b9d")+
+  geom_smooth(method = "glm",
+              method.args = list(family = "binomial"),
+              col = "red",
+              se = F) + 
+  scale_x_continuous(name ="Edge")+
+  scale_y_continuous(name ="",limits = c(0, 1), breaks =c(0,1))+
+  theme_classic()+
+  theme(
+    aspect.ratio = 2,
+    text = element_text(size = 14)
+    
+  )
+
+ggplot(Df, aes(x = elevation, y = count))+
+  geom_point(pch = 21, size = 2.5, col = "#1D3557", fill = "#457b9d")+
+  geom_smooth(method = "glm",
+              method.args = list(family = "binomial"),
+              col = "red",
+              se = F) + 
+  scale_x_continuous(name ="Elevation")+
   scale_y_continuous(name ="",limits = c(0, 1), breaks =c(0,1))+
   theme_classic()+
   theme(
