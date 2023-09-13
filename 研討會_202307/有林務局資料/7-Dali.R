@@ -54,7 +54,7 @@ spieces_info <-
 
 
  write.csv(spieces_info,
-           "./研討會_202307/有林務局資料/data/clean/BBS_Monkey_1522_0718.csv",
+           "./研討會_202307/有林務局資料/data/clean/BBS_Monkey_1522_0807.csv",
            row.names = F)
 
 

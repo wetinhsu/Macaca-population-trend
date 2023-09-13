@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="for analysis_1522_v1-Sheet1">
+        <SrcDataSource relativeToVRT="1">for analysis_1522_v1.xlsx</SrcDataSource>
+        <!--Header=False-->
+        <SrcLayer>Sheet1</SrcLayer>
+        <Field name="Site_N" src="Site_N" type="String"/>
+        <Field name="Point" src="Point" type="String"/>
+        <Field name="Year" src="Year" type="String"/>
+        <Field name="Survey" src="Survey" type="String"/>
+        <Field name="Macaca_sur" src="Macaca_sur" type="Integer"/>
+        <Field name="Macaca_dist" src="Macaca_dist" type="String"/>
+        <Field name="Time" src="Time" type="String"/>
+        <Field name="Surveyor" src="Surveyor" type="String"/>
+        <Field name="Month" src="Month" type="String"/>
+        <Field name="Day" src="Day" type="String"/>
+        <Field name="Hour" src="Hour" type="String"/>
+        <Field name="Minute" src="Minute" type="String"/>
+        <Field name="ID" src="ID" type="String"/>
+        <Field name="DataSource" src="DataSource" type="String"/>
+        <Field name="Macaca_sur.o" src="Macaca_sur.o" type="String"/>
+        <Field name="Altitude" src="Altitude" type="Integer"/>
+        <Field name="analysis" src="analysis" type="String"/>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>EPSG:3826</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="X_97" y="Y_97"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>

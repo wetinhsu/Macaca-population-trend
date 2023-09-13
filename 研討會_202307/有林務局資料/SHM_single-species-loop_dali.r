@@ -149,7 +149,7 @@ for (fi_name in f_name) {
     geom_line(aes(y=Median), colour="red", linewidth=1.5) + 
     scale_x_continuous(breaks = c(2015:2022)) +
     geom_ribbon(aes(ymin=LowerCI, ymax=UpperCI), alpha=0.2) +
-    ylab("Index (100 in 2015)") + theme_bw() + 
+    ylab("Index (100 in 2015)") + theme_bw() + ylim(0, 500) +
     theme(text = element_text(size = 18),
           aspect.ratio = 1) 
 ggsave(filename = "index.pdf", plot = p,
