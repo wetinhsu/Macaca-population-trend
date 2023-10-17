@@ -41,7 +41,8 @@ list_Site<- dbReadTable(con, "list_Site")
 dbDisconnect(con)
 
 
-list_Point <- list_Point %>% select(-`X_dms`, -`Y_dms`,-`環境特徵描述`)
+list_Point <- list_Point %>% select(`ID`, 獼猴樣區編號,樣點代號,
+                                    'TWD97_X'=`X_97`, 'TWD97_Y' = `Y_97`)
   
 ```
 
@@ -179,26 +180,27 @@ DF %>%
   #檢核位置
   left_join(list_Point,
             by = c("Site_N" = "獼猴樣區編號",
-                   "Point"= "樣點代號" )) %>% 
+                   "Point"= "樣點代號" ),
+            suffix = c(".ori", "")) %>% 
   
   #為了計算距離，先轉成"數字格式"
-  mutate_at(c("TWD97_X", "TWD97_Y", "X_97", "Y_97"), as.numeric) %>% 
+  mutate_at(c("TWD97_X", "TWD97_Y", "TWD97_X.ori", "TWD97_Y.ori"), as.numeric) %>% 
   
 
   #計算距離
   mutate(point_diff = ifelse(
     is.na(TWD97_X)| is.na(TWD97_Y), NA,
     st_distance(
-      st_as_sf(., coords = c("TWD97_X", "TWD97_Y"),
+      st_as_sf(., coords = c("TWD97_X.ori", "TWD97_Y.ori"),
                crs = 3826, remove = F, na.fail = F),#調查位置
       
-      st_as_sf(., coords = c("X_97", "Y_97"),
+      st_as_sf(., coords = c("TWD97_X", "TWD97_Y"),
                crs = 3826, remove = F, na.fail = F),#表定位置
       by_element = TRUE) %>% 
       as.numeric()
     )) %>% 
   #再轉回"文字格式"
-  mutate_at(c("TWD97_X", "TWD97_Y", "X_97", "Y_97"), as.character) %>% 
+  mutate_at(c("TWD97_X", "TWD97_Y", "TWD97_X.ori", "TWD97_Y.ori"), as.character) %>% 
   
   mutate(Macaca_sur.ori = Macaca_sur) %>% 
   mutate(Macaca_sur = ifelse(Macaca_sur %in% "1" & !is.na(Macaca_sur), 0,
@@ -221,7 +223,7 @@ DF.3 <-
   mutate(analysis = case_when(
              point_diff > 51 | is.na(point_diff) ~ paste0(analysis, ", locate"),  # range of gps =50m
              Point %in% "X" ~ paste0(analysis, ", locate"),  # range of gps =50m
-             str_detect(備註, "刪除") ~ paste0(analysis, ", locate"),
+             str_detect(Note, "刪除") ~ paste0(analysis, ", locate"),
              TRUE ~ analysis)) %>% 
   mutate(analysis = str_replace(analysis, "Y, ",""))
 ```
@@ -243,7 +245,7 @@ DF.3 %>%  #各林管處的各疏失情況的樣點數
 
 
 ```{r}
-DF.2 %>%   #林管處無疏失情形的樣點數
+DF.3 %>%   #林管處無疏失情形的樣點數
    filter(!is.na(Macaca_sur) ) %>% 
    filter(analysis %in% "Y" ) %>% 
    group_by(Office, analysis, Survey) %>%
@@ -261,26 +263,58 @@ DF.3 %>%    #時無疏失情形下，林管處在1、2旅次的猴群、孤猴�
    reshape2::dcast(Office + Survey ~ Macaca_sur, guess_value  = "N")
 ```
 
+```{r}
+source(file = here("script/Analysis 2023 for Forestry/forest polygon.R"))
+
+```
+
 
 ```{r}
+Sys.time()
+DF.4 <- 
 DF.3 %>% 
-   filter(analysis %in% "Y")  %>% 
-   filter(!is.na(Macaca_sur)) %>% 
-   group_by(Office, Macaca_sur, TypeName.1) %>% 
-   summarise(N = n()) %>%
-   reshape2::dcast( Office + Macaca_sur ~ TypeName.1, guess.var = "N")
+  dplyr::select(ID, TWD97_X, TWD97_Y) %>% 
+  unique() %>% 
+  st_as_sf(., coords = c("TWD97_X", "TWD97_Y"), crs = 3826) %>% 
+  mutate(n_nest (.,  nc.b))%>% 
+  left_join(DF.3, ., by = "ID")
+```
+
+
+```{r}
+source(file = here("script/Analysis 2023 for Forestry/raster.R"))
+
+DF.5 <- 
+DF.4 %>% 
+  st_as_sf(., coords = c("TWD97_X", "TWD97_Y"), crs = 3826) %>% 
+  st_transform(crs(imported_raster)) %>%
+  mutate(Altitude = extract(imported_raster, ., method='simple')) %>%
+  
+  st_drop_geometry 
+
+Sys.time()
+```
+
+
+```{r}
+# DF.3 %>% 
+#    filter(analysis %in% "Y")  %>% 
+#    filter(!is.na(Macaca_sur)) %>% 
+#    group_by(Office, Macaca_sur, TypeName.1) %>% 
+#    summarise(N = n()) %>%
+#    reshape2::dcast( Office + Macaca_sur ~ TypeName.1, guess.var = "N")
 ```
 
 
 ```{r}
 M.data <- 
-   DF.3 %>% 
+   DF.5 %>% 
    relocate(ends_with("ori"), .after = last_col()) %>% 
    relocate(ends_with("diff"), .after = last_col())%>% 
-   relocate("地點 (樣區名稱)", .after = "Station") %>% 
-   setNames(., str_replace(colnames(.), "^地點.*", "Name")) %>% 
-   setNames(., str_replace(colnames(.), "^join_TypeName$", "TypeName")) %>% 
-   setNames(., str_replace(colnames(.), "^distance$", "Distance")) %>% 
+   # relocate("地點 (樣區名稱)", .after = "Station") %>% 
+   # setNames(., str_replace(colnames(.), "^地點.*", "Name")) %>% 
+   # setNames(., str_replace(colnames(.), "^join_TypeName$", "TypeName")) %>% 
+   # setNames(., str_replace(colnames(.), "^distance$", "Distance")) %>% 
    arrange(Office, Site_N, Survey, Point) %>% 
    
    
@@ -313,7 +347,7 @@ M.data <-
 
 
 ```{r}
-write_xlsx( list('NOTE' = NOTE, 'Data' = M.data), here("data/clean/Forestry/full_combind/full_combind_Forestrydata_2022_V1.xlsx"))
+write_xlsx( list('NOTE' = NOTE, 'Data' = M.data), here("data/clean/Forestry/full_combind/full_combind_Forestrydata_2023_V1.xlsx"))
  
  #Part 3 可納入分析的資料----------------
 #(僅留下 距離A、B、海拔50m以上、森林、300m的猴群)---------- 
