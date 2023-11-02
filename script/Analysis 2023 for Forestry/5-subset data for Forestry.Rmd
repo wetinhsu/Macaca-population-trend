@@ -10,13 +10,55 @@ library(here)
 #------------
 ```
 
+欄位名中英文對照
 
 ```{r}
-M.data <- read_excel(here("./data/clean/Forestry/full_combind/full_combind_Forestrydata_2022_V1.xlsx"), sheet = "Data")%>% 
+colname_en <- c('Office','Station','Site_N','Name',
+                'Year','Month','Day',
+                'Survey','Surveyor','Point',
+                'TWD97_X','TWD97_Y','Hour','Minute',
+                'Macaca_sur','Macaca_dist','Macaca_voice','Habitat', 'Note')
+
+colname_ch <- c('分署','工作站','樣區編號','樣區名稱',
+                '年','月','日',
+                '旅次','調查者','樣點編號',
+                'X座標\\(TWD97\\)','Y座標\\(TWD97\\)','時','分',
+                '數量','距離','叫聲','棲地類型\\(主要\\)','備註')
+```
+
+
+
+```{r}
+path <- "./data/clean/Forestry/full_combind/"
+
+DF <- 
+list.files(here(path), full.names = T) %>% 
+  map(read_excel, sheet = "Data", col_types ="text") %>%
+  # map(function(x) {
+  #   x %>%
+  #      setNames(str_replace_all(names(.),setNames(colname_en,colname_ch))) %>% 
+  #   setNames(str_replace_all(names(x),
+  #                            c("distance" = "Distance",
+  #                              "join_TypeName"= "TypeName"))
+  #            )
+  #   }) %>% 
+  
+  bind_rows()
+```
+
+
+- Macaca_sur = 1 =   猴群
+- Macaca_sur = 0 =   非猴群(無、孤猴)
+- Macaca_sur = NA =  沒調查
+
+
+```{r}
+M.data <-
+#  DF%>% 
+  read_excel(here("data/clean/Forestry/merge/merge_data_2023.xlsx")) %>%
   select(-Macaca_voice, -Habitat ) %>% 
   mutate(Macaca_sur = ifelse(Macaca_dist %in% "C" , 0, Macaca_sur))
 ```
-
 
 ```{r}
 M.0<- M.data %>%
@@ -30,12 +72,12 @@ M.2<- M.0 %>%  #找出同一旅次同一樣區有猴群大於2者
   filter(N>1)
 ```
 
-
 ```{r}
 M.abc <- M.2 %>%
-  left_join(M.0) %>%   #幫M.2這樣區樣點加回座標等資訊
+  left_join(M.0, by = c("Year", "Survey","Site_N")) %>%   #幫M.2這樣區樣點加回座標等資訊
   mutate(Y_S_S = paste0(Year, "_", Survey, "_",Site_N)) %>% 
   st_as_sf(., coords = c("TWD97_X", "TWD97_Y"), crs = 3826) %>% 
+  
   split(., .$Y_S_S) %>% 
   lapply(., function(x){
 
@@ -48,7 +90,9 @@ M.abc <- M.2 %>%
       as.data.frame() %>%   #轉回長表格
       setNames(., x$Point) %>% 
       add_column(Base_point = x$Point) %>% 
-      reshape2::melt(id.vars = "Base_point", variable.name = "Nearest_point", value.name = "distance")%>%  
+      reshape2::melt(id.vars = "Base_point",
+                     variable.name = "Nearest_point",
+                     value.name = "distance")%>%  
       filter(!distance %in% 0) %>% 
         arrange(Base_point)
     }) %>% 
@@ -59,7 +103,6 @@ M.abc <- M.2 %>%
   mutate(Base_point = as.numeric(Base_point))
 ```
 
-
 ```{r}
 #M.abc %>% write_xlsx(.,"D:/待處理工作夾(做完要歸檔)/重複記錄.xlsx")  
 #重複記錄用人工卻認吧，依樣區有3個以上的重複記錄就很麻煩，程式規則也寫很麻煩
@@ -68,181 +111,79 @@ M.abc <- M.2 %>%
 #2. 如果只有兩群以上，建議看一下有猴群的樣點位置，合理的推測一下要刪掉哪一個樣點的猴群，尤其是相鄰樣點會有隔壁樣點也聽到的情形，ex:連續3樣點都有猴群紀錄，有可能的情形是中間那點有猴群，旁邊兩個樣點都聽到。
 ```
 
-
 ```{r}
-M.data.1 <-
-    M.data %>% 
-  #exculde 重複記錄
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-A05-01" & Point %in% 4,
-                              0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-E21-11" & Point %in% 5,
-                              0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-F25-01" & Point %in% 4,
-                              0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-G28-01" & Point %in% 3,
-                              0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-G28-06" & Point %in% 5,
-                              0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H31-04" & Point %in% c(2, 4),
-                              0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H32-06" & Point %in% c(2, 4),
-                              0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H33-01" & Point %in% 3,
-                              0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H34-01" & Point %in% 5,
-                              0)) %>%
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H34-04" & Point %in% 2,
-                              0)) %>%
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H34-05" & Point %in% 2,
-                              0)) %>%
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H34-11" & Point %in% 4,
-                              0)) %>%
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-E21-11" & Point %in% c(3,5),
-                              0)) %>%
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-F25-11" & Point %in% 3,
-                              0)) %>%
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-G29-03" & Point %in% 2,
-                              0)) %>%
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-H31-04" & Point %in% 2,
-                              0)) %>%
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-H31-09" & Point %in% 2,
-                              0)) %>%
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-H31-13" & Point %in% 2,
-                              0)) %>%
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-H34-01" & Point %in% 5,
-                              0)) %>%
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MB-A01-06" & Point %in% 3,
-                              0)) %>%
-  mutate(Macaca_sur = replace(Macaca_sur,
-                              Year %in% 2020 & Survey %in% 2 & Site_N %in% "MB-B06-10" & Point %in% 6,
-                              0)) %>%  #exculde 重複記錄
-
-    #exculde 重複記錄
-    mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-A02-06" & Point %in% c(1,3),
-                            0)) %>% 
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-A05-01" & Point %in% c(4,6),
-                                0)) %>% 
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-F24-10" & Point %in% c(3),
-                                0)) %>% 
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-H31-15" & Point %in% c(4),
-                                0)) %>% 
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-H34-01" & Point %in% c(4),
-                                0)) %>% 
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 1 & Site_N %in% "MB-E20-04" & Point %in% c(3, 5),
-                                0)) %>% 
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 1 & Site_N %in% "MB-F25-05" & Point %in% c(6),
-                                0)) %>% 
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 1 & Site_N %in% "MB-H31-14" & Point %in% c(2),
-                                0)) %>%
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 2 & Site_N %in% "MA-A05-01" & Point %in% c(2, 4, 6),
-                                0)) %>%
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 2 & Site_N %in% "MA-E21-10" & Point %in% c(1, 4),
-                                0)) %>%
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 2 & Site_N %in% "MA-H32-02" & Point %in% c(5),
-                                0)) %>%
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 2 & Site_N %in% "MA-H34-12" & Point %in% c(2),
-                                0)) %>%
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 2 & Site_N %in% "MB-A01-03" & Point %in% c(2),
-                                0)) %>%
-    mutate(Macaca_sur = replace(Macaca_sur,
-                                Year %in% 2021 & Survey %in% 2 & Site_N %in% "MB-G29-08" & Point %in% c(4),
-                                0)) %>% #exculde 重複記錄
-
-    #exculde 重複記錄
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 1 & Site_N %in% "MA-A02-04" & Point %in% c(4),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 1 & Site_N %in% "MA-D14-07" & Point %in% c(3),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 1 & Site_N %in% "MA-F26-05" & Point %in% c(2, 4, 6),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 1 & Site_N %in% "MA-H32-10" & Point %in% c(2, 3),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 1 & Site_N %in% "MA-H34-11" & Point %in% c(4),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 1 & Site_N %in% "MB-G28-13" & Point %in% c(6),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-D16-02" & Point %in% c(3),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-F26-01" & Point %in% c(6),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-G28-05" & Point %in% c(4),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-H31-15" & Point %in% c(6),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-H34-01" & Point %in% c(2),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-H34-03" & Point %in% c(3),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-H34-09" & Point %in% c(2, 6),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 2 & Site_N %in% "MB-D18-06" & Point %in% c(6),
-                            0)) %>% 
-  mutate(Macaca_sur = replace(Macaca_sur,
-                            Year %in% 2022 & Survey %in% 2 & Site_N %in% "MB-B07-08" & Point %in% c(6),
-                            0)) 
+remove.data <-   #重複記錄的列表
+  M.abc %>%  
+  filter(distance<500)%>% 
+  mutate( Y_S_S = paste0(Year, "_", Survey, "_",Site_N)) %>% 
+  split(., .$Y_S_S) %>% 
+  lapply(., function(x){
+    
+    if(nrow(x)==2){
+      x <- x[2,]  #要刪除第2點
+    }else{
+      x  #2點以上，留下來再討論，優先考量留下距離段近的，較遠的刪除
+    }
+  }) %>% 
+  bind_rows %>% 
+  # 手動
+  filter(!( Year %in% 2023 & Survey %in% 2 & Site_N %in% "MA-H34-10" & Base_point %in% c(2))) %>% 
+  filter(!( Year %in% 2023 & Survey %in% 2 & Site_N %in% "MA-F26-01" & Base_point %in% c(1))) %>% 
+  filter(!( Year %in% 2023 & Survey %in% 2 & Site_N %in% "MA-E22-07" & Base_point %in% c(2,4))) %>% 
+  filter(!( Year %in% 2023 & Survey %in% 1 & Site_N %in% "MA-M34-06" & Base_point %in% c(4)) )%>% 
+  filter(!( Year %in% 2023 & Survey %in% 1 & Site_N %in% "MA-E22-05" & Base_point %in% c(4))) %>% 
+  filter(!( Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-H34-09" & Base_point %in% c(1,5)))%>% 
+  filter(!( Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-G28-05" & Base_point %in% c(4))) %>% 
+  filter(!( Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-F24-14" & Base_point %in% c(4))) %>% 
+  filter(!( Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-D16-02" & Base_point %in% c(3))) %>% 
+  filter(!( Year %in% 2022 & Survey %in% 1 & Site_N %in% "MA-H32-10" & Base_point %in% c(1))) %>% 
+  filter(!( Year %in% 2022 & Survey %in% 1 & Site_N %in% "MA-F26-05" & Base_point %in% c(4))) %>% 
+  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "MB-G29-08" & Base_point %in% c(4))) %>% 
+  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "MB-A01-03" & Base_point %in% c(4))) %>% 
+  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "MA-H31-15" & Base_point %in% c(3))) %>% 
+  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "MA-E21-10" & Base_point %in% c(2))) %>% 
+  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "MA-A05-01" & Base_point %in% c(4))) %>% 
+  filter(!( Year %in% 2021 & Survey %in% 1 & Site_N %in% "MB-E20-04" & Base_point %in% c(5))) %>% 
+  filter(!( Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-H31-15" & Base_point %in% c(3))) %>% 
+  filter(!( Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-A05-01" & Base_point %in% c(4))) %>% 
+  filter(!( Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-A02-06" & Base_point %in% c(2))) %>% 
+  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-H34-07" & Base_point %in% c(3))) %>% 
+  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-H31-13" & Base_point %in% c(2))) %>% 
+  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-G29-03" & Base_point %in% c(2))) %>% 
+  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-G28-02" & Base_point %in% c(4))) %>% 
+  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-E21-11" & Base_point %in% c(3))) %>% 
+  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-D16-04" & Base_point %in% c(6))) %>% 
+  filter(!( Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H33-01" & Base_point %in% c(3))) %>% 
+  filter(!( Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H32-06" & Base_point %in% c(3,6))) %>% 
+  filter(!( Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H31-04" & Base_point %in% c(2))) %>% 
   
-
+  
+  # ~手動
+  select( -Nearest_point, -distance, -Y_S_S) %>% 
+  unique()%>% 
+  setNames(., c("Year", "Survey","Site_N", "Point")) %>% 
+  mutate(Point = as.character(Point))
+  
 ```
 
+
+
+```{r eval=FALSE, include=FALSE}
+M.data.1 <-
+  #remove 重複的猴群
+  M.data %>% 
+  semi_join(remove.data) %>% 
+  mutate(Macaca_sur = '0')%>% 
+  bind_rows(.,
+            anti_join(M.data, remove.data) ) %>% 
+  arrange(Year, Survey, Site_N, Point)   
+  
+  #~~remove 重複的猴群
+```
 
 ```{r}
 View(M.data.1 )
 ```
-
-
-```{r}
-remove.data  <-  #重複記錄的列表
-M.data.1%>% 
-  anti_join(M.data)
-```
-
 
 ```{r}
 M.data %>%  #移除重複前
@@ -252,7 +193,6 @@ M.data %>%  #移除重複前
   .$N %>% 
   table
 ```
-
 
 ```{r}
 M.data.1 %>%   #移除重複後  #樣區數應該不會變
@@ -265,7 +205,6 @@ M.data.1 %>%   #移除重複後  #樣區數應該不會變
 # for analysis2022
 ```
 
-
 ```{r}
 M.data.1 <- 
 M.data.1 %>%
@@ -274,7 +213,6 @@ M.data.1 %>%
            as.POSIXlt(format = "%yyyy%mm%dd") %>%
            format(., "%j") %>% as.numeric())
 ```
-
 
 ```{r}
 M.data.2 <-
@@ -286,7 +224,6 @@ M.data.2 <-
   mutate(analysis = ifelse(analysis == "Y" &  TypeName.1 %in% "非森林", 
                            "Y(NotForest)", analysis))
 ```
-
 
 ```{r}
 point_summary <- 
@@ -308,7 +245,6 @@ M.data.2 %>%
                  value.name = "樣點次")
 ```
 
-
 ```{r}
 NOTE <- data.frame(
   說明 = c(
@@ -320,7 +256,6 @@ NOTE <- data.frame(
          ))
 ```
 
-
 ```{r}
 write_xlsx( list('NOTE' = NOTE,
                  'Point_Summary' = point_summary,
@@ -330,4 +265,3 @@ write_xlsx( list('NOTE' = NOTE,
 
 
 ```
-
