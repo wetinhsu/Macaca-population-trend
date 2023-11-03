@@ -1,4 +1,4 @@
-```{r}
+```{r include=FALSE}
 #樣點資料檢核
 #---- load library
 
@@ -34,14 +34,14 @@ path <- "./data/clean/Forestry/full_combind/"
 DF <- 
 list.files(here(path), full.names = T) %>% 
   map(read_excel, sheet = "Data", col_types ="text") %>%
-  # map(function(x) {
-  #   x %>%
-  #      setNames(str_replace_all(names(.),setNames(colname_en,colname_ch))) %>% 
-  #   setNames(str_replace_all(names(x),
-  #                            c("distance" = "Distance",
-  #                              "join_TypeName"= "TypeName"))
-  #            )
-  #   }) %>% 
+  map(function(x) {
+    x %>%
+       setNames(str_replace_all(names(.),setNames(colname_en,colname_ch))) %>%
+    setNames(str_replace_all(names(x),
+                             c("distance" = "Distance",
+                               "join_TypeName"= "TypeName"))
+             )
+    }) %>%
   
   bind_rows()
 ```
@@ -54,8 +54,7 @@ list.files(here(path), full.names = T) %>%
 
 ```{r}
 M.data <-
-#  DF%>% 
-  read_excel(here("data/clean/Forestry/merge/merge_data_2023.xlsx")) %>%
+  DF%>% 
   select(-Macaca_voice, -Habitat ) %>% 
   mutate(Macaca_sur = ifelse(Macaca_dist %in% "C" , 0, Macaca_sur))
 ```
@@ -114,7 +113,7 @@ M.abc <- M.2 %>%
 ```{r}
 remove.data <-   #重複記錄的列表
   M.abc %>%  
-  filter(distance<500)%>% 
+  filter(distance < 300)%>% 
   mutate( Y_S_S = paste0(Year, "_", Survey, "_",Site_N)) %>% 
   split(., .$Y_S_S) %>% 
   lapply(., function(x){
@@ -128,34 +127,6 @@ remove.data <-   #重複記錄的列表
   bind_rows %>% 
   # 手動
   filter(!( Year %in% 2023 & Survey %in% 2 & Site_N %in% "MA-H34-10" & Base_point %in% c(2))) %>% 
-  filter(!( Year %in% 2023 & Survey %in% 2 & Site_N %in% "MA-F26-01" & Base_point %in% c(1))) %>% 
-  filter(!( Year %in% 2023 & Survey %in% 2 & Site_N %in% "MA-E22-07" & Base_point %in% c(2,4))) %>% 
-  filter(!( Year %in% 2023 & Survey %in% 1 & Site_N %in% "MA-M34-06" & Base_point %in% c(4)) )%>% 
-  filter(!( Year %in% 2023 & Survey %in% 1 & Site_N %in% "MA-E22-05" & Base_point %in% c(4))) %>% 
-  filter(!( Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-H34-09" & Base_point %in% c(1,5)))%>% 
-  filter(!( Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-G28-05" & Base_point %in% c(4))) %>% 
-  filter(!( Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-F24-14" & Base_point %in% c(4))) %>% 
-  filter(!( Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-D16-02" & Base_point %in% c(3))) %>% 
-  filter(!( Year %in% 2022 & Survey %in% 1 & Site_N %in% "MA-H32-10" & Base_point %in% c(1))) %>% 
-  filter(!( Year %in% 2022 & Survey %in% 1 & Site_N %in% "MA-F26-05" & Base_point %in% c(4))) %>% 
-  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "MB-G29-08" & Base_point %in% c(4))) %>% 
-  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "MB-A01-03" & Base_point %in% c(4))) %>% 
-  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "MA-H31-15" & Base_point %in% c(3))) %>% 
-  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "MA-E21-10" & Base_point %in% c(2))) %>% 
-  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "MA-A05-01" & Base_point %in% c(4))) %>% 
-  filter(!( Year %in% 2021 & Survey %in% 1 & Site_N %in% "MB-E20-04" & Base_point %in% c(5))) %>% 
-  filter(!( Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-H31-15" & Base_point %in% c(3))) %>% 
-  filter(!( Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-A05-01" & Base_point %in% c(4))) %>% 
-  filter(!( Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-A02-06" & Base_point %in% c(2))) %>% 
-  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-H34-07" & Base_point %in% c(3))) %>% 
-  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-H31-13" & Base_point %in% c(2))) %>% 
-  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-G29-03" & Base_point %in% c(2))) %>% 
-  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-G28-02" & Base_point %in% c(4))) %>% 
-  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-E21-11" & Base_point %in% c(3))) %>% 
-  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-D16-04" & Base_point %in% c(6))) %>% 
-  filter(!( Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H33-01" & Base_point %in% c(3))) %>% 
-  filter(!( Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H32-06" & Base_point %in% c(3,6))) %>% 
-  filter(!( Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H31-04" & Base_point %in% c(2))) %>% 
   
   
   # ~手動

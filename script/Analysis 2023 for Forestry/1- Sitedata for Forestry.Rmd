@@ -280,13 +280,19 @@ source(file = here("script/Analysis 2023 for Forestry/forest polygon.R"))
 ```{r}
 Sys.time()
 DF.4 <- 
-DF.3 %>% 
-  dplyr::select(ID, TWD97_X, TWD97_Y) %>% 
-  unique() %>% 
+list_Point %>% 
+  semi_join(DF.3)%>% 
   st_as_sf(., coords = c("TWD97_X", "TWD97_Y"), crs = 3826) %>% 
-  mutate(n_nest (.,  nc.b))%>% 
-  left_join(DF.3, ., by = "ID") %>% 
-  st_drop_geometry()
+  mutate(n_nest (.,  nc.b)) %>% 
+  st_drop_geometry()%>% 
+  left_join(DF.3, ., by = "ID") 
+
+
+
+
+
+
+
 
 Sys.time()
 ```
@@ -296,23 +302,18 @@ Sys.time()
 source(file = here("script/Analysis 2023 for Forestry/raster.R"))
 
 DF.5 <- 
-DF.4 %>% 
-  st_as_sf(., coords = c("TWD97_X", "TWD97_Y"), crs = 3826, remove = F) %>% 
+list_Point %>% 
+  semi_join(DF.3)%>% 
+  st_as_sf(., coords = c("TWD97_X", "TWD97_Y"), crs = 3826) %>% 
   st_transform(crs(imported_raster)) %>%
   extract(imported_raster, ., method='simple') %>% 
   data.frame(Altitude = .) %>%
- bind_cols(DF.4,.)%>% 
-  st_drop_geometry()
+ bind_cols(semi_join(list_Point, DF.3),.)%>% 
+  left_join(DF.4, .) 
 
 
 
 Sys.time()
-```
-
-
-```{r}
-DF.4 %>% 
-  st_drop_geometry() %>% View
 ```
 
 
