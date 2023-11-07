@@ -29,21 +29,21 @@ colname_ch <- c('分署','工作站','樣區編號','樣區名稱',
 
 
 ```{r}
-path <- "./data/clean/Forestry/full_combind/"
-
-DF <- 
-list.files(here(path), full.names = T) %>% 
-  map(read_excel, sheet = "Data", col_types ="text") %>%
-  map(function(x) {
-    x %>%
-       setNames(str_replace_all(names(.),setNames(colname_en,colname_ch))) %>%
-    setNames(str_replace_all(names(x),
-                             c("distance" = "Distance",
-                               "join_TypeName"= "TypeName"))
-             )
-    }) %>%
-  
-  bind_rows()
+# path <- "./data/clean/Forestry/full_combind/"
+# 
+# DF <- 
+# list.files(here(path), full.names = T) %>% 
+#   map(read_excel, sheet = "Data", col_types ="text") %>%
+#   map(function(x) {
+#     x %>%
+#        setNames(str_replace_all(names(.),setNames(colname_en,colname_ch))) %>%
+#     setNames(str_replace_all(names(x),
+#                              c("distance" = "Distance",
+#                                "join_TypeName"= "TypeName"))
+#              )
+#     }) %>%
+#   
+#   bind_rows()
 ```
 
 
@@ -53,10 +53,23 @@ list.files(here(path), full.names = T) %>%
 
 
 ```{r}
-M.data <-
-  DF%>% 
+
+M.data <- read_excel(here("./data/clean/Forestry/full_combind/full_combind_Forestrydata_2023_V1.xlsx"), sheet = "Data")%>%
+       setNames(str_replace_all(names(.),setNames(colname_en,colname_ch))) %>%
+    setNames(str_replace_all(names(.),
+                             c("distance" = "Distance",
+                               "join_TypeName"= "TypeName"))
+             )%>% 
   select(-Macaca_voice, -Habitat ) %>% 
   mutate(Macaca_sur = ifelse(Macaca_dist %in% "C" , 0, Macaca_sur))
+
+
+
+# 
+# M.data <-
+#   DF%>% 
+#   select(-Macaca_voice, -Habitat ) %>% 
+#   mutate(Macaca_sur = ifelse(Macaca_dist %in% "C" , 0, Macaca_sur))
 ```
 
 ```{r}
@@ -126,7 +139,21 @@ remove.data <-   #重複記錄的列表
   }) %>% 
   bind_rows %>% 
   # 手動
-  filter(!( Year %in% 2023 & Survey %in% 2 & Site_N %in% "MA-H34-10" & Base_point %in% c(2))) %>% 
+  filter(!( Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H31-04" & Base_point %in% c(2, 4))) %>% 
+  filter(!( Year %in% 2020 & Survey %in% 1 & Site_N %in% "MA-H32-06" & Base_point %in% c(2, 4))) %>% 
+  filter(!( Year %in% 2020 & Survey %in% 2 & Site_N %in% "MA-E21-11" & Base_point %in% c(3, 5))) %>%
+  filter(!( Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-A02-06" & Base_point %in% c(1, 3))) %>%
+  filter(!( Year %in% 2021 & Survey %in% 1 & Site_N %in% "MA-A05-01" & Base_point %in% c(4, 6))) %>%
+  filter(!( Year %in% 2021 & Survey %in% 1 & Site_N %in% "MB-E20-04" & Base_point %in% c(3, 5))) %>%
+  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "MA-A05-01" & Base_point %in% c(2, 4))) %>%
+  filter(!( Year %in% 2021 & Survey %in% 2 & Site_N %in% "MA-E21-10" & Base_point %in% c(1, 4))) %>%
+  filter(!( Year %in% 2022 & Survey %in% 1 & Site_N %in% "MA-F26-05" & Base_point %in% c(2, 4, 6))) %>%
+  filter(!( Year %in% 2022 & Survey %in% 1 & Site_N %in% "MA-H32-10" & Base_point %in% c(2, 3))) %>%
+  filter(!( Year %in% 2022 & Survey %in% 2 & Site_N %in% "MA-H34-09" & Base_point %in% c(2, 6))) %>%
+  filter(!( Year %in% 2023 & Survey %in% 2 & Site_N %in% "MA-E22-07" & Base_point %in% c(2, 4))) %>%
+  filter(!( Year %in% 2023 & Survey %in% 2 & Site_N %in% "MA-F26-01" & Base_point %in% c(6))) %>%
+  
+  
   
   
   # ~手動
@@ -144,7 +171,7 @@ M.data.1 <-
   #remove 重複的猴群
   M.data %>% 
   semi_join(remove.data) %>% 
-  mutate(Macaca_sur = '0')%>% 
+  mutate(Macaca_sur = 0)%>% 
   bind_rows(.,
             anti_join(M.data, remove.data) ) %>% 
   arrange(Year, Survey, Site_N, Point)   
@@ -179,6 +206,15 @@ M.data.1 %>%   #移除重複後  #樣區數應該不會變
 ```{r}
 M.data.1 <- 
 M.data.1 %>%
+  mutate(TypeName.1 = case_when(
+    str_detect(TypeName, "混")  ~ "混淆林",
+    str_detect(TypeName, "^竹林$") ~ "竹林",
+    str_detect(TypeName, "闊葉樹林型") ~ "闊葉林",
+    str_detect(TypeName, "針葉樹林型") ~ "針葉林",
+    TRUE ~ "非森林"
+    )) %>% 
+  mutate(TypeName.1 = ifelse(Distance > 20, "非森林", TypeName.1)) %>% 
+  
   mutate(TypeName.1 = ordered(TypeName.1,c("闊葉林", "針葉林","混淆林","竹林","非森林"))) %>% 
   mutate(julian.D = ISOdatetime(Year, Month, Day, Hour, Minute, sec = 0) %>%
            as.POSIXlt(format = "%yyyy%mm%dd") %>%
@@ -231,7 +267,7 @@ NOTE <- data.frame(
 write_xlsx( list('NOTE' = NOTE,
                  'Point_Summary' = point_summary,
                  'Data' = M.data.2), 
-            paste0(here("./data/clean/Forestry/for analysis/for analysis Forestrydata_2022_V1.xlsx")))
+            paste0(here("./data/clean/Forestry/for analysis/for analysis Forestrydata_2023_V1.xlsx")))
 
 
 

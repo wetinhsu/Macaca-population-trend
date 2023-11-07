@@ -330,6 +330,7 @@ Sys.time()
 ```{r}
 M.data <- 
    DF.5 %>% 
+  dplyr::select(-`獼猴樣區編號`,-`樣點代號`)%>% 
    relocate(ends_with("ori"), .after = last_col()) %>% 
    relocate(ends_with("diff"), .after = last_col())%>% 
    # relocate("地點 (樣區名稱)", .after = "Station") %>% 

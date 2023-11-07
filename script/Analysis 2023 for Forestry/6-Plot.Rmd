@@ -15,22 +15,28 @@ font_add("Microsoft JhengHei", "msjh.ttc")
 here::here() 
 ```
 
+```{r}
+
+```
+
+
+
 ```{r include=FALSE}
 
 M.data <- 
   here("./data/clean/Forestry/for analysis/") %>% 
   list.files(., full.names = T) %>% 
-  str_subset(paste0(2020:2022)) %>% #如果只要2020~2022年，就寫2020:2022
+  str_subset(paste0(2020:2023)) %>% #如果只要2020~2022年，就寫2020:2022
   lapply(., read_excel, sheet="Data", col_types = "text") %>% 
   bind_rows() %>% 
 
 
-  mutate(Office = ordered(Office, 
-                          c("羅東", "新竹", "東勢", "南投",
-                            "嘉義", "屏東", "花蓮", "臺東"))) %>% 
-  mutate(TypeName.1 = ordered(TypeName.1,
-                              c("闊葉林", "針葉林", "竹林",
-                                "混淆林", "非森林"))) %>% 
+  # mutate(Office = ordered(Office, 
+  #                         c("羅東", "新竹", "東勢", "南投",
+  #                           "嘉義", "屏東", "花蓮", "臺東"))) %>% 
+  # mutate(TypeName.1 = ordered(TypeName.1,
+  #                             c("闊葉林", "針葉林", "竹林",
+  #                               "混淆林", "非森林"))) %>% 
   mutate_at(c("Year", "Survey","Month",
               "Day", "Macaca_sur", "Distance", "Altitude", "julian.D"), as.numeric) 
   
