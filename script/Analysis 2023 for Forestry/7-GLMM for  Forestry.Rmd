@@ -30,14 +30,17 @@ M.data <-
   lapply(., read_excel, sheet="Data", col_types = "text") %>% 
   bind_rows() %>% 
   
-  mutate(Office = 
-           ordered(Office,
-                   levels = c("羅東", "新竹", "東勢", "南投",
-                              "嘉義", "屏東", "花蓮", "臺東"),
-                   labels = c("Luodong", "Hsinchu", "Dougshih", "Nantou",
-                              "Chiayi", "Pingtung", "Hualien", "Taitung")
-                   )
-         ) %>% 
+  mutate(Office = str_replace_all(Office, c("羅東" = "宜蘭",
+                                            "東勢" = "臺中"))) %>%
+  
+  # mutate(Office = 
+  #          ordered(Office,
+  #                  levels = c("羅東", "新竹", "東勢", "南投",
+  #                             "嘉義", "屏東", "花蓮", "臺東"),
+  #                  labels = c("Luodong", "Hsinchu", "Dougshih", "Nantou",
+  #                             "Chiayi", "Pingtung", "Hualien", "Taitung")
+  #                  )
+  #        ) %>% 
   
   mutate_at(c("Year", "Survey","Month",
               "Day", "Macaca_sur", "Distance", "julian.D", "Altitude"), as.numeric) %>% 
@@ -225,7 +228,7 @@ glht(m1.1, linfct = mcp(Office = "Tukey")) %>%
   ggplot(aes(x=lhs, y=estimate)) +
   geom_hline(yintercept=0, linetype="11", colour="grey60") +
   geom_segment(aes(xend=lhs, y=conf.low, yend=conf.high, color = factor(color_e)),
-               size=0.4,
+               linewidth=0.4,
                arrow=arrow(ends="both",
                            length=unit(0.05, "inches"), angle=70),
                show.legend = F) + 

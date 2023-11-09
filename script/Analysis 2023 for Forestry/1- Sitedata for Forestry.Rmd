@@ -285,7 +285,17 @@ list_Point %>%
   st_as_sf(., coords = c("TWD97_X", "TWD97_Y"), crs = 3826) %>% 
   mutate(n_nest (.,  nc.b)) %>% 
   st_drop_geometry()%>% 
-  left_join(DF.3, ., by = "ID") 
+  left_join(DF.3, ., by = "ID") %>%
+  
+  
+  mutate(TypeName.1 = case_when(
+    str_detect(TypeName, "混")  ~ "混淆林",
+    str_detect(TypeName, "^竹林$") ~ "竹林",
+    str_detect(TypeName, "闊葉樹林型") ~ "闊葉林",
+    str_detect(TypeName, "針葉樹林型") ~ "針葉林",
+    TRUE ~ "非森林"
+    )) %>% 
+  mutate(TypeName.1 = ifelse(Distance > 20, "非森林", TypeName.1)) 
 
 
 

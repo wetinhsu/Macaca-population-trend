@@ -205,16 +205,7 @@ M.data.1 %>%   #移除重複後  #樣區數應該不會變
 
 ```{r}
 M.data.1 <- 
-M.data.1 %>%
-  mutate(TypeName.1 = case_when(
-    str_detect(TypeName, "混")  ~ "混淆林",
-    str_detect(TypeName, "^竹林$") ~ "竹林",
-    str_detect(TypeName, "闊葉樹林型") ~ "闊葉林",
-    str_detect(TypeName, "針葉樹林型") ~ "針葉林",
-    TRUE ~ "非森林"
-    )) %>% 
-  mutate(TypeName.1 = ifelse(Distance > 20, "非森林", TypeName.1)) %>% 
-  
+M.data.1 %>% 
   mutate(TypeName.1 = ordered(TypeName.1,c("闊葉林", "針葉林","混淆林","竹林","非森林"))) %>% 
   mutate(julian.D = ISOdatetime(Year, Month, Day, Hour, Minute, sec = 0) %>%
            as.POSIXlt(format = "%yyyy%mm%dd") %>%
