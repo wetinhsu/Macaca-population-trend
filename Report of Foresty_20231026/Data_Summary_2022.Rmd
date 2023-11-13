@@ -1,0 +1,41 @@
+---
+title: "Macaca Data Summary 2023"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+output:
+  word_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      root.dir = "../",
+                      fig.width = 6,
+                      fig.asp = 1)
+library(here)
+```
+
+\newpage
+
+資料統整  
+
+
+```{r child = here::here("script", "Analysis 2023 for Forestry","6-Plot.Rmd") }
+
+```
+
+\newpage
+ GLMM
+
+```{r child = here::here("script", "Analysis 2023 for Forestry","7-GLMM for  Forestry.Rmd")}
+
+```
+
+
+\newpage
+ Trim  
+
+
+```{r child = here::here("script", "Analysis 2023 for Forestry","9-rtrim.Rmd")}
+
+```
+

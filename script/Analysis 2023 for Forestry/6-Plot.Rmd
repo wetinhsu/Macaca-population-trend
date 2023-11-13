@@ -15,7 +15,7 @@ font_add("Microsoft JhengHei", "msjh.ttc")
 here::here() 
 ```
 
-```{r}
+```{r include=FALSE}
 order_Office <- c("宜蘭","新竹","臺中","南投", "嘉義","屏東", "花蓮","臺東", "Total")
 ```
 
@@ -122,7 +122,7 @@ List_surveyor %>%
 
 M.data %>% 
   mutate(Year = ifelse(is.na(Year), "2020", Year)) %>% 
-  filter(Year %in% c("2022", "2021")) %>% 
+  filter(Year %in% c("2023")) %>% 
   filter(is.na(Macaca_sur)) %>% 
   reshape2::dcast(Site_N ~Year , length, value.var = "Macaca_sur") %>% 
   arrange(str_sub(Site_N, 4,6)) %>% 
@@ -348,8 +348,8 @@ M.data %>%
       filter(! is.na(Macaca_sur)) %>% 
       mutate(Office = "Total")
   ) %>% 
-  mutate(Office = ordered(Office, c("羅東","新竹",
-                                    "東勢","南投",
+  mutate(Office = ordered(Office, c("宜蘭","新竹",
+                                    "臺中","南投",
                                     "嘉義","屏東",
                                     "花蓮","臺東",
                                     "Total"))) %>% 
@@ -366,30 +366,27 @@ M.data %>%
 
   mutate_all(~str_replace_all(., '^0$', "-")) %>% 
   reshape2::melt(id = 1:2) %>% 
+  filter(Year %in% c(2022,2023)) %>% 
   reshape2::dcast(Office ~ Year + variable, value.var = "value") %>% 
   
   flextable(.) %>% 
 
   set_header_labels(
     "Office"="林管處",
-    "2020_超過7日" = "超過7日",
-    "2020_晚於11時" = "晚於11時",
-    "2020_不足6分鐘"="不足6分鐘",
-    "2020_誤差超過50m" = "誤差超過50m",
-    "2020_不在3~6月內" = "不在3~6月內",
-    "2021_超過7日" = "超過7日",
-    "2021_晚於11時" = "晚於11時",
-    "2021_不足6分鐘"="不足6分鐘",
-    "2021_誤差超過50m" = "誤差超過50m",
-    "2021_不在3~6月內" = "不在3~6月內",
+
     "2022_超過7日" = "超過7日",
     "2022_晚於11時" = "晚於11時",
     "2022_不足6分鐘"="不足6分鐘",
     "2022_誤差超過50m" = "誤差超過50m",
-    "2022_不在3~6月內" = "不在3~6月內") %>% 
-  add_header_row(., 
-                 values = c(" ","2020", "2021", "2022"),
-                 colwidths = c(1,5,5,5)) %>% 
+    "2022_不在3~6月內" = "不在3~6月內",
+    "2023_超過7日" = "超過7日",
+    "2023_晚於11時" = "晚於11時",
+    "2023_不足6分鐘"="不足6分鐘",
+    "2023_誤差超過50m" = "誤差超過50m",
+    "2023_不在3~6月內" = "不在3~6月內") %>%
+  add_header_row(.,
+                 values = c(" ", "2022", "2023"),
+                 colwidths = c(1,5,5)) %>%
   align(.,
         align = "center", part = "all")
 ```
@@ -402,17 +399,17 @@ M.data %>%
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
-  filter(Year == 2022) %>% 
+  filter(Year == 2023) %>% 
   filter(analysis %in% "Y") %>% 
   bind_rows(
     M.data %>% 
       filter(! is.na(Macaca_sur)) %>% 
       filter(analysis %in% "Y") %>%
-      filter(Year == 2022) %>% 
+      filter(Year == 2023) %>% 
       mutate(Office = "Total")
   ) %>% 
-  mutate(Office = ordered(Office, c("羅東","新竹",
-                                    "東勢","南投",
+  mutate(Office = ordered(Office, c("宜蘭","新竹",
+                                    "臺中","南投",
                                     "嘉義","屏東",
                                     "花蓮","臺東",
                                     "Total"))) %>% 
@@ -446,7 +443,7 @@ M.data %>%
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
-  filter(Year == 2022) %>% 
+  filter(Year == 2023) %>% 
   filter(analysis %in% "Y") %>% 
   filter(Macaca_sur.ori %in% 2 & !Macaca_dist %in% "C")%>% 
   group_by(Year, Survey, Site_N) %>% 
@@ -456,7 +453,7 @@ M.data %>%
   
   left_join(
   M.data %>% 
-    filter(Year == 2022) %>% 
+    filter(Year == 2023) %>% 
   filter(analysis %in% "Y") %>% 
   filter(Macaca_sur %in% 1) %>% 
   group_by(Year, Survey, Site_N) %>% 
@@ -477,7 +474,7 @@ M.data %>%
   
 ```
 
-刪除重複記錄前猴群有`r  nrow(M.data[M.data$Year %in% 2022 & M.data$analysis %in% "Y" & M.data$Macaca_dist != "C" &M.data$Macaca_sur.ori %in% 2,])`群；刪除重複記錄後猴群有`r  sum(M.data[M.data$Year %in% 2022 & M.data$analysis %in% "Y",]$Macaca_sur)`群。\
+刪除重複記錄前猴群有`r  nrow(M.data[M.data$Year %in% 2023 & M.data$analysis %in% "Y" & M.data$Macaca_dist != "C" &M.data$Macaca_sur.ori %in% 2,])`群；刪除重複記錄後猴群有`r  sum(M.data[M.data$Year %in% 2023 & M.data$analysis %in% "Y",]$Macaca_sur)`群。\
 <br/>\
 <br/>\
 <br/>
@@ -623,8 +620,8 @@ E_rate_Forest %>%
 
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-# 2020~年各森林類型內的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# 2020~2023年各森林類型內的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
 
 E_rate_Forest<-
 
@@ -866,6 +863,7 @@ M.data %>%
 
   scale_y_continuous(breaks = seq(0,0.1,0.02), 
                      limits = c(0,0.1))+
+  scale_x_discrete(limits = c("針葉林", "混淆林", "竹林","闊葉林"))+
   labs(x = "森林類型", y = "Encounter_rate")+
   theme(
     text = element_text(family="Microsoft JhengHei"),

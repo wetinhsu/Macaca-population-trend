@@ -289,7 +289,7 @@ M.data %>%
   )  %>% 
   mutate(Office = 
            ordered(Office,
-                   labels = c( "新竹", "東勢", "南投","羅東",
+                   labels = c( "新竹", "臺中", "南投","宜蘭",
                               "嘉義", "屏東", "花蓮", "臺東"),
                    levels = c("Hsinchu", "Dougshih", "Nantou","Luodong", 
                               "Chiayi", "Pingtung", "Hualien", "Taitung")
