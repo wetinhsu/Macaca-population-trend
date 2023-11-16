@@ -53,37 +53,64 @@ person <-
 
 
 # 對答案並篩選出完整測驗的資料
+
 DT <- 
-  dt[1:2] %>% #前測、後測
-  map(function(z){  
-    z %>% 
-      split(., .$人名) %>%  #細分成一人名一筆
-      map(function(x){ 
-        str_split(x, "、") %>% 
-          map2(., Answer, function(x,y){   ifelse( x %in% y, 1,0) }) %>% 
-          map(function(x) x %>% .[x ==1] %>% length)%>%
-          bind_cols() %>% 
-          select(-1)
-        }) %>%
-      bind_rows(.id = "人名") %>%
-      setNames(., names(dt$後測)) %>% 
-      mutate(`方法7` = ifelse(`方法7` %in% 2 , 1, `方法7`))    #方法7有兩個答案
-    })  %>%
-  bind_rows(.id = "Test")  %>% 
-  mutate(score_方法 = 3*apply(select(.,starts_with("方法")),1,sum, na.rm = T)) %>% 
-  mutate(score_照片 = 3*apply(select(.,starts_with("照片")),1,sum, na.rm = T)) %>% 
-  mutate(score_聲音 = 3*apply(select(.,starts_with("聲音")),1,sum, na.rm = T)) %>% 
-  mutate(score_綜合 = 1*apply(select(.,starts_with("綜合")),1,sum, na.rm = T)) %>% 
+dt[1:2]%>% #前測、後測
+  map(mutate_all, as.character) %>% 
+  map(function(y){
+    y %>% 
+      split(., .$人名)  %>%  #細分成一人名一筆
+      map(function(z){
+        
+        tmp_1 <- 
+          z %>% 
+          .[2:31] %>% 
+          str_split(., "、") %>% 
+          map2(Answer[c(2:31)], ., function(x,y){ 
+            ifelse( x %in% y, 1,0) 
+          }) %>% 
+          map(function(x){ 
+            x %>%
+              .[x ==1] %>%
+              length %>% 
+              ifelse(.==2, 1,.)
+            })%>%
+          bind_cols() 
+        
+        
+        tmp_2 <- 
+        z %>% 
+          .[32:34] %>% 
+          str_split(., "、") %>% 
+          map2(Answer[c(32:34)], ., function(x,y){ 
+            ifelse( x %in% y, x,0) 
+          }) %>% 
+           map(function(x) paste0(x, collapse = "、") )%>%
+           bind_cols() 
+        
+        cbind(tmp_1, tmp_2)
+        
+      })%>%
+      bind_rows(.id = "人名") 
+    
+    })%>% 
+  bind_rows(.id = "Test") %>% 
+  separate(., col = "綜合1",
+           into = paste0("綜合1", sep = "_", Answer$綜合1), sep = "、") %>% 
+  separate(., col = "綜合2",
+           into = paste0("綜合2", sep = "_", Answer$綜合2), sep = "、") %>% 
+  separate(., col = "綜合3",
+           into = paste0("綜合3", sep = "_", Answer$綜合3), sep = "、") %>%
+  mutate_at(names(.)[33:ncol(.)], function(x){
+    ifelse(x != 0, 1,0)
+    })%>%
+  mutate(score_方法 = 3*apply(select(.,starts_with("方法")),1,sum, na.rm = T)) %>%
+  mutate(score_照片 = 3*apply(select(.,starts_with("照片")),1,sum, na.rm = T)) %>%
+  mutate(score_聲音 = 3*apply(select(.,starts_with("聲音")),1,sum, na.rm = T)) %>%
+  mutate(score_綜合 = 1*apply(select(.,starts_with("綜合")),1,sum, na.rm = T)) %>%
   mutate(總分 = score_方法 + score_照片 + score_聲音 + score_綜合)
 
-
-
-
-
-
-
-
-
+View(DT,"DT")
 
  
 DT.1 <- 
@@ -115,6 +142,8 @@ analysis_summary <-
 
 car::Anova(model)
 
+anova(model)
+
 DT.1 %>% 
   filter(身分 %in% "志工") %>% 
  # filter(調查 %in% c("A", "B")) %>% 
@@ -139,3 +168,15 @@ DT.1 %>%
   facet_wrap(vars(考題))+
   labs(x = "身份", y = "答對比例")
   
+DT.1 %>% 
+  # filter(身分 %in% "森林護管員") %>% 
+  # filter(調查 %in% c("A", "B")) %>% 
+  select(`Test`,`身分`,`綜合1_棕面鶯`:`綜合1_白環鸚嘴鵯`) %>% 
+  reshape2::melt(id = 1:2) %>% 
+  group_by(Test,`身分`,variable) %>% 
+  summarise(分數 = sum(value)/length(value)) %>% 
+ # left_join(dt$`題目`, by = c("variable" ="題目")) %>%
+  ggplot(., aes(身分, 分數, Test))+
+  geom_bar(aes(fill= Test),stat='identity', position=position_dodge())+
+  facet_wrap(vars(variable))+
+  labs(x = "身份", y = "答對比例")
