@@ -118,8 +118,8 @@ DT  %>%
   right_join(dt$`基本資料`,., by = c("姓名" = "人名")) %>% 
   filter(姓名 %in% all_day$人名 )%>% 
   mutate(身分 = str_replace_all(身分,c( ".*志工" = "志工",
-                                    "臨時人員" = "職員",
-                                    "技術士" = "森林護管員",
+                                   # "臨時人員" = "職員",
+                                    "技術士|臨時人員|職員" = "森林護管員",
                                     
                                     "^阿里山生態.*" = "志工") )) %>% 
   mutate(調查 = case_when(
@@ -129,11 +129,12 @@ DT  %>%
     是否執行過臺灣獼猴和繁殖鳥類調查 %in% '都未曾執行過' ~ "None"
   )) 
 
-DT$是否執行過臺灣獼猴和繁殖鳥類調查 %>% table
+DT.1$是否執行過臺灣獼猴和繁殖鳥類調查 %>% table
+DT.1$身分 %>% table
 
 # 分析
 model <- 
-  glmmTMB(總分 ~  Test+ 調查 + 身分 + (1|姓名), 
+  glmmTMB(score_方法 ~  Test + 身分 + 調查 + (1|姓名), 
           data = DT.1, family = gaussian)
 
 # 分析結果
@@ -145,12 +146,16 @@ car::Anova(model)
 anova(model)
 
 DT.1 %>% 
-  filter(身分 %in% "志工") %>% 
+ # filter(身分 %in% "志工") %>% 
  # filter(調查 %in% c("A", "B")) %>% 
-  select(`Test`,`聲音1`:`聲音10`) %>% 
-  reshape2::melt(id = 1) %>% 
+  select(`Test`,`score_方法`:`score_綜合`) %>% 
+  reshape2::melt(id = 1:2) %>% 
   group_by(Test,variable) %>% 
-  summarise(Count = sum(value)) %>% 
+  
+  ggplot(., aes(variable, value, Test))+
+  geom_boxplot(aes(fill = Test))
+  
+  summarise(Count = mean(value)) %>% 
   ggplot(., aes(variable, Count, Test))+
   geom_bar(aes(fill= Test),stat='identity', position=position_dodge())
 
@@ -158,25 +163,25 @@ DT.1 %>%
 DT.1 %>% 
  # filter(身分 %in% "森林護管員") %>% 
   # filter(調查 %in% c("A", "B")) %>% 
-  select(`Test`,`身分`,`聲音1`:`聲音10`) %>% 
+  select(`Test`,`身分`,`score_方法`:`score_綜合`) %>% 
   reshape2::melt(id = 1:2) %>% 
   group_by(Test,`身分`,variable) %>% 
   summarise(分數 = sum(value)/length(value)) %>% 
   left_join(dt$`題目`, by = c("variable" ="題目")) %>%
   ggplot(., aes(身分, 分數, Test))+
   geom_bar(aes(fill= Test),stat='identity', position=position_dodge())+
-  facet_wrap(vars(考題))+
+  facet_wrap(vars(考題), ncol = 5)+
   labs(x = "身份", y = "答對比例")
   
 DT.1 %>% 
   # filter(身分 %in% "森林護管員") %>% 
   # filter(調查 %in% c("A", "B")) %>% 
-  select(`Test`,`身分`,`綜合1_棕面鶯`:`綜合1_白環鸚嘴鵯`) %>% 
+  select(`Test`,`調查`,`聲音1`:`聲音10`) %>% 
   reshape2::melt(id = 1:2) %>% 
-  group_by(Test,`身分`,variable) %>% 
+  group_by(Test,`調查`,variable) %>% 
   summarise(分數 = sum(value)/length(value)) %>% 
- # left_join(dt$`題目`, by = c("variable" ="題目")) %>%
-  ggplot(., aes(身分, 分數, Test))+
+  left_join(dt$`題目`, by = c("variable" ="題目")) %>%
+  ggplot(., aes(調查, 分數, Test))+
   geom_bar(aes(fill= Test),stat='identity', position=position_dodge())+
-  facet_wrap(vars(variable))+
-  labs(x = "身份", y = "答對比例")
+  facet_wrap(vars(考題), ncol = 5)+
+  labs(x = "調查", y = "答對比例")
