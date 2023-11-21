@@ -123,65 +123,193 @@ DT  %>%
                                     
                                     "^阿里山生態.*" = "志工") )) %>% 
   mutate(調查 = case_when(
-    是否執行過臺灣獼猴和繁殖鳥類調查 %in% '只有執行過獼猴調查' ~ "Monkey",
-    是否執行過臺灣獼猴和繁殖鳥類調查 %in% '只有執行過繁殖鳥類調查' ~ "Bird",
-    是否執行過臺灣獼猴和繁殖鳥類調查 %in% '臺灣獼猴和繁殖鳥類調查都有執行過' ~ "Both",
-    是否執行過臺灣獼猴和繁殖鳥類調查 %in% '都未曾執行過' ~ "None"
+    是否執行過臺灣獼猴和繁殖鳥類調查 %in% c("只有執行過獼猴調查","都未曾執行過") ~ "NoBird",
+    是否執行過臺灣獼猴和繁殖鳥類調查 %in% c("只有執行過繁殖鳥類調查","臺灣獼猴和繁殖鳥類調查都有執行過") ~ "Bird"
+
   )) 
 
 DT.1$是否執行過臺灣獼猴和繁殖鳥類調查 %>% table
+DT.1$調查 %>% table
 DT.1$身分 %>% table
 
+
+
+
+
 # 分析
-model <- 
+model_total <- 
+  glmmTMB(總分 ~  Test + 身分 + 調查 + (1|姓名), 
+          data = DT.1, family = gaussian)
+
+analysis_summary <- 
+  summary(model_total)$coefficients$cond %>% as.data.frame()
+
+car::Anova(model_total)
+
+
+ggplot(DT.1, aes(調查, 總分))+
+  geom_boxplot(aes(fill = Test))
+
+ggplot(DT.1, aes(身分, 總分))+
+  geom_boxplot(aes(fill = Test))
+#---
+model_mothod <- 
   glmmTMB(score_方法 ~  Test + 身分 + 調查 + (1|姓名), 
           data = DT.1, family = gaussian)
 
-# 分析結果
 analysis_summary <- 
-  summary(model)$coefficients$cond %>% as.data.frame()
+  summary(model_mothod)$coefficients$cond %>% as.data.frame()
 
-car::Anova(model)
+car::Anova(model_mothod)
 
-anova(model)
 
-DT.1 %>% 
- # filter(身分 %in% "志工") %>% 
- # filter(調查 %in% c("A", "B")) %>% 
-  select(`Test`,`score_方法`:`score_綜合`) %>% 
-  reshape2::melt(id = 1:2) %>% 
-  group_by(Test,variable) %>% 
-  
-  ggplot(., aes(variable, value, Test))+
+ggplot(DT.1, aes(調查, score_方法))+
   geom_boxplot(aes(fill = Test))
-  
-  summarise(Count = mean(value)) %>% 
-  ggplot(., aes(variable, Count, Test))+
-  geom_bar(aes(fill= Test),stat='identity', position=position_dodge())
+
+ggplot(DT.1, aes(身分, score_方法))+
+  geom_boxplot(aes(fill = Test))
 
 
-DT.1 %>% 
- # filter(身分 %in% "森林護管員") %>% 
-  # filter(調查 %in% c("A", "B")) %>% 
-  select(`Test`,`身分`,`score_方法`:`score_綜合`) %>% 
+#----
+model_picture <- 
+  glmmTMB(score_照片 ~  Test + 身分 + 調查 + (1|姓名), 
+          data = DT.1, family = gaussian)
+
+analysis_summary <- 
+  summary(model_picture)$coefficients$cond %>% as.data.frame()
+
+car::Anova(model_picture)
+
+ggplot(DT.1, aes(調查, score_照片))+
+  geom_boxplot(aes(fill = Test))
+
+ggplot(DT.1, aes(身分, score_照片))+
+  geom_boxplot(aes(fill = Test))
+
+
+
+#----
+model_sound <- 
+  glmmTMB(score_聲音 ~  Test + 身分 + 調查 + (1|姓名), 
+          data = DT.1, family = gaussian)
+
+analysis_summary <- 
+  summary(model_sound)$coefficients$cond %>% as.data.frame()
+
+car::Anova(model_sound)
+
+
+ggplot(DT.1, aes(調查, score_聲音))+
+  geom_boxplot(aes(fill = Test))
+
+ggplot(DT.1, aes(身分, score_聲音))+
+  geom_boxplot(aes(fill = Test))
+
+
+
+
+#---
+model_綜合 <- 
+  glmmTMB(score_綜合 ~  Test + 身分 + 調查 + (1|姓名), 
+          data = DT.1, family = gaussian)
+
+analysis_summary <- 
+  summary(model_綜合)$coefficients$cond %>% as.data.frame()
+
+car::Anova(model_綜合)
+
+
+ggplot(DT.1, aes(調查, score_綜合))+
+  geom_boxplot(aes(fill = Test))
+
+ggplot(DT.1, aes(身分, score_綜合))+
+  geom_boxplot(aes(fill = Test))
+
+
+
+#---------------
+
+paste0("方法", 1:10, "~Test") %>% 
+  lapply(function(x){
+    
+    x %>% 
+      as.formula() %>% 
+      t.test(., data = DT.1, paired = T)
+    
+  })
+
+paste0("照片", 1:10, "~Test") %>% 
+  lapply(function(x){
+    
+    x %>% 
+      as.formula() %>% 
+      t.test(., data = DT.1, paired = T)
+    
+  })
+
+
+paste0("聲音", 1:10, "~Test") %>% 
+  lapply(function(x){
+    
+    x %>% 
+      as.formula() %>% 
+      t.test(., data = DT.1, paired = T)
+    
+  })
+
+paste0("總分","~Test") %>% 
+  lapply(function(x){
+    
+    x %>% 
+      as.formula() %>% 
+      t.test(., data = DT.1, paired = T)
+    
+  })
+
+
+
+
+
+
+library(openxlsx)
+
+DT.1 %>% write.xlsx(.,"圖表.xlsx")
+
+
+
+dat_split <-
+  DT.1 %>% 
+  select(`身分`,`Test`:`聲音10`) %>% 
   reshape2::melt(id = 1:2) %>% 
-  group_by(Test,`身分`,variable) %>% 
-  summarise(分數 = sum(value)/length(value)) %>% 
-  left_join(dt$`題目`, by = c("variable" ="題目")) %>%
-  ggplot(., aes(身分, 分數, Test))+
-  geom_bar(aes(fill= Test),stat='identity', position=position_dodge())+
-  facet_wrap(vars(考題), ncol = 5)+
-  labs(x = "身份", y = "答對比例")
-  
-DT.1 %>% 
-  # filter(身分 %in% "森林護管員") %>% 
-  # filter(調查 %in% c("A", "B")) %>% 
-  select(`Test`,`調查`,`聲音1`:`聲音10`) %>% 
+  group_by(身分,Test,variable) %>% 
+  summarise(Count = sum(value)) %>% 
+  left_join(dt$`題目`, by = c("variable" ="題目")) %>% 
+  mutate(大項 = str_extract(variable,"\\w{1,2}")) %>% 
+  split(., .$大項) %>% 
+  map(., function(x){
+    x %>% 
+      reshape2::dcast(身分+variable+ 考題 ~Test, value.var= "Count") %>% 
+      mutate(NO = str_extract(variable,"\\d{1,}")) %>% 
+      arrange(as.numeric(NO)) %>% 
+      select(-NO)
+  })
+
+
+
+
+dat_split <-
+  DT.1 %>% 
+  select(`調查`,`Test`:`聲音10`) %>% 
   reshape2::melt(id = 1:2) %>% 
-  group_by(Test,`調查`,variable) %>% 
-  summarise(分數 = sum(value)/length(value)) %>% 
-  left_join(dt$`題目`, by = c("variable" ="題目")) %>%
-  ggplot(., aes(調查, 分數, Test))+
-  geom_bar(aes(fill= Test),stat='identity', position=position_dodge())+
-  facet_wrap(vars(考題), ncol = 5)+
-  labs(x = "調查", y = "答對比例")
+  group_by(調查,Test,variable) %>% 
+  summarise(Count = sum(value)) %>% 
+  left_join(dt$`題目`, by = c("variable" ="題目")) %>% 
+  mutate(大項 = str_extract(variable,"\\w{1,2}")) %>% 
+  split(., .$大項) %>% 
+  map(., function(x){
+    x %>% 
+      reshape2::dcast(調查+variable+ 考題 ~Test, value.var= "Count") %>% 
+      mutate(NO = str_extract(variable,"\\d{1,}")) %>% 
+      arrange(as.numeric(NO)) %>% 
+      select(-NO)
+  })
