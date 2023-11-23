@@ -38,19 +38,6 @@ person <-
   list(前測 = dt$`前測`, 後測 =  dt$`後測`, Both = all_day) %>% 
   map(., nrow) %>% bind_rows(.id = "A")
 
-# dt$後測 %>% split(., .$人名) %>% as.list() %>% 
-#   map(function(x){ str_split(x, "、") %>% unlist 
-#   })
-
-
-# 
-# dt %>% map(function(x){
-#   x %>% 
-#   split(., .$人名) %>% 
-#     map(function(j) select(j,-`人名`))
-#          })  %>%  View
-
-
 
 # 對答案並篩選出完整測驗的資料
 
@@ -229,87 +216,91 @@ ggplot(DT.1, aes(身分, score_綜合))+
 
 #---------------
 
+
 paste0("方法", 1:10, "~Test") %>% 
   lapply(function(x){
     
     x %>% 
       as.formula() %>% 
-      t.test(., data = DT.1, paired = T)
+      t.test(., data = DT.1, paired = T)%>%  .[c(1,3)] %>% bind_cols
     
-  })
+  })%>% bind_rows()%>% 
+  mutate(tracect = paste0("方法", 1:10), .before = 'statistic') %>% 
+  
+  bind_rows(
 
 paste0("照片", 1:10, "~Test") %>% 
   lapply(function(x){
     
     x %>% 
       as.formula() %>% 
-      t.test(., data = DT.1, paired = T)
+      t.test(., data = DT.1, paired = T)%>%  .[c(1,3)] %>% bind_cols
     
-  })
+  })%>% bind_rows()%>% 
+  mutate(tracect = paste0("照片", 1:10), .before = 'statistic')
 
-
+) %>% 
+  bind_rows(
 paste0("聲音", 1:10, "~Test") %>% 
   lapply(function(x){
     
     x %>% 
       as.formula() %>% 
-      t.test(., data = DT.1, paired = T)
+      t.test(., data = DT.1, paired = T) %>%  .[c(1,3)] %>% bind_cols
     
-  })
-
-paste0("總分","~Test") %>% 
+  }) %>% bind_rows() %>% 
+  mutate(tracect = paste0("聲音", 1:10), .before = 'statistic')
+) %>% 
+  bind_rows(
+    paste0(c("score_方法","score_照片","score_聲音","score_綜合","總分"),"~Test") %>% 
   lapply(function(x){
     
     x %>% 
       as.formula() %>% 
-      t.test(., data = DT.1, paired = T)
+      t.test(., data = DT.1, paired = T) %>%  .[c(1,3)] %>% bind_cols
     
-  })
+  })%>% bind_rows() %>% 
+  mutate(tracect = paste0(c("score_方法","score_照片","score_聲音","score_綜合","總分")) , .before = 'statistic')
+
+)  %>% 
+  setNames(., c("tracect", "t", "p.value"))%>% 
+  mutate(p.value = round(p.value,2),
+         t = round(-t,2))%>%  View
 
 
+#----------------------
+DT.1 %>% t.test(score_照片 ~ Test, data = ., paired = T) %>% .[1:5] 
+
+DT.1 %>% 
+  reshape2::dcast(姓名 + 調查 + 身分 ~ Test, value.var = "score_方法") %>% 
+  mutate(score_方法_diff = 後測-前測) %>% 
+  lm(score_方法_diff~ 調查 + 身分, data = .) %>% anova
+
+DT.1 %>% 
+  reshape2::dcast(姓名 + 調查 + 身分 ~ Test, value.var = "score_照片") %>% 
+  mutate(score_照片_diff = 後測-前測) %>% 
+  lm(score_照片_diff~ 調查 + 身分, data = .) %>% anova
+
+DT.1 %>% 
+  reshape2::dcast(姓名 + 調查 + 身分 ~ Test, value.var = "score_聲音") %>% 
+  mutate(score_聲音_diff = 後測-前測) %>% 
+  lm(score_聲音_diff~ 調查 + 身分, data = .) %>% anova
 
 
+DT.1 %>% 
+  reshape2::dcast(姓名 + 調查 + 身分 ~ Test, value.var = "score_綜合") %>% 
+  mutate(score_綜合_diff = 後測-前測) %>% 
+  lm(score_綜合_diff~ 調查 + 身分, data = .) %>% anova
 
+DT.1 %>% 
+  reshape2::dcast(姓名 + 調查 + 身分 ~ Test, value.var = "總分") %>% 
+  mutate(總分 = 後測-前測) %>% 
+  lm(總分~ 調查 + 身分, data = .) %>% anova
+
+
+#----------------
 
 library(openxlsx)
 
 DT.1 %>% write.xlsx(.,"圖表.xlsx")
 
-
-
-dat_split <-
-  DT.1 %>% 
-  select(`身分`,`Test`:`聲音10`) %>% 
-  reshape2::melt(id = 1:2) %>% 
-  group_by(身分,Test,variable) %>% 
-  summarise(Count = sum(value)) %>% 
-  left_join(dt$`題目`, by = c("variable" ="題目")) %>% 
-  mutate(大項 = str_extract(variable,"\\w{1,2}")) %>% 
-  split(., .$大項) %>% 
-  map(., function(x){
-    x %>% 
-      reshape2::dcast(身分+variable+ 考題 ~Test, value.var= "Count") %>% 
-      mutate(NO = str_extract(variable,"\\d{1,}")) %>% 
-      arrange(as.numeric(NO)) %>% 
-      select(-NO)
-  })
-
-
-
-
-dat_split <-
-  DT.1 %>% 
-  select(`調查`,`Test`:`聲音10`) %>% 
-  reshape2::melt(id = 1:2) %>% 
-  group_by(調查,Test,variable) %>% 
-  summarise(Count = sum(value)) %>% 
-  left_join(dt$`題目`, by = c("variable" ="題目")) %>% 
-  mutate(大項 = str_extract(variable,"\\w{1,2}")) %>% 
-  split(., .$大項) %>% 
-  map(., function(x){
-    x %>% 
-      reshape2::dcast(調查+variable+ 考題 ~Test, value.var= "Count") %>% 
-      mutate(NO = str_extract(variable,"\\d{1,}")) %>% 
-      arrange(as.numeric(NO)) %>% 
-      select(-NO)
-  })
