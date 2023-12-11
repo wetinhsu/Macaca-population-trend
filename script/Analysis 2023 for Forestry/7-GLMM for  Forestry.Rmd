@@ -107,7 +107,10 @@ m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 + Offic
 
 
 ```{r eval=FALSE, include=FALSE}
-Anova(m1)
+
+
+Anova(m1) %>% broom::tidy(.) %>% flextable()
+
 ```
 
 
@@ -131,7 +134,7 @@ d1<- dredge(m1,  trace = T)
 
 
 ```{r}
-d1[d1$delta<2,]
+d1[d1$delta<2,]  
 ```
 
 
@@ -165,7 +168,7 @@ m1.1 <- glmer(Macaca_sur ~   Year.re + Altitude.1 +  julian.D.1 + Office  + (1|S
 
 ```{r echo=FALSE}
 
-Anova(m1.1) 
+Anova(m1.1)  %>% broom::tidy(.) %>% flextable()
 ```
 
 
@@ -192,7 +195,7 @@ glht(m1.1, linfct = mcp(Office = "Tukey")) %>%
   flextable() %>% 
   autofit()
 ```
-
+<br/>
 
 ```{r echo=FALSE}
 summary(glht(m1.1, linfct = c("Year.re = 0",
@@ -238,7 +241,7 @@ glht(m1.1, linfct = mcp(Office = "Tukey")) %>%
   theme_classic()
 ```
 
-```{r}
+```{r echo=FALSE}
 glht(m1.1, linfct = c("Year.re = 0",
                       "Altitude.1 = 0",
                       "julian.D.1 = 0")) %>%
@@ -257,7 +260,7 @@ glht(m1.1, linfct = c("Year.re = 0",
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 M.data %>% 
   group_by(Year, Survey) %>% 
   summarise(
@@ -279,7 +282,7 @@ M.data %>%
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 M.data %>% 
   group_by(Office,Year, Survey) %>% 
   summarise(
@@ -287,14 +290,14 @@ M.data %>%
     m = Macaca_sur %>% as.numeric() %>% sum,
     E = m/N
   )  %>% 
-  mutate(Office = 
-           ordered(Office,
-                   labels = c( "新竹", "臺中", "南投","宜蘭",
-                              "嘉義", "屏東", "花蓮", "臺東"),
-                   levels = c("Hsinchu", "Dougshih", "Nantou","Luodong", 
-                              "Chiayi", "Pingtung", "Hualien", "Taitung")
-           )
-  ) %>% 
+  # mutate(Office = 
+  #          ordered(Office,
+  #                  labels = c( "新竹", "臺中", "南投","宜蘭",
+  #                             "嘉義", "屏東", "花蓮", "臺東"),
+  #                  levels = c("Hsinchu", "Dougshih", "Nantou","Luodong", 
+  #                             "Chiayi", "Pingtung", "Hualien", "Taitung")
+  #          )
+  # ) %>% 
   ggplot(., aes(x = factor(Office), y = E)) +
   geom_boxplot()+
   scale_y_continuous(limits =  c(0, 0.12),

@@ -166,11 +166,11 @@ index(m1, "imputed", covars = T) %>% plot
 Overall
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 overall(m1,"imputed") %>% 
-  print(.) 
+  print(.) %>% flextable()
 ```
 
 overall  
-```{r include=FALSE}
+```{r eval=FALSE, include=FALSE}
 plot(overall(m1, "imputed"), axes = F)
 axis(1, at = 2015:2023, cex.axis=1.5)
 axis(2, cex.axis=1.5)
@@ -179,14 +179,14 @@ title( "imputed" )
 ```
 
 heatmap
-```{r include=FALSE}
+```{r eval=FALSE, include=FALSE}
 heatmap(m1, "imputed", cex.axis=1.5) 
 title( "imputed" )
 ```
 
 index
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(showtext)
 library(ggprism)
 
@@ -212,7 +212,7 @@ theme_bbs <-
 ```
 
 
-```{r}
+```{r include=FALSE}
 idx <- index(m1, "imputed", covars = T)  %>% 
   dplyr::select(covariate, category, time, imputed = imputed, se_imp = se_imp)
 
@@ -252,7 +252,8 @@ ggplot(idx[idx$covariate %in% "Overall",], aes(x = time, y= imputed*100 ))+
 ```
 
 
-```{r}
+LCL、UCL、idx_2023指標變化值
+```{r echo=FALSE}
 
 Overall.mul <- overall(m1, "imputed")$slope$mul
 Overall.se_mul <- overall(m1, "imputed")$slope$se_mul
