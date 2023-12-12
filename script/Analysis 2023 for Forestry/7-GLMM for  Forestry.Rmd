@@ -106,7 +106,7 @@ m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 + Offic
 ```
 
 
-```{r eval=FALSE, include=FALSE}
+```{r echo=FALSE}
 
 
 Anova(m1) %>% broom::tidy(.) %>% flextable()
@@ -159,7 +159,7 @@ sw(model.avg(d1, subset = delta < 2))
 
 
 ```{r}
-m1.1 <- glmer(Macaca_sur ~   Year.re + Altitude.1 +  julian.D.1 + Office  + (1|Site_N), 
+m1.1 <- glmer(Macaca_sur ~   Year.re + Altitude.1 +   Office  + (1|Site_N), 
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 ```
@@ -199,8 +199,7 @@ glht(m1.1, linfct = mcp(Office = "Tukey")) %>%
 
 ```{r echo=FALSE}
 summary(glht(m1.1, linfct = c("Year.re = 0",
-                            "Altitude.1 = 0",
-                            "julian.D.1 = 0")))%>% 
+                            "Altitude.1 = 0")))%>% 
   broom::tidy(.) %>%
   
   mutate(signif = gtools::stars.pval(adj.p.value)) %>% 
@@ -243,8 +242,7 @@ glht(m1.1, linfct = mcp(Office = "Tukey")) %>%
 
 ```{r echo=FALSE}
 glht(m1.1, linfct = c("Year.re = 0",
-                      "Altitude.1 = 0",
-                      "julian.D.1 = 0")) %>%
+                      "Altitude.1 = 0")) %>%
   confint() %>% 
   broom::tidy(.) %>% 
   arrange(estimate) %>% 
@@ -302,6 +300,9 @@ M.data %>%
   geom_boxplot()+
   scale_y_continuous(limits =  c(0, 0.12),
                      breaks = seq(0,0.12,0.02))+
+  scale_x_discrete(limits = c( "新竹", "臺中",
+                               "南投","宜蘭",
+                            "嘉義", "屏東", "花蓮", "臺東"))+
   labs(x = "  ",
        y = "Encounter rate (troop/point)")+
   theme_classic()+

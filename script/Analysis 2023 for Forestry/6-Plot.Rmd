@@ -809,7 +809,7 @@ M.data %>%
             position = position_dodge(0.9), show.legend = F)+
   scale_y_continuous(breaks = seq(0,0.15,0.05), limits = c(0,0.15))+
   scale_x_discrete(limits = c( "新竹", "臺中", "南投","宜蘭",
-                            "屏東", "嘉義", "花蓮", "臺東"))+
+                            "嘉義", "屏東", "花蓮", "臺東"))+
   labs(x = "林管處", y = "相對密度 (群/樣點)")+
   theme(
     text = element_text(family="Microsoft JhengHei"),
