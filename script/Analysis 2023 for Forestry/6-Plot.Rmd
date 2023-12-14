@@ -57,6 +57,7 @@ M.data <-
 #調查者的統計資料
 List_surveyor <- 
   M.data %>%
+  filter(!is.na(Macaca_sur)) %>% 
   separate(.,Surveyor,
            into = paste0("Surveyor","_",0:10),
            sep ="、|,",
