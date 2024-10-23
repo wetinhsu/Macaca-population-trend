@@ -16,7 +16,7 @@ s <- stack(imported_raster)
 
 
 
-S.all<- read_xlsx( "./data/clean/forest_combind_data_1521.xlsx") %>% 
+S.all<- read_xlsx( "./data/clean/forest_combind_data_1523.xlsx") %>% 
   filter(! is.na(Month)| ! is.na(Day)| ! is.na(Hour)| ! is.na(Minute)) %>% 
   add_column(NO = 1:nrow(.))
 
@@ -29,10 +29,10 @@ S.all %>%  #確認每一旅次內的每一個樣點資料只有1筆
 
 
 p<- S.all %>%
-  filter(!is.na(X))  %>% 
-  mutate(x = as.numeric(X)) %>% 
-  mutate(y = as.numeric(Y)) %>% 
-  st_as_sf(., coords = c("X", "Y"), crs = 4326) %>% 
+  filter(!is.na(X_97))  %>% 
+  mutate(x = as.numeric(X_97)) %>% 
+  mutate(y = as.numeric(Y_97)) %>% 
+  st_as_sf(., coords = c("X_97", "Y_97"), crs = 3826) %>% 
   st_transform(crs(imported_raster))
 
 
@@ -47,4 +47,4 @@ S.all <-
   left_join(pp, by = c("NO")) %>% 
   dplyr::select(-"NO")
 
-write_xlsx(S.all, "./data/clean/full_combind_data_1521.xlsx")
+write_xlsx(S.all, "./data/clean/full_combind_data_1523.xlsx")

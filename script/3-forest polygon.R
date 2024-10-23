@@ -49,7 +49,7 @@ nc.b <- st_read(paste0(path,"/","全島森林林型分布圖.shp"), crs=3826) %>
 st_point <- 
   list_Point %>% 
   filter(!is.na(樣區編號)) %>% 
-  select(ID, X_97, Y_97) %>% 
+  select(PointID, X_97, Y_97) %>% 
   filter(!is.na(X_97)|!is.na(Y_97))%>% 
   filter(!X_97%in% "")%>% 
   mutate_at(c("X_97", "Y_97"), as.numeric) %>% 
@@ -68,14 +68,14 @@ Sys.time()
 
 #--------------------------------------------------------------------
 library(readxl)
-M.all <- read_excel("./data/clean/Macaca/Macaca_1522_v1.xlsx", col_types = "text") 
+M.all <- read_excel("./data/clean/Macaca/Macaca_1523_v1.xlsx", col_types = "text") 
 
 S.all <- 
-  read_excel("data/clean/Site/Site_2022_v1.xlsx", col_types = "text") %>% 
+#  read_excel("data/clean/Site/Site_2022_v1.xlsx", col_types = "text") %>% 
   
   bind_rows(
     
-    S1521%>% mutate_if(is.numeric, as.character)
+    S1523%>% mutate_if(is.numeric, as.character)
     
   )
 
@@ -83,9 +83,9 @@ S.all <-
 M.data <- 
   M.all %>% 
   full_join(.,S.all, by = c("Year", "Site_N", "Point", "Survey")) %>% 
-  mutate(ID = as.integer(ID)) %>% 
-  left_join(.,st_point_1 , by = "ID") 
+  mutate(PointID = as.integer(PointID)) %>% 
+  left_join(.,st_point_1 , by = "PointID") 
 
 
-write_xlsx(M.data, "./data/clean/forest_combind_data_1522.xlsx")
+write_xlsx(M.data, "./data/clean/forest_combind_data_1523.xlsx")
 

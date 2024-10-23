@@ -1,0 +1,846 @@
+```{r include=FALSE}
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(here)
+library(flextable)
+library(ftExtra)
+library(showtext)
+
+showtext_auto()
+font_add("Microsoft JhengHei", "msjh.ttc")
+here::here() 
+
+```
+
+```{r include=FALSE}
+conty_order = c("宜蘭縣","基隆市","臺北市", "新北市",
+                "桃園縣","桃園市","新竹市", "新竹縣","苗栗縣",
+                "臺中市","彰化縣", "南投縣","南投市",
+                "雲林縣","嘉義縣","嘉義市", "臺南市",
+                "高雄市", "屏東縣",
+                "花蓮縣", "台東縣","臺東縣",
+                "Total")
+TypeName_order = c("闊葉林",
+                   "針葉林",
+                   "混淆林",
+                   "竹林",
+                   "非森林",
+                   "Total")
+```
+
+```{r read_data, include=FALSE}
+M.data <- read_excel(here("./data/clean/for analysis_1523.xlsx"),
+                     sheet=1) %>% 
+  
+  mutate_at(c("Year", "Survey", "Point", "Macaca_sur",
+              "Month", "Day", "Distance"), as.numeric) %>% 
+  
+  mutate(TypeName.1 = ordered(TypeName.1, TypeName_order)) %>% 
+  mutate(County = ordered(County,conty_order)) 
+  
+```
+
+
+
+### **原始資料**
+
+#### **調查日3/1\~6/30間、包含非森林、包含50m以下**
+
+```{r include=FALSE}
+Ori_Macaca <- 
+  M.data %>%  
+  bind_rows(
+     M.data %>%   mutate(County = "Total")
+     ) %>%
+  mutate(GG = case_when(
+    Macaca_sur %in% 1 ~ "G",
+    Macaca_sur %in% 0 & !is.na(Macaca_dist) ~ "S",
+    TRUE ~ "None"
+  )) %>% 
+  
+  filter(! GG %in% "None") %>% 
+  
+  split(., .$GG) %>% 
+  
+  map(., function(x){
+    x %>% 
+      group_by(Year,  County) %>% 
+      summarise(
+        '筆數'= Macaca_sur %>% length, 
+        '樣區數'= Site_N %>% unique %>% length,
+        '樣點數'= paste0(Site_N,"-",Point) %>% unique %>% length
+        ) %>% 
+      mutate(County = ordered(County, conty_order))%>% 
+      reshape2::melt(id = 1:2) %>% 
+      reshape2::dcast(variable + Year ~ County) 
+    })
+```
+
+猴群數量
+
+```{r echo=FALSE}
+Ori_Macaca$`G` %>%
+    mutate(Year = as.character(Year)) %>% 
+    flextable(., ) %>%
+    merge_v(., j = c("variable") ) %>% 
+    hline(i = c(9,18)) %>% 
+    font(part = "all",fontname = "Arial Unicode MS") %>% 
+    set_table_properties(layout = "autofit")
+  
+
+```
+
+\newpage
+
+孤猴數量
+
+```{r echo=FALSE}
+Ori_Macaca$`S` %>%
+    mutate(Year = as.character(Year)) %>% 
+    flextable(., ) %>%
+    merge_v(., j = c("variable") ) %>% 
+    hline(i = c(9,18)) %>% 
+    font(part = "all",fontname = "Arial Unicode MS") %>% 
+    set_table_properties(layout = "autofit")
+```
+
+\newpage
+
+### **分析用**
+
+#### **調查日3/1\~6/30間、"不"包含非森林、"不"包含50m以下**
+
+```{r include=FALSE}
+Clean_Macaca <- 
+  M.data %>%  
+  bind_rows(
+     M.data %>%   mutate(County = "Total")
+     ) %>%
+  mutate(GG = case_when(
+    Macaca_sur %in% 1 ~ "G",
+    Macaca_sur %in% 0 & !is.na(Macaca_dist) ~ "S",
+    TRUE ~ "None"
+  )) %>% 
+  
+  filter(! GG %in% "None") %>% 
+  
+  filter(analysis %in% "Y") %>% 
+  
+  split(., .$GG) %>% 
+  
+  map(., function(x){
+    x %>% 
+      group_by(Year,  County) %>% 
+      summarise(
+        '筆數'= Macaca_sur %>% length, 
+        '樣區數'= Site_N %>% unique %>% length,
+        '樣點數'= paste0(Site_N,"-",Point) %>% unique %>% length
+        ) %>% 
+      mutate(County = ordered(County, conty_order))%>% 
+      reshape2::melt(id = 1:2) %>% 
+      reshape2::dcast(variable + Year ~ County) 
+    })
+```
+
+猴群數量
+
+```{r echo=FALSE}
+Clean_Macaca$`G` %>%
+    mutate(Year = as.character(Year)) %>% 
+    flextable(., ) %>%
+    merge_v(., j = c("variable") ) %>% 
+    hline(i = c(9,18)) %>% 
+    font(part = "all",fontname = "Arial Unicode MS") %>% 
+    set_table_properties(layout = "autofit")
+  
+
+```
+
+\newpage
+孤猴數量
+
+```{r echo=FALSE}
+Clean_Macaca$`S` %>%
+    mutate(Year = as.character(Year)) %>% 
+    flextable(., ) %>%
+    merge_v(., j = c("variable") ) %>% 
+    hline(i = c(9,18)) %>% 
+    font(part = "all",fontname = "Arial Unicode MS") %>% 
+    set_table_properties(layout = "autofit")
+```
+
+```{r include=FALSE}
+output.1<- 
+  M.data %>% 
+  mutate(analysis %in% "Y") %>% 
+  mutate(TypeName = 
+           str_replace_all( TypeName,  "^針闊葉樹混$", "針闊葉樹混淆")) %>%
+  mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur) ) %>% 
+  group_by(TypeName.1,TypeName) %>% 
+  summarise(
+    N = n(),
+    m = sum(Macaca_sur))
+```
+
+\newpage
+
+
+
+```{r warning=FALSE, include=FALSE}
+#  Region、猴群數、樣區數
+
+E_rate_Region<- 
+  M.data %>%
+  bind_rows( M.data %>% mutate(Region2='TW') ) %>%
+  
+  filter(analysis %in% "Y") %>%
+  group_by(Year, Survey, Region2) %>% 
+  summarise(
+    N= n(),
+    m = sum(Macaca_sur,na.rm=T) )  %>% 
+  mutate(E = (m/N) %>% round(.,3)) %>%
+  ungroup() %>% 
+  reshape2::melt(id = 1:3) %>% 
+  reshape2::dcast(Region2 + variable ~ Year + Survey,
+                  value.var = "value") %>% 
+  reshape2::melt(id = 1:2, variable.name = "variable2")  %>% 
+  
+  bind_rows(     #增加各region2的mean、se部分
+    group_by(., Region2, variable) %>% 
+      summarise(
+        Mean = mean(value),
+        Se = sd(value)/sqrt(length(value))
+      ) %>% 
+  reshape2::melt(id = 1:2, variable.name = "variable2")
+  ) %>% 
+  mutate(value = ifelse(
+    variable == "E",
+    sprintf("%06.4f",value),
+    ifelse(
+      variable2 %in% c("Mean", "Se"),
+      sprintf("%0.1f",value),
+      value
+    )
+  )) %>% 
+  
+  reshape2::dcast(Region2 + variable ~ variable2,
+                  value.var = "value") %>% 
+  mutate(variable = ordered( variable, c("N", "m", "E"))) %>% 
+  mutate(Region2 = ordered(Region2, c("North","Center",
+                                      "South","Southwest",
+                                      "Hualien","Taitung",
+                                      "TW"))) %>% 
+  arrange(Region2)
+```
+
+```{r echo=FALSE, warning=FALSE}
+#畫表
+
+E_rate_Region %>% 
+  mutate(variable = str_replace_all(variable, "^N", "樣點"))%>% 
+  mutate(variable = str_replace_all(variable, "^m", "猴群"))%>%
+  mutate(variable = str_replace_all(variable, "^E", "相對密度"))%>%
+    flextable(., ) %>%
+     span_header(.,sep = "[_\\.]")%>%
+    merge_v(., j = c("Region2") ) %>% 
+    font(part = "all",fontname = "Arial Unicode MS") %>% 
+    align(.,align = "center", part = "all")%>% 
+    set_table_properties(layout = "autofit")
+
+
+
+```
+
+
+```{r eval=FALSE, include=FALSE}
+aaaaaa <- 
+  M.data %>%
+  bind_rows( M.data %>% mutate(Region2='TW') ) %>%
+  
+  filter(analysis %in% "Y") %>%
+  group_by(Year, Survey, Region2) %>% 
+  summarise(
+    N= n(),
+    m = sum(Macaca_sur,na.rm=T) )  %>% 
+  mutate(E = (m/N) %>% round(.,3)) %>%
+  ungroup() %>% 
+  reshape2::melt(id = 1:3) %>% 
+  reshape2::dcast(Region2 + variable ~ Year + Survey,
+                  value.var = "value") %>% 
+  reshape2::melt(id = 1:2, variable.name = "variable2")  %>% 
+  
+  
+  mutate(variable = ordered(variable,
+                            levels = c("N","m", "E"),
+                            labels = c("樣點","猴群", "相對密度"))) %>% 
+  
+  
+  mutate(Region2 = ordered(Region2,levels = c("North","Center",
+                                      "Southwest","South",
+                                      "Hualien","Taitung",
+                                      "TW"),
+                           labels = c("N","C",
+                                      "SW","S",
+                                      "H","T",
+                                      "TW"))) 
+  
+
+  ggplot(aaaaaa, aes(x = Region2, y = value))+
+#  geom_boxplot(width = .3)+
+#  geom_point(
+#    data = aaaaaa[aaaaaa$variable2 %in% c("2021_1", "2021_2"),],
+#    aes(x = Region2, y = value), col = "blue")+
+  stat_summary(fun = "mean",
+               geom = "point",
+               pch = 16, col = "red")+
+  
+  stat_summary(fun.data = "mean_se", 
+               geom = "errorbar", col = "red", 
+               width = .1)+
+
+
+
+  facet_wrap (~ variable, scales="free")
+
+
+```
+
+
+
+\newpage
+
+TypeName、猴群數、樣區數
+
+```{r include=FALSE}
+E_rate_Forest<-
+ M.data %>%  #非森林的小計
+  filter(! Month  %in% c(2, 7) & !is.na(X_97)) %>% 
+  filter(TypeName.1 %in% "非森林") %>% 
+   
+   bind_rows(
+     M.data %>%  #<50m & >=50m 分別森林的小計
+       filter(! Month  %in% c(2, 7) & !is.na(X_97)) %>% 
+       filter(!TypeName.1 %in% "非森林") %>%
+       mutate(TypeName.1 = ifelse(Altitude<50,
+                                  "Forest (EL<50m)",
+                                  "Forest (EL>50m)")) 
+   )%>% 
+  
+   bind_rows(
+     M.data %>%  #>=50m 
+       filter(analysis %in% "Y") 
+   ) %>% 
+  
+   bind_rows(
+     M.data %>%  #all 
+       filter(! Month  %in% c(2, 7) & !is.na(X_97)) %>% 
+       mutate(TypeName.1 = "Total")
+   ) %>%
+  
+  
+  group_by(Year, Survey, TypeName.1) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm = T)) %>%
+  mutate(E = m/N) %>%
+  
+  reshape2::melt(id = 1:3) %>% 
+  group_by(TypeName.1, variable) %>%
+  summarise(Mean = mean(value),
+            Se = sd(value)/sqrt(length(value))) %>% 
+  reshape2::melt(id = 1:2, variable.name = "variable2") %>%
+  
+  mutate(value = ifelse(
+    variable == "E",
+    sprintf("%06.4f",value),
+    ifelse(
+      variable2 %in% c("Mean", "Se"),
+      sprintf("%0.1f",value),
+      value
+    )
+  )) %>% 
+  
+  
+  
+  reshape2::dcast(TypeName.1 ~ variable + variable2) %>% 
+   mutate(TypeName.1 = ordered(TypeName.1, c("Forest (EL>50m)",
+                                             "闊葉林", "針葉林",
+                                             "混淆林", "竹林",
+                                             "Forest (EL<50m)",
+                                             "非森林",
+                                             "Total"))) %>% 
+  arrange(TypeName.1)
+```
+
+```{r echo=FALSE}
+#畫表
+E_rate_Forest %>% 
+  setNames(., str_replace_all(colnames(.), "^N", "樣點數")) %>%
+  setNames(., str_replace_all(colnames(.), "^m", "猴群數")) %>%
+  setNames(., str_replace_all(colnames(.), "^E", "相對密度")) %>%
+    flextable(., ) %>%
+    span_header(.,sep = "[_]")%>%
+    font(part = "all",fontname = "Arial Unicode MS") %>% 
+    align(.,align = "center", part = "all")%>% 
+    set_table_properties(layout = "autofit")
+     
+
+```
+
+\newpage
+
+年的相對密度
+
+```{r E_year, include=FALSE}
+
+E_year <- 
+M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  group_by(Year, Survey) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm=T),
+            Encounter_rate = m/N)
+
+mean_N <- 
+E_year %>% 
+  group_by(Year) %>% 
+  summarise(mean_N = mean(N),
+            position = quantile(Encounter_rate, 0.75))
+
+```
+
+```{r echo=FALSE}
+ggplot(E_year, aes(x = Year, y = Encounter_rate, group = Year))+
+  geom_boxplot(width = 0.3, fill= gray(.9))+
+  geom_text(data = mean_N,
+             aes( x = Year, y = position, label = mean_N),
+            size = 3, nudge_x = 0.3, nudge_y = 0.001)+
+  
+  theme_classic() + 
+  scale_x_continuous(breaks = 2015:2023, labels = 2015:2023)+
+  scale_y_continuous(limits = c(0,0.03),
+                     expand = c(0, 0.002, 0, 0))+
+  labs(x = "Year", y = "Encounter rate (troop/point)" )+
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(linewidth = 1.5,fill = NA),
+    axis.line = element_line(linewidth = 1, colour = "black"),
+    axis.ticks = element_line(linewidth = 1),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  group_by(Year, Survey) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm=T),
+            Encounter_rate = m/N) %>% 
+  
+  group_by(Year) %>%
+  summarise(m1 = sum(m),
+            N1 = sum(N),
+            E = mean(Encounter_rate),
+        Se = sd(Encounter_rate)/sqrt(length(Encounter_rate))) %>% 
+
+
+ggplot(. , aes( Year, E)) +
+  geom_point(size = 4)+
+  geom_line(size = 1) +
+  geom_errorbar(aes(ymin = (E - Se),
+                    ymax = (E + Se)),
+                width = 0.1,size = 1) +
+  #  annotate("text",x=2015.5, y=0.03,label=paste0("mean ± se"),
+  #           vjust=0,  color="red", size=8,family="Microsoft JhengHei")+
+  theme_classic() + 
+  scale_x_continuous(breaks = 2015:2023)+
+  scale_y_continuous(limits = c(0,0.03),expand = c(0, 0.002, 0, 0))+
+ #   coord_cartesian(xlim = c(2015, 2021))+
+  
+  labs(x = "Year", y = "Encounter rate (troop/point)" ) +
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+   # panel.border = element_rect(size = 1.5,fill = NA),
+    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 16,colour = "black"),
+    axis.title = element_text(size = 20,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+
+```
+
+\newpage
+
+
+
+海拔的相對密度
+```{r include=FALSE}
+Alt.d <- 
+  M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  mutate(Altitude_f = cut(Altitude,
+                        breaks = c(seq(0,4000,500)),
+                        labels = c(seq(250,3750,500)),
+                        include.lowest = T)) %>% 
+  group_by(Year, Survey, Altitude_f) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm=T),
+            Encounter_rate = m/N) 
+
+
+Alt.d.n <-
+  Alt.d %>%
+  group_by(Altitude_f) %>% 
+  summarise(mean_N = mean(N, na.rm = T)%>% round(.,1),
+            y = quantile(Encounter_rate,0.75))
+
+```
+
+
+```{r Altitude, echo=FALSE}
+
+ggplot(data = Alt.d, aes( x=Altitude_f, y = Encounter_rate)) +
+  geom_boxplot(#size = 1,
+               width = 0.4, fill= gray(.9),
+               outlier.size = 3) +
+  
+  geom_text(data = Alt.d.n,
+            aes( x = Altitude_f, y = y, label = mean_N),
+            size = 3,
+            nudge_x = 0.3, nudge_y = 0.0018)+
+
+  
+  labs(x = "Elevation (m)",
+       y = "Encounter rate (troop/point)") +
+  theme_classic() +
+  # scale_y_continuous(limits = c(0,0.08),
+  #                    expand = c(0, 0.002, 0, 0))+
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(linewidth = 1.5,fill = NA),
+    axis.line = element_line(linewidth = 1, colour = "black"),
+    axis.ticks = element_line(linewidth = 1),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+
+
+```
+
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# only 闊葉林的Altitude
+  M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  filter(TypeName.1 %in% "闊葉林") %>% 
+  
+  
+  mutate(Altitude_f = cut(Altitude,
+                        breaks = c(seq(0,4000,500)),
+                        labels = c(seq(250,3750,500)),
+                        include.lowest = T)) %>% 
+  group_by(Year, Survey, Altitude_f) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm=T),
+            Encounter_rate = m/N) %>% 
+  ggplot(data = ., aes( x=Altitude_f, y = Encounter_rate)) +
+  geom_boxplot(size = 1, width = 0.4, fill= gray(.9),
+               outlier.size = 3) +
+  
+  labs(x = "Elevation (m)", y = "Encounter rate (troop/point)") +
+  theme_classic() +
+  scale_y_continuous(limits = c(0,0.08),expand = c(0, 0.002, 0, 0))+
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+
+
+```
+
+\newpage
+
+
+Region的相對密度
+```{r include=FALSE}
+Rgn.d <- 
+  M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  mutate( Region2 = ordered(Region2,
+                            c("North","Center",  "South", "Southwest",
+                             "Hualien", "Taitung" ))) %>% 
+  group_by(Year, Survey, Region2) %>% 
+  
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm=T),
+            Encounter_rate = m/N) 
+
+
+Rgn.d.n <-
+  Rgn.d %>%
+  group_by(Region2) %>% 
+  summarise(mean_N = mean(N, na.rm = T)%>% round(.,1),
+            y = quantile(Encounter_rate,0.75))
+
+
+```
+
+
+```{r eval=FALSE, include=FALSE}
+ggplot(Rgn.d, aes( Region2, Encounter_rate))+
+  geom_boxplot(linewidth = 1, width = 0.4, fill= gray(.9),
+               outlier.size = 3)+
+  theme_bw()+
+  scale_x_discrete("Region", labels = c("North" = "N",
+                                        "Center" = "C",
+                                        "Southwest" = "SW",
+                                        "South" = "S",
+                                        "Hualien" = "H",
+                                        "Taitung" = "T"))+
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(linewidth = 1.5,fill = NA),
+    axis.line = element_line(linewidth = 1, colour = "black"),
+    axis.ticks = element_line(linewidth = 1),
+    axis.text = element_text(size = 18,colour = "black"),
+    axis.title = element_text(size = 23,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+
+```
+
+
+```{r echo=FALSE}
+ggplot(Rgn.d, aes( Region2, Encounter_rate))+
+  geom_boxplot(linewidth = 1, width = 0.4, fill= gray(.9),
+               outlier.size = 3)+
+  
+    geom_text(data = Rgn.d.n,
+            aes( x = Region2, y = y, label = mean_N),
+            size = 3,
+            nudge_x = 0.3, nudge_y = 0.002)+
+
+  
+  theme_bw()+
+  scale_x_discrete("Region", labels = c("North" = "N",
+                                        "Center" = "C",
+                                        "Southwest" = "SW",
+                                        "South" = "S",
+                                        "Hualien" = "H",
+                                        "Taitung" = "T"))+
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(linewidth = 1.5,fill = NA),
+    axis.line = element_line(linewidth = 1, colour = "black"),
+    axis.ticks = element_line(linewidth = 1),
+    axis.text = element_text(size = 18,colour = "black"),
+    axis.title = element_text(size = 23,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+
+```
+
+
+\newpage
+
+
+Julian Day的相對密度
+
+Julian Day = 60，係指第60~74天，Julian Day = 75，係指第75~89天，以此類推，僅Julian Day = 180，係指第180~182天
+
+```{r warning=FALSE, include=FALSE}
+Jd.d <- 
+  M.data %>% 
+  filter(analysis %in% "Y") %>% 
+
+  mutate(julian.D_f = cut(julian.D,
+                        breaks = c(seq(60,210,15)),
+                        labels = seq(60,195,15),
+                        include.lowest = T)) %>% 
+  
+  group_by(Year, Survey, julian.D_f) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm=T),
+            Encounter_rate = m/N) 
+
+
+```
+
+
+```{r echo=FALSE}
+ggplot(Jd.d, aes(julian.D_f, Encounter_rate))+
+  geom_boxplot(linewidth = 1, width = 0.4, fill= gray(.9),
+               outlier.size = 3) +
+  theme_bw() + 
+  scale_x_discrete("Julian day")+
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(linewidth = 1.5,fill = NA),
+    axis.line = element_line(linewidth = 1, colour = "black"),
+    axis.ticks = element_line(linewidth = 1),
+    axis.text = element_text(size = 11,colour = "black"),
+    axis.title = element_text(size = 23,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+```
+
+\newpage
+
+
+
+森林類型的相對密度
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+Type.d <- 
+  M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  mutate(TypeName.1= ordered(TypeName.1,
+                             c("闊葉林", "針葉林", "混淆林", "竹林"))) %>% 
+   group_by(Year, Survey, TypeName.1) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm=T),
+            Encounter_rate = m/N)
+
+Type.d.n <-
+  Type.d %>%
+  group_by(TypeName.1) %>% 
+  summarise(mean_N = mean(N, na.rm = T) %>% round(.,1),
+            y = quantile(Encounter_rate,0.75))
+```
+
+
+```{r echo=FALSE}
+ggplot(Type.d, aes(TypeName.1, Encounter_rate))+
+  geom_boxplot(linewidth = 1, width = 0.4, fill= gray(.9),
+               outlier.size = 3) +
+  
+    geom_text(data = Type.d.n,
+            aes( x = TypeName.1, y = y, label = mean_N),
+            size = 3,
+            nudge_x = 0.3, nudge_y = 0.0018)+
+  
+  
+  theme_bw() +
+  xlab("Forest type")+
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(linewidth = 1.5,fill = NA),
+    axis.line = element_line(linewidth = 1, colour = "black"),
+    axis.ticks = element_line(linewidth = 1),
+    axis.text = element_text(size = 16,colour = "black"),
+    axis.title = element_text(size = 23,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+```
+
+
+```{r eval=FALSE, include=FALSE}
+library(RColorBrewer)
+ggplot(Type.d, aes(TypeName.1, Encounter_rate,
+                        fill = TypeName.1))+
+  geom_boxplot(size = 1, width = 0.4,
+               outlier.size = 3, show.legend = F) +
+  scale_fill_brewer(palette = "Set3")+
+  
+  theme_bw() +
+  xlab("Forest type")+
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    aspect.ratio = 1,
+    panel.border = element_rect(size = 1.5,fill = NA),
+    axis.line = element_line(size = 1, colour = "black"),
+    axis.ticks = element_line(size = 1),
+    axis.text = element_text(size = 16,colour = "black"),
+    axis.title = element_text(size = 23,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.x.bottom = element_text(vjust = -2),
+    axis.title.y.left = element_text(vjust = 2),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid = element_blank(),
+    plot.margin = margin(30,30,20,20)
+  )
+        
+```
+
+
+
+
+
+```{r include=FALSE}
+M.data %>%
+  filter(Macaca_sur %in% 1) %>% 
+  mutate(DD = cut(Distance, breaks = seq(0,100,10),
+                                ordered_result = T,
+                                include.lowest = T)) %>% 
+  group_by(DD) %>% 
+  summarise(D2 = n()) %>% 
+  
+  ggplot(., aes(x=DD, y=D2)) +
+  geom_bar(stat="identity", colour = "black", fill=gray(0.8))+
+  geom_text(aes(label=D2), vjust=-0.3, color="black", size=3.5)+
+  theme_bw()+
+  xlab("Distance")+
+  ylab("Count")
+
+```
+
+
