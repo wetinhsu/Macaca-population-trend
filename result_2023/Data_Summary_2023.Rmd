@@ -1,45 +1,48 @@
 ---
-title: "Macaca Data Summary 2023"
+title: "BBS Macaca Data Summary 2023"
 date: "`r format(Sys.time(), '%Y-%m-%d')`"
 output:
   word_document: default
 ---
 
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
                       root.dir = "../",
                       fig.width = 6,
-                      fig.asp = 1)
+                      fig.asp = 1,
+                      warning = FALSE,
+                      message = FALSE)
 library(here)
+
 ```
 
 \newpage
 
-資料統整  
-
+**資料統整**
 
 ```{r child = here::here("script", "Analysis 2023","6-data plot.Rmd") }
 
 ```
 
 \newpage
- GLMM
+
+**GLMM**
+
+
 
 
 \newpage
- Trim  
+
+**Trim**
 
 ```{r child = here::here("script", "Analysis 2023","9-rtrim.Rmd")}
 
 ```
 
-
-
 \newpage
- Estimate  
+
+**Estimate**
 
 ```{r child = here::here("script", "Analysis 2023","8-Estimate.Rmd")}
 
 ```
-

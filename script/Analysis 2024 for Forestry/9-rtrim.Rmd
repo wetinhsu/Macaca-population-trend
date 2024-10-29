@@ -122,7 +122,7 @@ m1 <- trim(
   stepwise = F)
 ```
 
-
+Goodness of fit:
 ```{r echo=FALSE}
  gof(m1) 
 
@@ -134,14 +134,27 @@ wald
 Wald test for significance of covariates
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 wald(m1) %>% 
-  .$covar %>% 
-  print %>% 
-  flextable(.)
+  .$covar %>%  
+  as.data.frame() %>% 
+  setNames(., c('Covariate',	'Wald_test',	'df',	'p')) %>% 
+  mutate_at(c('Wald_test','p'),function(x) sprintf("%06.4f",x)) %>% 
+  flextable(.) %>% 
+  autofit() %>% 
+  align(align = "center", part = "all") %>% 
+  colformat_num(x = .,  big.mark="")
 ```
 
 Wald test for significance of changes in slope
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
-wald(m1) %>% print %>% flextable(.)
+wald(m1) %>%
+  .$dslope %>% as.data.frame() %>% 
+  setNames(., c('Changepoint',	'Wald_test',	'df',	'p')) %>% 
+  mutate_at(c('Wald_test','p'),function(x) sprintf("%05.3f",x)) %>% 
+  flextable(.) %>% 
+  autofit() %>% 
+  align(align = "center", part = "all") %>% 
+    set_table_properties(layout = "autofit") %>% 
+  colformat_num(.,  big.mark="") 
 ```
 
 
@@ -166,7 +179,13 @@ index(m1, "imputed", covars = T) %>% plot
 Overall
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 overall(m1,"imputed") %>% 
-  print(.) %>% flextable()
+  print(.) %>% 
+  flextable()%>% 
+  autofit() %>% 
+  align(align = "center", part = "all") %>%
+  set_table_properties(layout = "autofit") %>% 
+  colformat_num(.,  big.mark="")%>% 
+  colformat_double(.,  digits = 3) 
 ```
 
 overall  
@@ -252,18 +271,4 @@ ggplot(idx[idx$covariate %in% "Overall",], aes(x = time, y= imputed*100 ))+
 ```
 
 
-LCL、UCL、idx_2023指標變化值
-```{r echo=FALSE}
-
-Overall.mul <- overall(m1, "imputed")$slope$mul
-Overall.se_mul <- overall(m1, "imputed")$slope$se_mul
-
-round( 100*(Overall.mul-1.96*Overall.se_mul) ,1) #`LCL`
-round( 100*(Overall.mul+1.96*Overall.se_mul) ,1) #`UCL`
-
-idx_2023 <- idx[idx$covariate %in% "Overall" & idx$time %in% "2023",]$imputed
-
-round( 100*(idx_2023 -1) ,0)  # idx_2022指標變化值
-
-```
 

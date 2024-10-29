@@ -1,0 +1,153 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(here)
+library(flextable)
+library(ftExtra)
+library(showtext)
+
+showtext_auto()
+font_add("Microsoft JhengHei", "msjh.ttc")
+here::here() 
+
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+
+M.data <- read_excel(here("./data/clean/for analysis_1523.xlsx"),
+                     sheet=1) %>% 
+  
+  mutate_at(c("Year", "Survey", "Point", "Macaca_sur",
+              "Month", "Day", "Distance"), as.numeric) 
+
+
+
+E_year <- 
+  M.data %>% 
+  filter(analysis %in% "Y") %>% 
+  group_by(Year, Survey) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm=T),
+            Encounter_rate = m/N)
+
+mean_N <- 
+  E_year %>% 
+  group_by(Year) %>% 
+  summarise(mean_N = mean(N),
+            position = quantile(Encounter_rate, 0.75))
+
+
+#------------
+
+M.data_F <- 
+  here("./data/clean/Forestry/for analysis/") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2020:2024)) %>% #如果只要2020~2022年，就寫2020:2022
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows() %>% 
+  
+  mutate(Office = str_replace_all(Office, c("羅東" = "宜蘭",
+                                            "東勢" = "臺中"))) %>%
+  
+  
+  # mutate(Office = ordered(Office, 
+  #                         c("羅東", "新竹", "東勢", "南投",
+  #                           "嘉義", "屏東", "花蓮", "臺東"))) %>% 
+  # mutate(TypeName.1 = ordered(TypeName.1,
+  #                             c("闊葉林", "針葉林", "竹林",
+  #                               "混淆林", "非森林"))) %>% 
+  mutate_at(c("Year", "Survey","Month",
+              "Day", "Macaca_sur", "Distance", "Altitude", "julian.D"), as.numeric) 
+
+
+E_year_F <- 
+  M.data_F %>% 
+  filter(analysis %in% "Y") %>% 
+  group_by(Year, Survey) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur, na.rm=T),
+            Encounter_rate = m/N)
+
+
+
+
+all_data <- 
+E_year_F %>% 
+  mutate(data_source = "Forest") %>% 
+  bind_rows(
+    E_year %>% 
+      mutate(data_source = "BBS") 
+  ) %>% 
+  mutate(Year = as.character(Year))
+
+
+
+Year.d.n <-
+  all_data %>% 
+  
+  group_by(Year, data_source) %>% 
+  summarise(mean_N = mean(N) %>% round(1), 
+            E75 = quantile(Encounter_rate,0.75)) %>% 
+  ungroup()%>% 
+  mutate(Year = as.character(Year))
+
+
+
+```
+
+
+```{r echo=FALSE}
+
+ggplot(all_data, aes(x = Year, y = Encounter_rate)) +
+  geom_boxplot(width = 0.4, linewidth = 0.03,alpha = 0.3,
+               aes(fill= data_source, col= data_source))+
+  
+  geom_text(data = Year.d.n,
+            aes(x = Year,
+                y = E75*1.03,
+                label = mean_N),
+            size = 4,
+            hjust = -0.3,
+            vjust = -0,
+            position = position_dodge(0.9), show.legend = F)+
+  scale_y_continuous(limits = c(0,0.08))+
+  labs(x = "年份", y = "相對密度 (群/樣點)")+
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    panel.border = element_rect(linewidth = 1.5,fill = NA),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.y = element_text(angle = 270,
+                                vjust = -1, hjust = 0.5),
+    legend.position = "top"
+  )
+
+```
+
+```{r}
+
+  all_data %>%
+  group_by(Year, data_source) %>% 
+  summarise(`mean N` = mean(N) %>% round(1), 
+            `mean E` = mean(Encounter_rate) %>% round(3)) %>% 
+  ungroup()%>% 
+  pivot_longer(cols = c('mean N', 'mean E')) %>% 
+  pivot_wider(names_from = c('data_source', 'name'),
+    values_from = c(value)) %>% 
+  
+  flextable(., ) %>%
+  span_header(.,sep = "[_]")%>% 
+    align(.,align = "center", part = "all")%>% 
+  colformat_num(.,  big.mark="")  
+
+
+```
+
