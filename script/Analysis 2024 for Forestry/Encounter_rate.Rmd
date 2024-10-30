@@ -132,7 +132,7 @@ ggplot(all_data, aes(x = Year, y = Encounter_rate)) +
 
 ```
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
   all_data %>%
   group_by(Year, data_source) %>% 
