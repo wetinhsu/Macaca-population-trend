@@ -1,6 +1,15 @@
+---
+output:
+  word_document:
+---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+
+knitr::opts_chunk$set(echo = TRUE,
+                      root.dir = "../",
+                      fig.width = 6,
+                      fig.asp = 1)
 
 library(tidyverse)
 library(readxl)
@@ -16,6 +25,9 @@ here::here()
 
 ```
 
+# BBS(2015\~2023) 及 Forest(2020\~2024) Encounter_rate 
+
+</br> </br>
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 
@@ -100,38 +112,6 @@ Year.d.n <-
 
 ```
 
-
-```{r echo=FALSE}
-
-ggplot(all_data, aes(x = Year, y = Encounter_rate)) +
-  geom_boxplot(width = 0.4, linewidth = 0.03,alpha = 0.3,
-               aes(fill= data_source, col= data_source))+
-  
-  geom_text(data = Year.d.n,
-            aes(x = Year,
-                y = E75*1.03,
-                label = mean_N),
-            size = 4,
-            hjust = -0.3,
-            vjust = -0,
-            position = position_dodge(0.9), show.legend = F)+
-  scale_y_continuous(limits = c(0,0.08))+
-  labs(x = "年份", y = "相對密度 (群/樣點)")+
-  theme(
-    text = element_text(family="Microsoft JhengHei"),
-    panel.border = element_rect(linewidth = 1.5,fill = NA),
-    panel.grid = element_blank(),
-    panel.background = element_blank(),
-    axis.text = element_text(size = 14,colour = "black"),
-    axis.title = element_text(size = 18,colour = "black",
-                              vjust = -2, hjust = 0.5),
-    axis.title.y = element_text(angle = 270,
-                                vjust = -1, hjust = 0.5),
-    legend.position = "top"
-  )
-
-```
-
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
   all_data %>%
@@ -151,3 +131,41 @@ ggplot(all_data, aes(x = Year, y = Encounter_rate)) +
 
 ```
 
+\newpage
+
+
+
+
+```{r echo=FALSE}
+
+ggplot(all_data, aes(x = Year, y = Encounter_rate)) +
+  geom_boxplot(width = 0.4, linewidth = 0.03,alpha = 0.3,
+               aes(fill= data_source, col= data_source))+
+  
+  geom_text(data = Year.d.n,
+            aes(x = Year,
+                y = E75*1.03,
+                label = mean_N),
+            size = 4,
+            hjust = 0.5,
+            vjust = -0.5,
+            position = position_dodge(0.9), show.legend = F)+
+  scale_y_continuous(limits = c(0,0.08))+
+  scale_x_discrete(
+    breaks = c(seq(2015,2025,3)),
+                     labels = c(seq(2015, 2025,3)))+
+  labs(x = "年份", y = "相對密度 (群/樣點)")+
+  theme(
+    text = element_text(family="Microsoft JhengHei"),
+    panel.border = element_rect(linewidth = 1.5,fill = NA),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text = element_text(size = 18,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black",
+                              vjust = -2, hjust = 0.5),
+    axis.title.y = element_text(angle = 270,
+                                vjust = -1, hjust = 0.5),
+    legend.position = "top"
+  )
+
+```

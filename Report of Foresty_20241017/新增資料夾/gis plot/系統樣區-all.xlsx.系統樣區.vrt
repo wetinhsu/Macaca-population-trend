@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="系統樣區-all-系統樣區">
+        <SrcDataSource relativeToVRT="1">系統樣區-all.xlsx</SrcDataSource>
+        <!--Header=False-->
+        <SrcLayer>系統樣區</SrcLayer>
+        <Field name="SiteID" src="SiteID" type="Integer"/>
+        <Field name="優先調查" src="優先調查" type="String"/>
+        <Field name="縣市" src="縣市" type="String"/>
+        <Field name="鄉鎮" src="鄉鎮" type="String"/>
+        <Field name="樣區編號" src="樣區編號" type="String"/>
+        <Field name="樣區名稱" src="樣區名稱" type="String"/>
+        <Field name="海拔段" src="海拔段" type="String"/>
+        <Field name="調查月份" src="調查月份" type="String"/>
+        <Field name="中心點_X" src="中心點_X" type="String"/>
+        <Field name="中心點_Y" src="中心點_Y" type="String"/>
+        <Field name="舊編號" src="舊編號" type="String"/>
+        <Field name="獼猴樣區編號" src="獼猴樣區編號" type="String"/>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>EPSG:4326</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="X_wgs84" y="Y_wgs84"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="分層隨機取樣的樣區清單 _20221031-樣區表">
+        <SrcDataSource relativeToVRT="1">分層隨機取樣的樣區清單 _20221031.xlsx</SrcDataSource>
+        <!--Header=False-->
+        <SrcLayer>樣區表</SrcLayer>
+        <Field name="plotnr" src="plotnr" type="Integer"/>
+        <Field name="HJSU41" src="HJSU41" type="Integer"/>
+        <Field name="HJHsiu3" src="HJHsiu3" type="String"/>
+        <Field name="ELEV" src="ELEV" type="Integer"/>
+        <Field name="BBSRegion" src="BBSRegion" type="Integer"/>
+        <Field name="樣區類型" src="樣區類型" type="String"/>
+        <Field name="樣區編號" src="樣區編號" type="String"/>
+        <Field name="縣市" src="縣市" type="String"/>
+        <Field name="鄉鎮" src="鄉鎮" type="String"/>
+        <Field name="地點 (樣區名稱)" src="地點 (樣區名稱)" type="String"/>
+        <Field name="樣區所屬海拔段" src="樣區所屬海拔段" type="String"/>
+        <Field name="調查月份" src="調查月份" type="String"/>
+        <Field name="X67" src="X67" type="Integer"/>
+        <Field name="Y67" src="Y67" type="Integer"/>
+        <Field name="X97" src="X97" type="Integer"/>
+        <Field name="Y97" src="Y97" type="Integer"/>
+        <Field name="X_經度" src="X_經度" type="String"/>
+        <Field name="Y_緯度" src="Y_緯度" type="String"/>
+        <Field name="調查NOTE" src="調查NOTE" type="String"/>
+        <Field name="old樣區編號" src="old樣區編號" type="String"/>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>EPSG:4326</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="X_wgs84" y="Y_wgs84"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>

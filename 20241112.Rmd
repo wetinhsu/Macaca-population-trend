@@ -1,0 +1,322 @@
+---
+title: "獼猴資料"
+output:
+  word_document: default
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(sf)
+library(here)
+
+library(data.table)
+
+```
+
+# **BBS** 
+```{r include=FALSE}
+
+M.data <- read_excel(here("./data/clean/for analysis_1523.xlsx"),
+                     sheet=1) %>% 
+  filter(analysis %in% "Y") %>%
+  mutate_at(c("Year", "Survey", "Point", "Macaca_sur",
+              "Month", "Day", "Distance"), as.numeric)
+```
+
+相對密度(群/樣點)圖  
+```{r include=FALSE}
+
+E_year <-
+M.data %>% 
+  setDT %>% 
+  .[, .(N = length(Macaca_sur),
+        m = sum(Macaca_sur, na.rm=T)
+        ),
+   by =  c('Year', 'Survey')] %>% 
+  .[,Encounter_rate := m/N] %>% 
+  
+  .[, .(log_E = log(mean(Encounter_rate ))),
+  by =  c('Year')] 
+
+```
+
+
+```{r echo=FALSE}
+
+ggplot(E_year, aes(x = Year, y = log_E))+
+  geom_point()+
+  geom_smooth(method = lm,formula = y ~ x, se = F)+
+  theme_classic()
+
+```
+  
+
+\newpage  
+
+**估計猴群數** 
+
+```{r include=FALSE}
+df <- 
+  M.data %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[, Year := as.numeric(Year)] %>% 
+  setDT %>% 
+  .[!(TypeName.1 %in% "非森林"), ]
+
+#bootstrap-------------------------
+bb<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]
+
+#A僅使用25m內的猴群
+#AB使用100m內的猴群
+
+```
+
+```{r include=FALSE}
+
+#重複抽樣10000次----
+bootstrap_AB <- 
+bb %>% 
+  split(., .$Year) %>% 
+  lapply(., function(x){
+    replicate(10000, mean(sample(x$AB, replace = TRUE), na.rm = T)) 
+  })%>% 
+  lapply(., function(x){
+    data.frame(
+    'q_1' = quantile(x, probs = 0.025),
+     'mm' = mean(x),
+    'q_3' = quantile(x, probs = 0.975)
+    )
+  }) %>% 
+  bind_rows(.id = 'Year') %>% 
+  mutate('Year'  = as.integer(Year))
+
+
+  row.names(bootstrap_AB) <- NULL
+      
+
+
+```
+
+
+海拔50m以上的森林總面積=21028.14 (km^2^)  
+方法：bootstrap  
+重複抽樣：10,000次  
+單位面積的半徑: 100m  
+
+
+```{r include=FALSE}
+per_Area <- (0.1*0.1*pi)   #100m半徑的單位原面積
+
+troop_M <- 
+ bootstrap_AB %>%
+   setDT %>% 
+   .[ , 'M_troops' := (21028.14/per_Area)*mm] %>% 
+  .[ , 'q1_troops' := (21028.14/per_Area)*q_1] %>% 
+  .[ , 'q3_troops' := (21028.14/per_Area)*q_3] %>% 
+  .[, 'log_troops':= log(M_troops)]%>% 
+  .[ , 'COUNT' := M_troops*25] 
+
+
+```
+
+
+```{r  echo=FALSE}
+
+ggplot(troop_M, aes(x = Year, y = M_troops))+
+  geom_point()+
+  geom_errorbar(aes(ymin = q1_troops,
+                    ymax = q3_troops),width=0.1)+
+  labs(y = "猴群數(95%CI)")+
+
+  theme_classic()
+
+```
+
+```{r echo=FALSE}
+
+ggplot(troop_M, aes(x = Year, y = M_troops*25))+
+  geom_point()+
+  geom_errorbar(aes(ymin = q1_troops*25,
+                    ymax = q3_troops*25),width=0.1)+
+  labs(y = "隻數(95%CI)")+
+  scale_y_continuous(labels = scales::comma)+
+
+  theme_classic()
+
+```
+   
+
+
+```{r echo=FALSE}
+
+ggplot(troop_M, aes(x = Year, y = log_troops))+
+  geom_point()+
+  geom_smooth(method = lm,formula = y ~ x, se = F)+
+  theme_classic()
+
+
+```
+
+
+
+# **林業署**  
+
+```{r include=FALSE}
+
+M.data_F <- 
+  here("./data/clean/Forestry/for analysis/") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2020:2024)) %>% #如果只要2020~2022年，就寫2020:2022
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows() %>% 
+
+  mutate_at(c("Year", "Survey","Month",
+              "Day", "Macaca_sur", "Distance", "Altitude", "julian.D"), as.numeric) %>% 
+  filter(analysis %in% "Y") %>% 
+  filter(Year > 2020) %>% 
+  mutate_at(c("Year"), as.integer)
+```
+
+相對密度(群/樣點)圖  
+```{r include=FALSE}
+
+E_year_F <-
+M.data_F %>% 
+  setDT %>% 
+  .[, .(N = length(Macaca_sur),
+        m = sum(Macaca_sur, na.rm=T)
+        ),
+   by =  c('Year', 'Survey')] %>% 
+  .[,Encounter_rate := m/N] %>% 
+  
+  .[, .(log_E = log(mean(Encounter_rate ))),
+  by =  c('Year')] 
+
+```
+
+
+```{r echo=FALSE}
+
+ggplot(E_year_F, aes(x = Year, y = log_E))+
+  geom_point()+
+  geom_smooth(method = lm,formula = y ~ x, se = F)+
+  scale_x_continuous(breaks = 2015:2024)+
+  theme_classic()
+
+```
+
+
+
+\newpage  
+
+**估計猴群數** 
+
+```{r include=FALSE}
+df_F <- 
+  M.data_F %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[, Year := as.numeric(Year)] %>% 
+  setDT %>% 
+  .[!(TypeName.1 %in% "非森林"), ]
+
+#bootstrap-------------------------
+bb_F<- df_F %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]
+
+#A僅使用25m內的猴群
+#AB使用100m內的猴群
+
+```
+
+```{r include=FALSE}
+
+#重複抽樣10000次----
+bootstrap_AB_F <- 
+bb_F %>% 
+  split(., .$Year) %>% 
+  lapply(., function(x){
+    replicate(10000, mean(sample(x$AB, replace = TRUE), na.rm = T)) 
+  })%>% 
+  lapply(., function(x){
+    data.frame(
+    'q_1' = quantile(x, probs = 0.025),
+     'mm' = mean(x),
+    'q_3' = quantile(x, probs = 0.975)
+    )
+  }) %>% 
+  bind_rows(.id = 'Year') %>% 
+  mutate('Year'  = as.integer(Year))
+
+
+  row.names(bootstrap_AB_F) <- NULL
+      
+
+
+```
+
+海拔50m以上的森林總面積=?????? (km^2^)  13812.00 qgis  
+方法：bootstrap  
+重複抽樣：10,000次  
+單位面積的半徑: 100m  
+
+
+```{r include=FALSE}
+per_Area <- (0.1*0.1*pi)   #100m半徑的單位原面積
+
+troop_M_F <- 
+ bootstrap_AB_F %>%
+   setDT %>% 
+   .[ , 'M_troops' := (13812.00/per_Area)*mm] %>% 
+  .[ , 'q1_troops' := (13812.00/per_Area)*q_1] %>% 
+  .[ , 'q3_troops' := (13812.00/per_Area)*q_3] %>% 
+  .[, 'log_troops':= log(M_troops)]%>% 
+  .[ , 'COUNT' := M_troops*25] 
+
+
+```
+
+
+```{r troops, echo=FALSE}
+
+ggplot(troop_M_F, aes(x = Year, y = M_troops))+
+  geom_point()+
+  geom_errorbar(aes(ymin = q1_troops,
+                    ymax = q3_troops),width=0.1)+
+  geom_point(data = troop_M,
+             aes(x = Year-0.1, y = M_troops),
+             col = "blue")+
+  geom_errorbar(data = troop_M,
+                aes(x =Year-0.1 ,ymin = q1_troops,
+                    ymax = q3_troops),width=0.1,
+             col = "blue")+
+  
+  scale_x_continuous(breaks = 2015:2024)+
+  labs(y = "猴群數(95%CI)")+
+  
+
+  theme_classic()
+
+```
+
+
+
+
+```{r echo=FALSE}
+
+ggplot(troop_M_F, aes(x = Year, y = M_troops*25))+
+  geom_point()+
+  geom_errorbar(aes(ymin = q1_troops*25,
+                    ymax = q3_troops*25),width=0.1)+
+  labs(y = "隻數(95%CI)")+
+  scale_y_continuous(labels = scales::comma)+
+
+  theme_classic()
+
+```

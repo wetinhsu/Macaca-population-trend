@@ -1,3 +1,8 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
 ```{r include=FALSE}
 library(tidyverse)
 library(rtrim)
@@ -189,7 +194,7 @@ overall(m1,"imputed") %>%
 ```
 
 overall  
-```{r eval=FALSE, include=FALSE}
+```{r echo=FALSE}
 plot(overall(m1, "imputed"), axes = F)
 axis(1, at = 2015:2024, cex.axis=1.5)
 axis(2, cex.axis=1.5)

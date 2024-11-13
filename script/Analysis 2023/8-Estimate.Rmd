@@ -1,3 +1,8 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
 ```{r include=FALSE}
 library(data.table)
 library(magrittr)
@@ -155,6 +160,55 @@ data.frame(
 
 ```
 
+
+
+資料範圍:2021-2023
+
+
+```{r echo=FALSE}
+bb_2021 <- 
+  df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]%>% 
+  .[ `Year` > 2020,] %>% 
+  .$AB 
+  
+bootstrap_2021_AB <-   
+replicate(10000, mean(sample(bb_2021 , replace = TRUE)))
+
+per_Arer <- (0.1*0.1*pi)   #100m半徑的單位原面積
+
+#21028.14/(0.1*0.1*pi)
+
+summary_bootstrap_2021 <- 
+list(
+'q_1' = quantile(bootstrap_2021_AB, probs = 0.025) ,
+'q_2' = quantile(bootstrap_2021_AB, probs = 0.5) ,
+'q_3' = quantile(bootstrap_2021_AB, probs = 0.975) ,
+'mm' = mean( bootstrap_2021_AB)   #bootsrap出來的猴群數的平均值
+)
+
+
+
+data.frame(
+  '項目' = c('相對密度(群/樣點)','相對密度(群/樣點)(95% CI)','絕對密度(群/ km^2)',
+           '絕對密度(95% CI)','群','猴群數(95% CI)'),
+  '值' = c(
+   sprintf("%06.4f",summary_bootstrap_2021$mm),
+   paste0(sprintf("%06.4f",summary_bootstrap_2021$q_1), '~' ,sprintf("%06.4f",summary_bootstrap_2021$q_3)),
+   sprintf("%06.4f",summary_bootstrap_2021$mm/per_Arer),
+   paste0(sprintf("%06.4f",summary_bootstrap_2021$q_1/per_Arer), '~' ,sprintf("%06.4f",summary_bootstrap_2021$q_3/per_Arer)),
+   sprintf("%.0f", (21028.14/per_Arer)*summary_bootstrap_2021$mm),
+   paste0(sprintf("%.0f",(21028.14/per_Arer)*q_1), '~' , sprintf("%.0f",(21028.14/per_Arer)*summary_bootstrap_2021$q_3))
+           )
+  ) %>% 
+  flextable() %>% 
+  autofit() %>% 
+#  align(align = "center", part = "all") %>%
+  set_table_properties(layout = "autofit") 
+
+
+```
 
 
 

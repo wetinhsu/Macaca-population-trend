@@ -1,0 +1,208 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+```{r include=FALSE}
+library(data.table)
+library(magrittr)
+library(multcomp)
+library(ggplot2)
+library(rtrim)
+library(dplyr)
+library(openxlsx)
+library(rtrim)
+library(readxl)
+library(here)
+library(flextable)
+library(RColorBrewer) 
+library(magrittr)
+
+```
+
+```{r include=FALSE}
+#Original data---- 
+
+M.data <- read_excel(here("./data/clean/for analysis_1523.xlsx"),
+                     sheet=1) %>% setDT %>% 
+
+  .[, Year := as.numeric(Year)] %>% 
+  .[, Survey := as.numeric(Survey)] %>% 
+  .[, Point := as.numeric(Point)] %>% 
+  .[, Macaca_sur := as.numeric(Macaca_sur)] %>% 
+  .[, Month := as.numeric(Month)] %>% 
+  .[, Day := as.numeric(Day)] %>% 
+  .[, Distance := as.numeric(Distance)] %>% 
+  .[, julian.D := as.numeric(julian.D)] %>% 
+  .[, TypeName.1 := as.factor(TypeName.1)] %>% 
+  .[, Site_N := as.factor(Site_N)] %>% 
+  .[, Region2 := as.factor(Region2)] 
+
+#----------------------------
+
+county.area <- 
+  read.csv(here("./data/clean/gis/county area-3.csv"), header = T) %>%  #因為編碼問題所以從county area-2換成county area-3
+  setDT %>% 
+  setnames(.,c("County", "Area", "perimeter")) %>% 
+  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
+                     "新北市","台北縣","臺北縣",
+                     "桃園縣","桃園市","新竹市",
+                     "新竹縣","苗栗縣"), Region := "North"] %>%
+  .[County %in% list("台中市","臺中市",
+                     "台中縣","臺中縣",
+                     "彰化縣","南投縣","南投市",
+                     "雲林縣","嘉義縣","嘉義市"), Region := "Center"] %>%
+  .[County %in% list("台南市","臺南市",
+                     "台南縣","臺南縣",
+                     "高雄縣","高雄市",
+                     "屏東縣"), Region := "South"]%>%
+  .[County %in% list("花蓮縣",
+                     "台東縣","臺東縣"), Region := "East"] %>% 
+  
+  
+  
+  .[County %in% list("宜蘭縣","基隆市","台北市","臺北市",
+                     "新北市","台北縣","臺北縣",
+                     "桃園縣","桃園市","新竹市",
+                     "新竹縣","苗栗縣"), Region2 := "North"] %>% 
+  .[County %in% list("台中市","臺中市",
+                     "台中縣","臺中縣",
+                     "彰化縣","南投縣","南投市"), Region2 := "Center"] %>% 
+  .[County %in% list("雲林縣","嘉義縣","嘉義市",
+                     "台南市","臺南市",
+                     "台南縣","臺南縣"), Region2 := "Southwest"] %>%
+  .[County %in% list("高雄縣","高雄市",
+                     "屏東縣"), Region2 := "South"]%>%
+  .[County %in% list("花蓮縣"), Region2 := "Hualien"] %>%
+  .[County %in% list("台東縣","臺東縣"), Region2 := "Taitung"] %>% 
+  
+  .[!is.na(Region2),] %>% 
+  .[, .(area=sum(Area)), by = list(Region2)] %>% 
+  .[, prob_Area:= (area/sum(area))] %>% 
+  .[, Region2 := as.character(Region2)]
+
+weight <- 
+  M.data %>% 
+  setDT  %>% 
+  .[, Region2 := as.character(Region2)]%>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  #.[Year < 2019,] %>%
+  .[!(TypeName.1 %in% "Not forest"), ] %>% 
+  .[, SP := paste0(Site_N,"-",Point)]  %>%
+  .[, list(Year, SP, Survey, Region2)] %>%
+  .[, .(point_n = .N), by = list(Year, SP, Region2)] %>% 
+  .[, SP_n := .N, by = list(Year,Region2)] %>%
+  left_join(county.area)  %>% setDT %>%
+  .[, weight := (prob_Area / SP_n /point_n)]  
+
+
+
+df <- 
+  M.data %>% 
+  setDT %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[Year >2020 & Year < 2024,] %>%
+  .[!(TypeName.1 %in% "Not forest"), ] %>% 
+  .[, SP := paste0(Site_N,"-",Point)] %>% 
+  .[, .(number = sum(Macaca_sur)), by = list(Year, SP, Region2, Altitude)] %>% 
+  .[, N := sum(number), by = list(SP, Region2)] %>% 
+  left_join(weight[, c(1:2, 8)])  %>% setDT %>%
+  .[!(N %in% 0),] %>% 
+  .[, N := NULL] %>% 
+  .[, Altitude_f := cut(Altitude,
+                        breaks = c(0,1000,2500,4000),
+                        labels = c("A","B","C"),
+                        include.lowest = T)] %>%
+  .[, Altitude_f := factor(Altitude_f)] %>%
+  .[, Region2 := factor(Region2)] %>% 
+  .[,Altitude := NULL] %>% 
+  setDF 
+```
+
+```{r include=FALSE}
+m1 <- trim(
+  number ~ SP + Year + Region2 ,
+  weights = "weight",df,
+  model =  2,
+  changepoints = "all",
+  overdisp = F,
+  serialcor = F, 
+  autodelete = T, 
+  stepwise = F)
+```
+
+Goodness of fit:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+  gof(m1) %>% 
+  print(.) 
+```
+
+Wald test for significance of covariates
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+wald(m1) %>%
+  .$covar %>%  
+  as.data.frame() %>% 
+  setNames(., c('Covariate',	'Wald_test',	'df',	'p')) %>% 
+  mutate_at(c('Wald_test','p'),function(x) sprintf("%06.4f",x)) %>% 
+  flextable(.) %>% 
+  autofit() %>% 
+  align(align = "center", part = "all") %>% 
+  colformat_num(x = .,  big.mark="")
+```
+  
+    
+
+Wald test for significance of changes in slope
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+wald(m1) %>%
+  .$dslope %>% as.data.frame() %>% 
+  setNames(., c('Changepoint',	'Wald_test',	'df',	'p')) %>% 
+  mutate_at(c('Wald_test','p'),function(x) sprintf("%05.3f",x)) %>% 
+  flextable(.) %>% 
+  autofit() %>% 
+  align(align = "center", part = "all") %>% 
+    set_table_properties(layout = "autofit") %>% 
+  colformat_num(.,  big.mark="") 
+```
+
+Index
+
+```{r echo=FALSE}
+index(m1, "imputed", covars = F) %>% plot(., pct =T)
+```
+
+```{r include=FALSE}
+#covars = T
+
+index(m1, "imputed", covars = T) %>% plot
+```
+
+Overall
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+overall(m1,"imputed") %>%   
+  print %>% 
+  flextable(.) %>% 
+  autofit() %>% 
+  align(align = "center", part = "all") %>%
+  set_table_properties(layout = "autofit") %>% 
+  colformat_num(.,  big.mark="")%>% 
+  colformat_double(.,  digits = 3) 
+  
+```
+
+```{r echo=FALSE}
+plot(overall(m1, "imputed"), axes = F)
+axis(1, at = 2015:2023, cex.axis=1.5)
+axis(2, cex.axis=1.5)
+box()
+title( "imputed" )
+```
+
+```{r include=FALSE}
+heatmap(m1, "imputed", cex.axis=1.5) 
+title( "imputed" )
+```

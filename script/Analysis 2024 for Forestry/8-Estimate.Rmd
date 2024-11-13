@@ -1,0 +1,292 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+```{r include=FALSE}
+library(data.table)
+library(magrittr)
+library(ggplot2)
+library(readxl)
+library(here)
+library(flextable)
+library(tidyverse)
+
+```
+
+```{r include=FALSE}
+#------------------------------------------------
+
+#Original data---- 
+
+M.data <- 
+    list.files(here("./data/clean/Forestry/for analysis/"),
+             full.names = T,pattern = "xlsx$|xls$") %>% 
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows() %>% 
+  # read_excel(here("data/clean/for analysis_1523.xlsx"),
+  #                    sheet=1) %>%
+    setDT %>% 
+  .[analysis %in% "Y",] %>% 
+  .[TypeName %like% "混", TypeName.n := "mixed"] %>% 
+  .[TypeName %like% "竹林", TypeName.n := "Bamboo"] %>% 
+  .[TypeName %like% "闊葉", TypeName.n := "broad-leaved"] %>% 
+  .[TypeName %like% "針葉", TypeName.n := "coniferous"] %>% 
+  .[, TypeName.1 := ifelse(Distance>20, "Not forest", TypeName.n)]
+
+M.data$Year %<>% as.numeric
+M.data$Survey %<>% as.numeric
+M.data$Point %<>% as.numeric
+M.data$Macaca_sur %<>% as.numeric
+M.data$Month %<>% as.numeric
+M.data$Day %<>% as.numeric
+M.data$Distance %<>% as.numeric
+M.data$julian.D %<>% as.numeric
+M.data$Region %<>% as.factor
+M.data$TypeName.1 %<>% as.factor
+M.data$Site_N %<>% as.factor
+```
+
+```{r include=FALSE}
+M.data <- M.data %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[, Year := as.numeric(Year)] %>% 
+  .[, Year.re := Year - min(Year) + 1]
+
+#==============================================
+df <- 
+  M.data %>% 
+  #.[Year < 2019,] %>%
+  .[!(TypeName.1 %in% "Not forest"), ]
+```
+
+```{r include=FALSE}
+#bootstrap-------------------------
+bb<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]
+
+#A僅使用25m內的猴群
+#AB使用100m內的猴群
+
+```
+
+```{r include=FALSE}
+bootstrap_AB <- 
+replicate(10000, mean(sample(bb$AB, replace = TRUE)))
+
+#重複抽樣10000次
+```
+
+```{r include=FALSE}
+q_1 <- quantile(bootstrap_AB,probs = c(0.025))
+q_3 <- quantile(bootstrap_AB,probs = c(0.975))
+mm <- mean( bootstrap_AB)  #bootsrap出來的猴群數的平均值
+per_Arer <- (0.1*0.1*pi)   #100m半徑的單位原面積
+
+21028.14/(0.1*0.1*pi)
+```
+
+海拔50m以上的森林總面積=21028.14 (km^2^)\
+方法：bootstrap\
+重複抽樣：10,000次\
+單位面積的半徑: 100m\
+
+---
+
+資料範圍：2020-2024
+```{r echo=FALSE}
+data.frame(
+  '項目' = c('相對密度(群/樣點)','相對密度(群/樣點)(95% CI)',
+           '絕對密度(群/ km^2)',
+           '絕對密度(95% CI)',
+           '群','猴群數(95% CI)'),
+  '值' = c(
+   sprintf("%06.4f",mm),
+   paste0(sprintf("%06.4f",q_1), '~' ,sprintf("%06.4f",q_3)),
+   sprintf("%06.4f",mm/per_Arer),
+   paste0(sprintf("%06.4f",q_1/per_Arer), '~' ,sprintf("%06.4f",q_3/per_Arer)),
+   sprintf("%.0f", (21028.14/per_Arer)*mm),
+   paste0(sprintf("%.0f",(21028.14/per_Arer)*q_1), '~' , sprintf("%.0f",(21028.14/per_Arer)*q_3))
+           )
+  ) %>% 
+  flextable() %>% 
+  autofit() %>% 
+#  align(align = "center", part = "all") %>%
+  set_table_properties(layout = "autofit") 
+   
+```
+
+
+
+資料範圍:2020-2023
+
+
+```{r echo=FALSE}
+bb_2023 <- 
+  df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]%>% 
+  .[ `Year` > 2019 &`Year` < 2024,] %>% 
+  .$AB 
+  
+bootstrap_2023_AB <-   
+replicate(10000, mean(sample(bb_2023 , replace = TRUE)))
+
+per_Arer <- (0.1*0.1*pi)   #100m半徑的單位原面積
+
+#21028.14/(0.1*0.1*pi)
+
+summary_bootstrap_2023 <- 
+list(
+'q_1' = quantile(bootstrap_2023_AB, probs = 0.025) ,
+'q_2' = quantile(bootstrap_2023_AB, probs = 0.5) ,
+'q_3' = quantile(bootstrap_2023_AB, probs = 0.975) ,
+'mm' = mean( bootstrap_2023_AB)   #bootsrap出來的猴群數的平均值
+)
+
+
+
+data.frame(
+  '項目' = c('相對密度(群/樣點)','相對密度(群/樣點)(95% CI)','絕對密度(群/ km^2)',
+           '絕對密度(95% CI)','群','猴群數(95% CI)'),
+  '值' = c(
+   sprintf("%06.4f",summary_bootstrap_2023$mm),
+   paste0(sprintf("%06.4f",summary_bootstrap_2023$q_1), '~' ,sprintf("%06.4f",summary_bootstrap_2023$q_3)),
+   sprintf("%06.4f",summary_bootstrap_2023$mm/per_Arer),
+   paste0(sprintf("%06.4f",summary_bootstrap_2023$q_1/per_Arer), '~' ,sprintf("%06.4f",summary_bootstrap_2023$q_3/per_Arer)),
+   sprintf("%.0f", (21028.14/per_Arer)*summary_bootstrap_2023$mm),
+   paste0(sprintf("%.0f",(21028.14/per_Arer)*q_1), '~' , sprintf("%.0f",(21028.14/per_Arer)*summary_bootstrap_2023$q_3))
+           )
+  ) %>% 
+  flextable() %>% 
+  autofit() %>% 
+#  align(align = "center", part = "all") %>%
+  set_table_properties(layout = "autofit") 
+
+
+```
+
+
+
+資料範圍:2021-2023
+
+
+```{r echo=FALSE}
+bb_2123 <- 
+  df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]%>% 
+  .[ `Year` > 2020 & `Year` < 2024,] %>% 
+  .$AB 
+  
+bootstrap_2123_AB <-   
+replicate(10000, mean(sample(bb_2123 , replace = TRUE)))
+
+per_Arer <- (0.1*0.1*pi)   #100m半徑的單位原面積
+
+#21028.14/(0.1*0.1*pi)
+
+summary_bootstrap_2123 <- 
+list(
+'q_1' = quantile(bootstrap_2123_AB, probs = 0.025) ,
+'q_2' = quantile(bootstrap_2123_AB, probs = 0.5) ,
+'q_3' = quantile(bootstrap_2123_AB, probs = 0.975) ,
+'mm' = mean( bootstrap_2123_AB)   #bootsrap出來的猴群數的平均值
+)
+
+
+
+data.frame(
+  '項目' = c('相對密度(群/樣點)','相對密度(群/樣點)(95% CI)','絕對密度(群/ km^2)',
+           '絕對密度(95% CI)','群','猴群數(95% CI)'),
+  '值' = c(
+   sprintf("%06.4f",summary_bootstrap_2123$mm),
+   paste0(sprintf("%06.4f",summary_bootstrap_2123$q_1), '~' ,sprintf("%06.4f",summary_bootstrap_2123$q_3)),
+   sprintf("%06.4f",summary_bootstrap_2123$mm/per_Arer),
+   paste0(sprintf("%06.4f",summary_bootstrap_2123$q_1/per_Arer), '~' ,sprintf("%06.4f",summary_bootstrap_2123$q_3/per_Arer)),
+   sprintf("%.0f", (21028.14/per_Arer)*summary_bootstrap_2123$mm),
+   paste0(sprintf("%.0f",(21028.14/per_Arer)*q_1), '~' , sprintf("%.0f",(21028.14/per_Arer)*summary_bootstrap_2123$q_3))
+           )
+  ) %>% 
+  flextable() %>% 
+  autofit() %>% 
+#  align(align = "center", part = "all") %>%
+  set_table_properties(layout = "autofit") 
+
+
+```
+
+
+
+資料範圍:2021-2024
+
+
+```{r echo=FALSE}
+bb_2124 <- 
+  df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]%>% 
+  .[ `Year` > 2020,] %>% 
+  .$AB 
+  
+bootstrap_2124_AB <-   
+replicate(10000, mean(sample(bb_2124 , replace = TRUE)))
+
+per_Arer <- (0.1*0.1*pi)   #100m半徑的單位原面積
+
+#21028.14/(0.1*0.1*pi)
+
+summary_bootstrap_2124 <- 
+list(
+'q_1' = quantile(bootstrap_2124_AB, probs = 0.025) ,
+'q_2' = quantile(bootstrap_2124_AB, probs = 0.5) ,
+'q_3' = quantile(bootstrap_2124_AB, probs = 0.975) ,
+'mm' = mean( bootstrap_2124_AB)   #bootsrap出來的猴群數的平均值
+)
+
+
+
+data.frame(
+  '項目' = c('相對密度(群/樣點)','相對密度(群/樣點)(95% CI)','絕對密度(群/ km^2)',
+           '絕對密度(95% CI)','群','猴群數(95% CI)'),
+  '值' = c(
+   sprintf("%06.4f",summary_bootstrap_2124$mm),
+   paste0(sprintf("%06.4f",summary_bootstrap_2124$q_1), '~' ,sprintf("%06.4f",summary_bootstrap_2124$q_3)),
+   sprintf("%06.4f",summary_bootstrap_2124$mm/per_Arer),
+   paste0(sprintf("%06.4f",summary_bootstrap_2124$q_1/per_Arer), '~' ,sprintf("%06.4f",summary_bootstrap_2124$q_3/per_Arer)),
+   sprintf("%.0f", (21028.14/per_Arer)*summary_bootstrap_2124$mm),
+   paste0(sprintf("%.0f",(21028.14/per_Arer)*q_1), '~' , sprintf("%.0f",(21028.14/per_Arer)*summary_bootstrap_2124$q_3))
+           )
+  ) %>% 
+  flextable() %>% 
+  autofit() %>% 
+#  align(align = "center", part = "all") %>%
+  set_table_properties(layout = "autofit") 
+
+
+```
+
+
+
+
+```{r include=FALSE}
+#獨立樣本
+df %>% 
+  .[, .(E = sum(Macaca_sur)/length(Macaca_sur)), by = c("Year", "Survey")] %>% 
+  .[ ,list(mean = mean(E)/(0.1*0.1*pi) , sd = sd(E)/sqrt(10)/(0.1*0.1*pi))] 
+  
+0.5-0.04*1.96
+0.5+0.04*1.96
+```
+
+```{r include=FALSE}
+#檢測是否符合常態
+test <- 
+df %>% 
+  .[, .(E = sum(Macaca_sur)/length(Macaca_sur)), by = c("Year", "Survey")] 
+  qqnorm(test$E)
+  qqline(test$E)
+  
+  shapiro.test(test$E)
+```
