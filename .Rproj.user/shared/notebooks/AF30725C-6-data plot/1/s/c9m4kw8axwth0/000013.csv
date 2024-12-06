@@ -1,0 +1,16 @@
+"0","Jd.d <- "
+"0","  M.data %>% "
+"0","  filter(analysis %in% ""Y"") %>% "
+"0",""
+"0","  mutate(julian.D_f = cut(julian.D,"
+"0","                        breaks = c(seq(60,210,15)),"
+"0","                        labels = seq(60,195,15),"
+"0","                        include.lowest = T)) %>% "
+"0","  "
+"0","  group_by(Year, Survey, julian.D_f) %>% "
+"0","  summarise(N = n(),"
+"0","            m = sum(Macaca_sur, na.rm=T),"
+"0","            Encounter_rate = m/N) "
+"1","[38;5;255m`summarise()` has grouped output by 'Year', 'Survey'. You can override
+using the `.groups` argument.[39m
+"

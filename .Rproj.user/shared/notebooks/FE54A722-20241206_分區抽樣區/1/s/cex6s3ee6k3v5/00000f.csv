@@ -1,0 +1,23 @@
+"0","M.data_F <- 
+  here(""./data/clean/Forestry/for analysis/"") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2020:2024)) %>% #如果只要2020~2022年，就寫2020:2022
+  lapply(., read_excel, sheet=""Data"", col_types = ""text"") %>% 
+  bind_rows()  %>% 
+  mutate(Site_N = str_remove_all(Site_N, 	
+'MB-C11-10',""MA-C11-10"")) %>% 
+  filter(analysis %in% ""Y"")
+"
+"1","[1m[33mError[39m in `mutate()`:[22m
+[38;5;250m[36mℹ[38;5;250m In argument: `Site_N = str_remove_all(Site_N, ""MB-C11-10"",
+  ""MA-C11-10"")`.[39m
+[1mCaused by error in `str_remove_all()`:[22m
+[33m![39m 未使用的引數 (""MA-C11-10"")
+Backtrace:
+[90m 1. [39m... %>% filter(analysis %in% ""Y"")
+[90m 4. [39m[1m[94mdplyr:::mutate.data.frame([39m[22m., Site_N = str_remove_all(Site_N, ""MB-C11-10"", ""MA-C11-10"")[1m[94m)[39m[22m
+[90m 5. [39mdplyr:::mutate_cols(.data, dplyr_quosures(...), by)
+[90m 7. [39mdplyr:::mutate_col(dots[[i]], data, mask, new_columns)
+[90m 8. [39mmask$eval_all_mutate(quo)
+[90m 9. [39m[1mdplyr[22m (local) eval()
+"

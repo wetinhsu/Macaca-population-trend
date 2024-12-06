@@ -1,0 +1,5 @@
+"0","#AICc=============================================="
+"0","options(na.action = ""na.fail"")"
+"0","d1<- dredge(m1, trace = F)  "
+"2","Fixed term is ""(Intercept)""
+"

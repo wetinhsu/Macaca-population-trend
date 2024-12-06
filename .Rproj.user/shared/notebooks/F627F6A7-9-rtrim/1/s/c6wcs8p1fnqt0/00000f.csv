@@ -1,0 +1,4 @@
+"0","index(m1, ""imputed"", covars = F) %>% plot(., pct =T)"
+"2","錯誤發生在 index(m1, ""imputed"", covars = F) %>% plot(., pct = T)：
+  沒有這個函式 ""%>%""
+"

@@ -1,0 +1,2 @@
+"0","index(m1, ""imputed"", covars = F) %>%"
+"0","  plot(., pct =T, axes = F)"

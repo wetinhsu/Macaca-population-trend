@@ -1,0 +1,6 @@
+"0","Office_list <-"
+"0","  read_excel("
+"0","  paste0(here(""data/raw/FORESTRYdata/""), ""/"", 2024,""/林業署獼猴調查樣區列表.xlsx"")"
+"0","  ) %>% "
+"0","  mutate(Office = ordered(Office, c(""宜蘭"", ""新竹"", ""臺中"", ""南投"", ""嘉義"", ""屏東"", ""花蓮"", ""臺東"")))"
+"0",""

@@ -1,0 +1,9 @@
+"0","DF.3 %>%   #林管處無疏失情形的樣點數"
+"0","   filter(!is.na(Macaca_sur) ) %>% "
+"0","   filter(analysis %in% ""Y"" ) %>% "
+"0","   group_by(Office, analysis, Survey) %>%"
+"0","   summarise(N = n()) %>%"
+"0","   reshape2::dcast( Office ~ analysis + Survey, guess.var = ""N"")"
+"2","`summarise()` has grouped output by 'Office', 'analysis'. You can override using the `.groups` argument."
+"2","Using N as value column: use value.var to override.
+"

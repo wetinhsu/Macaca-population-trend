@@ -1,0 +1,4 @@
+"0","remove.data  <-  #重複記錄的列表"
+"0","M.data.1%>% "
+"0","  anti_join(M.data)"
+"2","Joining, by = c(""analysis"", ""Office"", ""Station"", ""Name"", ""Site_N"", ""Year"", ""Month"", ""Day"", ""Survey"", ""Surveyor"", ""Point"", ""Hour"", ""Minute"", ""Macaca_sur"", ""Macaca_dist"", ""Date"", ""TWD97_X"", ""TWD97_Y"", ""Distance"", ""TypeName"", ""TypeName.1"", ""Altitude"", ""備註"", ""TWD97_X.ori"", ""TWD97_Y.ori"", ""Macaca_sur.ori"", ""time_diff"", ""day_diff"", ""point_diff"")"

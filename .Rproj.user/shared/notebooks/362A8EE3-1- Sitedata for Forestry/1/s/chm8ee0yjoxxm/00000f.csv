@@ -1,0 +1,6 @@
+"0","DF<-  "
+"0","  DF %>% "
+"0","  mutate(Macaca_voice = gsub(""n"",""N"", .$Macaca_voice)) %>% "
+"0","  mutate(Macaca_voice = ifelse(Macaca_sur %in% 0 & Macaca_voice %in% c(""N""), NA,  Macaca_voice)) %>% "
+"0","  "
+"0","  mutate(Date = ISOdatetime(Year, Month, Day, Hour, Minute, sec = 0) ) "

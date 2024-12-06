@@ -1,0 +1,6 @@
+"0",""
+"0",""
+"0","Anova(m1) %>% broom::tidy(.) %>% "
+"0","    mutate(statistic = sprintf(""%.3f"", statistic)) %>%"
+"0","  mutate('p.value' = sprintf(""%.3f"", p.value)) %>% "
+"0","  flextable()"

@@ -1,0 +1,107 @@
+"0","library(data.table)"
+"2","Warning:"
+"2"," package ‘data.table’ was built under R version 4.0.5
+"
+"2","Registered S3 method overwritten by 'data.table':
+  method           from
+  print.data.table     
+"
+"2","data.table 1.14.2 using 8 threads (see ?getDTthreads).  Latest news: r-datatable.com
+"
+"0","library(magrittr)"
+"2","Warning:"
+"2"," package ‘magrittr’ was built under R version 4.0.5
+"
+"0","library(multcomp)"
+"2","Loading required package: mvtnorm
+"
+"2","Warning:"
+"2"," package ‘mvtnorm’ was built under R version 4.0.5
+"
+"2","Loading required package: survival
+"
+"2","Warning:"
+"2"," package ‘survival’ was built under R version 4.0.5
+"
+"2","Loading required package: TH.data
+"
+"2","Loading required package: MASS
+"
+"2","Warning:"
+"2"," package ‘MASS’ was built under R version 4.0.5
+"
+"2","
+Attaching package: ‘TH.data’
+
+"
+"2","The following object is masked from ‘package:MASS’:
+
+    geyser
+
+"
+"0","library(ggplot2)"
+"0","library(rtrim)"
+"2","Warning:"
+"2"," package ‘rtrim’ was built under R version 4.0.5
+"
+"2","Welcome to rtrim 2.0.6 Type ?`rtrim-package` to get started.
+"
+"2","
+Attaching package: ‘rtrim’
+
+"
+"2","The following object is masked from ‘package:stats’:
+
+    heatmap
+
+"
+"0","library(dplyr)"
+"2","Warning:"
+"2"," package ‘dplyr’ was built under R version 4.0.5
+"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following object is masked from ‘package:MASS’:
+
+    select
+
+"
+"2","The following objects are masked from ‘package:data.table’:
+
+    between, first, last
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"0","library(openxlsx)"
+"2","Warning:"
+"2"," package ‘openxlsx’ was built under R version 4.0.5
+"
+"0","library(rtrim)"
+"0","library(readxl)"
+"2","Warning:"
+"2"," package ‘readxl’ was built under R version 4.0.5
+"
+"0","library(here)"
+"2","Warning:"
+"2"," package ‘here’ was built under R version 4.0.5
+"
+"2","here() starts at D:/R/test/Macaca-population-trend
+"
+"0","library(flextable)"
+"0","library(RColorBrewer) "
+"2","Warning:"
+"2"," package ‘RColorBrewer’ was built under R version 4.0.5
+"
+"0","library(magrittr)"
+"0",""

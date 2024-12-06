@@ -1,0 +1,10 @@
+"0","#猴群、孤猴的統計資料             "
+"0"," "
+"0"," M.data  %>% "
+"0","   filter(!is.na(Macaca_sur) ) %>% "
+"0","   group_by(Office, Macaca_sur) %>% "
+"0","   summarise(N = n()) %>% "
+"0","   reshape2::dcast(Office ~ Macaca_sur, guess_value  = ""N"")"
+"2","`summarise()` has grouped output by 'Office'. You can override using the `.groups` argument."
+"2","Using N as value column: use value.var to override.
+"

@@ -1,0 +1,8 @@
+"0","#AICc=============================================="
+"0","options(na.action = ""na.fail"")"
+"0","d1<- dredge(m1, trace = F)  "
+"2","Fixed term is ""(Intercept)""
+"
+"2","警告： Model failed to converge with max|grad| = 0.165962 (tol = 0.002, component 1)"
+"2","警告： Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?"

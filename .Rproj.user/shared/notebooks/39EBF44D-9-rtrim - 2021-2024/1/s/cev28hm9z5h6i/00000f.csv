@@ -1,0 +1,8 @@
+"0","overall(m1,""imputed"") %>% "
+"0","  print(.) %>% "
+"0","  flextable()%>% "
+"0","  autofit() %>% "
+"0","  align(align = ""center"", part = ""all"") %>%"
+"0","  set_table_properties(layout = ""autofit"") %>% "
+"0","  colformat_num(.,  big.mark="""")%>% "
+"0","  colformat_double(.,  digits = 3) "

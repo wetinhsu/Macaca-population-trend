@@ -1,0 +1,2 @@
+"0","df$Altitude.1 <-  scale(df$Altitude,scale =T)"
+"0","df$julian.D.1 <-  scale(df$julian.D,scale =T)"

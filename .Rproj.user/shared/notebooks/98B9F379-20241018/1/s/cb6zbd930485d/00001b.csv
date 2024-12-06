@@ -1,0 +1,18 @@
+"0","check_table <- 
+ M.data %>% left_join(table_Point, by = 'PointID') %>% 
+  dplyr::select(
+    DataID,
+    analysis,
+    time_diff,
+    day_diff,
+    point_diff,
+    tagert_recorded=recorded) %>% 
+  mutate(check_date = Sys.Date() %>%  as.character) 
+"
+"1","[1m[33mError[39m in `dplyr::select()`:[22m
+[33m![39m Can't select columns that don't exist.
+[31m✖[39m Column `recorded` doesn't exist.
+Backtrace:
+[90m 1. [39m... %>% mutate(check_date = Sys.Date() %>% as.character)
+[90m 4. [39m[1m[94mdplyr:::select.data.frame([39m[22m., DataID, analysis, time_diff, day_diff, point_diff, tagert_recorded = recorded[1m[94m)[39m[22m
+"

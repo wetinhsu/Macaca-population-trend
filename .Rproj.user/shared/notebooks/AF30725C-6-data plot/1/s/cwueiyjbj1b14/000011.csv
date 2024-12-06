@@ -1,0 +1,21 @@
+"0","Alt.d <- "
+"0","  M.data %>% "
+"0","  filter(analysis %in% ""Y"") %>% "
+"0","  mutate(Altitude_f = cut(Altitude,"
+"0","                        breaks = c(seq(0,4000,500)),"
+"0","                        labels = c(seq(250,3750,500)),"
+"0","                        include.lowest = T)) %>% "
+"0","  group_by(Year, Survey, Altitude_f) %>% "
+"0","  summarise(N = n(),"
+"0","            m = sum(Macaca_sur, na.rm=T),"
+"0","            Encounter_rate = m/N) "
+"1","[38;5;255m`summarise()` has grouped output by 'Year',
+'Survey'. You can override using the `.groups`
+argument.[39m
+"
+"0","Alt.d.n <-"
+"0","  Alt.d %>%"
+"0","  group_by(Altitude_f) %>% "
+"0","  summarise(mean_N = mean(N, na.rm = T)%>% round(.,1),"
+"0","            y = quantile(Encounter_rate,0.75))"
+"0",""

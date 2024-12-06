@@ -1,0 +1,6 @@
+"0","M.Point <- "
+"0","  read_excel(here(""data/refer/林務局獼猴樣點_20221005.xlsx"")) %>% "
+"0","  filter(!is.na(TWD97_X)|!is.na(TWD97_Y)) %>% "
+"0","  mutate(樣點代號 = as.character(樣點代號)) %>% "
+"0","  select(-`樣區樣點編號`)"
+"0","  "

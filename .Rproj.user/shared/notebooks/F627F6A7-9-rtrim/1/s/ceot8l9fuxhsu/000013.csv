@@ -1,0 +1,34 @@
+"0","overall(m1,""imputed"") %>%   
+  print %>% 
+  flextable(.) %>% 
+  autofit() %>% 
+  align(align = ""center"", part = ""all"") %>%
+  colformat_num(.,  big.mark="""")%>% 
+  colformat_double(.,  digits = 3) 
+"
+"1",""
+"1"," from"
+"1"," upto"
+"1","        add"
+"1","    se_add"
+"1","      mul"
+"1","     se_mul"
+"1","         p"
+"1","
+"
+"1"," 2015"
+"1"," 2023"
+"1"," 0.04966655"
+"1"," 0.0235984"
+"1"," 1.050921"
+"1"," 0.02480005"
+"1"," 0.0733649"
+"1","
+"
+"1",""
+"1","   meaning"
+"1","
+"
+"1"," Uncertain"
+"1","
+"

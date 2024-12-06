@@ -1,0 +1,7 @@
+"0","Clean_Macaca$`G` %>%"
+"0","    mutate(Year = as.character(Year)) %>% "
+"0","    flextable(., ) %>%"
+"0","    merge_v(., j = c(""variable"") ) %>% "
+"0","    hline(i = c(9,18)) %>% "
+"0","    font(part = ""all"",fontname = ""Arial Unicode MS"") %>% "
+"0","    set_table_properties(layout = ""autofit"")"

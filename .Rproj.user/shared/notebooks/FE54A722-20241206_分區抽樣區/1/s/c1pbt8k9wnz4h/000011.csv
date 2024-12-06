@@ -1,0 +1,5 @@
+"0","con <-  dbConnect(RSQLite::SQLite(), dbname=""D:/R/test/DB/P_BBS.db"")"
+"0",""
+"0",""
+"0","list_Site<- dbReadTable(con, ""list_Site"")"
+"0",""

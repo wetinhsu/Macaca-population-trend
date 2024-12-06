@@ -1,0 +1,11 @@
+"0",""
+"0","E_year <- "
+"0","M.data %>% "
+"0","  filter(analysis %in% ""Y"") %>% "
+"0","  group_by(Year, Survey) %>% "
+"0","  summarise(N = n(),"
+"0","            m = sum(Macaca_sur, na.rm=T),"
+"0","            Encounter_rate = m/N)"
+"1","[38;5;255m`summarise()` has grouped output by 'Year'. You can override using the
+`.groups` argument.[39m
+"

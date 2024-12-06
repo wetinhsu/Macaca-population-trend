@@ -1,0 +1,11 @@
+"0","  gof(m1) %>% 
+  print(.) 
+"
+"1","Goodness of fit:
+"
+"1","              Chi-square = 2225.33, df=2251, p=0.6458
+"
+"1","        Likelihood Ratio = 1475.19, df=2251, p=1.0000
+"
+"1","  AIC (up to a constant) = -3026.81
+"

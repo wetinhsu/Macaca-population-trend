@@ -1,0 +1,4 @@
+"0","bootstrap_AB <- "
+"0","replicate(10000, mean(sample(bb$AB, replace = TRUE)))"
+"0",""
+"0","#重複抽樣10000次"

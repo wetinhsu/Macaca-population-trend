@@ -1,0 +1,8 @@
+"0","overall(m1,""imputed"") %>% "
+"0","  .$slope %>% "
+"0","  print(.) %>%"
+"0","  xtable::xtable(.) %>% "
+"0","  xtable_to_flextable(.) %>% "
+"0","  autofit() %>% "
+"0","#  align(align = ""center"", part = ""all"") %>% "
+"0","  colformat_num(x = .,  big.mark="""")"

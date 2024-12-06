@@ -1,0 +1,5 @@
+"0","troop_M
+"
+"2","警告： 無法開啟壓縮過的檔案 'D:/R/test/Macaca-population-trend/.Rproj.user/shared/notebooks/72C0C952-20241112_?????/1/s/cj5drk5nid7w8_t\_rs_rdf_20581bf92644.rdf'，可能的原因是 'Invalid argument'"
+"2","錯誤發生在 gzfile(file, ""wb"")：無法開啟連接
+"

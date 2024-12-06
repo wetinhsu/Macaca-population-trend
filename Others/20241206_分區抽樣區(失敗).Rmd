@@ -1,0 +1,162 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sf)
+library(tidyverse)
+
+library(here)
+
+library(DBI)
+library(RSQLite)
+```
+
+```{r}
+con <-  dbConnect(RSQLite::SQLite(), dbname="D:/R/test/DB/P_BBS.db")
+
+
+list_Site<- dbReadTable(con, "list_Site")
+
+```
+
+
+```{r}
+library(readxl)
+
+M.data <- read_excel(here("./data/clean/for analysis_1523.xlsx"),
+                     sheet=1) %>% 
+  
+  filter(analysis %in% "Y") %>% 
+  mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur))
+
+M.data_F <- 
+  here("./data/clean/Forestry/for analysis/") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2020:2024)) %>% #如果只要2020~2022年，就寫2020:2022
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows()  %>% 
+  mutate(Site_N =  str_replace_all(Site_N, 'MB-C11-10',"MA-C11-10")) %>% 
+  filter(analysis %in% "Y")
+
+
+```
+
+
+```{r}
+
+all_site <- 
+list_Site %>% 
+  filter(樣區編號  %in% M.data$Site_N |
+           獼猴樣區編號  %in% M.data_F$Site_N ) 
+
+
+```
+
+
+```{r}
+library(sf)
+
+layer_data <- st_read(dsn = "D:/R/SHP圖層/0_自製/SplitLayer.gpkg",
+                      layer = "site_surveyed")
+
+ZONE8 <- st_read(dsn = "D:/R/SHP圖層/0_自製/SplitLayer.gpkg",
+                      layer = "ZONE8")
+```
+
+```{r}
+site_splited <- 
+layer_data %>% 
+  st_intersection(ZONE8) %>% 
+  st_drop_geometry
+  
+```
+
+```{r}
+
+M.data_F %>% 
+  select(Year, Site_N) %>%
+  unique() %>% 
+  right_join(site_splited, ., by = c("獼猴樣區編號"="Site_N")) %>%
+  bind_rows(
+    M.data %>%
+  select(Year, Site_N) %>%
+  unique() %>%
+  right_join(site_splited, ., by = c("樣區編號"="Site_N"))
+  ) %>%
+  group_by(Year, ZONE8) %>% 
+  summarise(N = n()) %>% 
+  ggplot(., aes(x = as.integer(Year), y =N))+
+  geom_point()+
+  geom_line(aes(col = ZONE8))
+```
+
+
+
+```{r}
+N_smp <- 
+data.frame(ZONE8 = c('CW','SW','ES','NW','EN','NE','SE') ,
+           AREA = c( 4327210919,  3620044011 , 3537847580 , 2967476683 ,
+ 2674268834 , 2551905929 , 1286120364 ),
+           n = c(82,69,67,56,51,48,24))
+
+
+
+st_read(dsn = "D:/R/SHP圖層/0_自製/SplitLayer.gpkg",
+                      layer = "forestsplited") %>% 
+  mutate(area = st_area(.) %>% units::set_units(., NULL))
+```
+
+
+```{r}
+site_Sam_list <- 
+site_splited %>% 
+  split(., .$ZONE8) %>% 
+  lapply(., function(x){
+   
+    n <- N_smp %>% filter(ZONE8 %in% x$ZONE8) %>% .$n 
+    
+    x %>%
+      filter(SiteID %in% sample(SiteID, n, replace = F) )
+  }) %>% 
+  bind_rows()
+  
+  
+site_Sam_list
+```
+
+```{r}
+DF_smp <- 
+site_Sam_list %>% 
+  select( -`優先調查`,-`鄉鎮`,-(`海拔段`:`舊編號`)) %>% 
+  inner_join(., M.data_F, by = c("獼猴樣區編號" = "Site_N")) %>% 
+  filter(Year >2020) %>% 
+  select(`SiteID`:`ZONE8`,Point,Year,Survey, Macaca_sur,TypeName.1) %>% 
+  bind_rows(
+   site_Sam_list %>% 
+  select( -`優先調查`,-`鄉鎮`,-(`海拔段`:`舊編號`)) %>% 
+  inner_join(., M.data, by = c("樣區編號" = "Site_N")) %>% 
+  select(`SiteID`:`ZONE8`,Point,Year,Survey, Macaca_sur,TypeName.1) 
+    
+  ) %>% 
+  mutate(Macaca_sur = Macaca_sur %>% as.numeric)
+
+```
+
+
+```{r}
+DF_smp %>% 
+  group_by(SiteID,樣區編號, 獼猴樣區編號,ZONE8, Year) %>% 
+  summarise(E = sum(Macaca_sur)/length(Macaca_sur)) %>% 
+  group_by(ZONE8, Year) %>% 
+  summarise(E = mean(E)) %>% 
+  left_join(N_smp)
+
+
+
+
+```
+

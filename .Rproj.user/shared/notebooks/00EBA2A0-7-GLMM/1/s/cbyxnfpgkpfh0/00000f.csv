@@ -1,0 +1,114 @@
+"0","allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D +  Region2 + (1|Site_N), "
+"0","             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型"
+"2","警告： Model failed to converge with max|grad| = 2.09579 (tol = 0.002, component 1)"
+"2","警告： Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+ - Rescale variables?"
+"1","bobyqa"
+"1"," "
+"1",": "
+"2","警告： Model failed to converge with max|grad| = 3.77927 (tol = 0.002, component 1)"
+"2","警告： Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+ - Rescale variables?"
+"1","[OK]
+"
+"1","Nelder_Mead"
+"1"," "
+"1",": "
+"2","警告： Model failed to converge with max|grad| = 1.30587 (tol = 0.002, component 1)"
+"2","警告： Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+ - Rescale variables?"
+"1","[OK]
+"
+"1","nlminbwrap"
+"1"," "
+"1",": "
+"2","警告： convergence code 1 from nlminbwrap: iteration limit reached without convergence (10)"
+"2","警告： Model failed to converge with max|grad| = 3.60426 (tol = 0.002, component 1)"
+"2","警告： Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+ - Rescale variables?"
+"1","[OK]
+"
+"1","nmkbw"
+"1"," "
+"1",": "
+"1","[failed]
+"
+"1","optimx.L-BFGS-B"
+"1"," "
+"1",": "
+"2","警告： Parameters or bounds appear to have different scalings.
+  This can cause poor performance in optimization. 
+  It is important for derivative free methods like BOBYQA, UOBYQA, NEWUOA."
+"2","警告： convergence code 9999 from optimx: none"
+"2","警告： Parameters or bounds appear to have different scalings.
+  This can cause poor performance in optimization. 
+  It is important for derivative free methods like BOBYQA, UOBYQA, NEWUOA."
+"2","警告： convergence code 9999 from optimx: none"
+"2","警告： Parameters or bounds appear to have different scalings.
+  This can cause poor performance in optimization. 
+  It is important for derivative free methods like BOBYQA, UOBYQA, NEWUOA."
+"2","警告： convergence code 9999 from optimx: none"
+"1","[failed]
+"
+"1","nloptwrap.NLOPT_LN_NELDERMEAD"
+"1"," "
+"1",": "
+"2","警告： Model failed to converge with max|grad| = 0.0700938 (tol = 0.002, component 1)"
+"2","警告： Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+ - Rescale variables?"
+"1","[OK]
+"
+"1","nloptwrap.NLOPT_LN_BOBYQA"
+"1"," "
+"1",": "
+"2","警告： Model failed to converge with max|grad| = 0.470579 (tol = 0.002, component 1)"
+"2","警告： Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+ - Rescale variables?"
+"1","[OK]
+"
+"1","original model:
+"
+"1","Macaca_sur ~ TypeName.1 + Year.re + Altitude + julian.D + Region2 + (1 | Site_N)"
+"1"," "
+"1","
+"
+"1","data: "
+"1"," "
+"1","df"
+"1"," "
+"1","
+"
+"1","optimizers ("
+"1",""
+"1","7"
+"1",""
+"1","): "
+"1",""
+"1","bobyqa, Nelder_Mead, nlminbwrap, nmkbw, optimx.L-BFGS-B,"
+"1",""
+"1","nloptwrap.NLOPT_LN_N..."
+"1",""
+"1","
+"
+"1","2"
+"1"," "
+"1","optimizer(s) failed
+"
+"1","differences in negative log-likelihoods:
+"
+"1","max="
+"1"," "
+"1","3.55"
+"1"," "
+"1","; std dev="
+"1"," "
+"1","1.54"
+"1"," "
+"1","
+"

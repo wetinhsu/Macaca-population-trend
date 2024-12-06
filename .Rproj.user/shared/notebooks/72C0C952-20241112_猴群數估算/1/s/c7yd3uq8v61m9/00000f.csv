@@ -1,0 +1,6 @@
+"0",""
+"0","M.data <- read_excel(here(""./data/clean/for analysis_1523.xlsx""),"
+"0","                     sheet=1) %>% "
+"0","  filter(analysis %in% ""Y"") %>%"
+"0","  mutate_at(c(""Year"", ""Survey"", ""Point"", ""Macaca_sur"","
+"0","              ""Month"", ""Day"", ""Distance""), as.numeric)"

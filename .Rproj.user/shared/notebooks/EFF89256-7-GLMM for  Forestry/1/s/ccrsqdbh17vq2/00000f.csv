@@ -1,0 +1,4 @@
+"0","#-------------------------------------------"
+"0",""
+"0","allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D + Office +  (1|Site_N), "
+"0","             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型"

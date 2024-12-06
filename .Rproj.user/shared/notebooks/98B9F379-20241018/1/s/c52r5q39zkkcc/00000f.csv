@@ -1,0 +1,7 @@
+"0","Data_survey <- "
+"0"," DF.o %>% "
+"0","  left_join(table_Point, by = c('Site_N' = '獼猴樣區編號',"
+"0","                                'Point' = '樣點代號')) %>% "
+"0","  dplyr::select(-Site_N, -Point, -Name)%>% "
+"0","  mutate(recorded = Sys.Date(), .before = names(.)[1])"
+"0",""

@@ -1,0 +1,331 @@
+---
+title: "偵測率"
+output: word_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+require(Rdistance)
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(here)
+library(units)
+library(kableExtra)
+```
+
+
+```{r eval=FALSE, include=FALSE}
+# example:  Point Transects - With Vegetation Covariates
+ 
+data("thrasherDetectionData") 
+data("thrasherSiteData")
+head(thrasherDetectionData)
+head(thrasherSiteData)
+
+
+
+dfuncFit <- dfuncEstim(dist ~ 1
+                   , detectionData = thrasherDetectionData
+                   , likelihood = "hazrate"
+                   , pointSurvey = TRUE)
+
+
+dfuncFit <- abundEstim(dfuncFit
+         , detectionData = thrasherDetectionData
+         , siteData = thrasherSiteData
+         , area = set_units(100, "acres"), ci=NULL)
+
+summary(dfuncFit)
+
+plot(dfuncFit)
+```
+
+
+
+  
+```{r include=FALSE}
+M.data_F <- 
+  here("./data/clean/Forestry/for analysis/") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2020:2024)) %>% #如果只要2020~2022年，就寫2020:2022
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows() %>% 
+
+  mutate_at(c("Year", "Survey","Month",
+              "Day", "Macaca_sur", "Distance", "Altitude", "julian.D"), as.numeric) %>% 
+  filter(analysis %in% "Y") %>% 
+  filter(Year > 2020) %>% 
+  mutate_at(c("Year"), as.integer)
+```
+
+```{r include=FALSE}
+M.data <- read_excel(here("./data/clean/for analysis_1523.xlsx"),
+                     sheet=1) %>% 
+  filter(analysis %in% "Y") %>%
+  mutate_at(c("Year", "Survey", "Point", "Macaca_sur",
+              "Month", "Day", "Distance"), as.numeric)
+```
+
+
+
+
+
+```{r eval=FALSE, include=FALSE}
+### **BBS**
+
+# package: Rdistance  
+
+#Detection Data
+Detection_df <- 
+  M.data %>% 
+  filter(Macaca_dist %in% c("A", "B")) %>%
+  select(Year, Survey,Site_N , Point, Macaca_sur, Macaca_dist) %>% 
+  
+  mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur)) %>%
+  
+  
+  mutate(dist = case_when(
+      Macaca_dist %in% "A" ~ 25,
+      Macaca_dist %in% "B" ~ 100))  %>%
+  
+  mutate(dist =units::set_units(dist, "m"))%>% 
+  mutate(siteID = paste0(Site_N , "-", Point)) %>% 
+  filter(Macaca_sur>0) %>% 
+  mutate(groupsize = Macaca_sur)
+
+```
+
+```{r eval=FALSE, include=FALSE}
+table(Detection_df$dist)
+```
+
+
+```{r echo=FALSE}
+#Site Data
+Siten_df <- 
+  M.data %>% 
+  filter(Macaca_dist %in% c("A", "B")) %>%
+
+
+  mutate(siteID = paste0(Site_N , "-", Point))%>% 
+  select(siteID,TypeName.1) %>% 
+  unique()
+```
+
+
+```{r eval=FALSE, include=FALSE}
+dfuncFit<- dfuncEstim(formula = dist ~  TypeName.1 , 
+                      detectionData = Detection_df,
+                      siteData = Siten_df,
+                      likelihood = "hazrate",  #
+                      pointSurvey = T)
+
+dfuncFit
+```
+
+```{r eval=FALSE, include=FALSE}
+
+abundEstim(dfuncFit
+                       , detectionData = Detection_df
+                       , siteData = Siten_df
+                       , area = set_units(100, "km^2"), ci=NULL)
+```
+
+
+
+
+
+
+
+```{r eval=FALSE, include=FALSE}
+### **林業署**
+
+
+#Detection Data
+Detection_df_F <- 
+  M.data_F %>% 
+  filter(Macaca_dist %in% c("A", "B")) %>%
+  select(Year, Survey,Site_N , Point, Macaca_sur, Macaca_dist) %>% 
+  
+  mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur)) %>%
+  
+  
+  mutate(dist = case_when(
+      Macaca_dist %in% "A" ~ 25,
+      Macaca_dist %in% "B" ~ 100))  %>%
+  
+  mutate(dist =units::set_units(dist, "m"))%>% 
+  mutate(siteID = paste0(Site_N , "-", Point)) %>% 
+  filter(Year > 2020) %>% 
+ filter(Macaca_sur>0) 
+```
+
+```{r eval=FALSE, include=FALSE}
+table(Detection_df_F$dist)
+```
+
+
+```{r echo=FALSE}
+#Site Data
+Siten_df_F <- 
+  M.data_F %>% 
+  filter(Macaca_dist %in% c("A", "B")) %>%
+
+
+  mutate(siteID = paste0(Site_N , "-", Point))%>% 
+  select(siteID,TypeName.1) %>% 
+  unique()
+```
+
+
+```{r eval=FALSE, include=FALSE}
+dfuncFit_F<- dfuncEstim(formula = dist ~ TypeName.1 , 
+                      detectionData = Detection_df_F,
+                      siteData = Siten_df_F,
+                      likelihood = c( "hazrate"),  #
+                      pointSurvey = TRUE
+                      )
+
+dfuncFit_F
+```
+
+=================================================  
+package: Distance   
+BBS: 2015~2023  
+林業署: 2021~2024  
+================================================    
+
+### **BBS**  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(Distance)
+data <- M.data %>% 
+  filter(Macaca_dist %in% c("A", "B")) %>%
+  select(Year, Survey,Site_N , Point, Macaca_sur, Macaca_dist, TypeName.1) %>% 
+  
+  mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur)) %>%
+  
+  
+  mutate(dist = case_when(
+      Macaca_dist %in% "A" ~ 25,
+      Macaca_dist %in% "B" ~ 100))  %>%
+  
+  mutate(dist =units::set_units(dist, "m"))%>% 
+  mutate(siteID = paste0(Site_N , "-", Point)) %>% 
+  filter(Macaca_sur>0)  %>%
+  mutate(distance = as.numeric(dist)) %>% 
+  mutate(distbegin = 0)
+```
+
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fit <- ds(data, key = "hn", formula = ~1,
+          transect = "point",
+          region_table =Siten_df,
+             adjustment = NULL)
+
+
+
+plot(fit, which = 2)
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(fit)$ddf
+```
+   
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+gof_ds(fit)
+```
+
+\newpage   
+### **林業署**  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(Distance)
+data_F <- M.data_F %>% 
+  filter(Macaca_dist %in% c("A", "B")) %>%
+  select(Year, Survey,Site_N , Point, Macaca_sur, Macaca_dist, TypeName.1) %>% 
+  
+  mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur)) %>%
+  
+  
+  mutate(dist = case_when(
+      Macaca_dist %in% "A" ~ 25,
+      Macaca_dist %in% "B" ~ 100))  %>%
+  
+  mutate(dist =units::set_units(dist, "m"))%>% 
+  mutate(siteID = paste0(Site_N , "-", Point))  %>%
+  mutate(distance = as.numeric(dist)) %>% 
+  mutate(distbegin = 0) %>% 
+  filter(Year >2020 & Year <2024 )
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fit_F <- ds(data_F, key = "hn", formula = ~1  ,
+          transect = "point",
+          region_table =Siten_df_F,
+             adjustment = NULL)
+plot(fit_F, which = 2)
+```
+
+
+```{r echo=FALSE}
+
+
+summary(fit_F)$ddf 
+```
+
+
+```{r echo=TRUE}
+gof_ds(fit_F) 
+```
+
+
+----------------------
+如果將棲地類型列入變數
+
+- BBS  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fit_2 <- ds(data, key = "hn", formula = ~1 + TypeName.1,
+          transect = "point",
+          region_table =Siten_df,
+             adjustment = NULL)
+
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summarize_ds_models(fit, fit_2) %>% 
+  kable(align = "c")
+```
+
+  
+\br  
+
+- 林業署  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fit_F_2 <- ds(data_F, key = "hn", formula = ~1 + TypeName.1,
+          transect = "point",
+          region_table =Siten_df_F,
+             adjustment = NULL)
+
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summarize_ds_models(fit_F, fit_F_2) %>% 
+  kable(align = "c")
+```
+
+$\hat{P_a}$ is average detectability;  
+se($\hat{P_a}$) is standard error. Models are sorted according to AIC.  

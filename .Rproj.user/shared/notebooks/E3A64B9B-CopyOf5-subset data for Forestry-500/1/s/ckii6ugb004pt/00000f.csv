@@ -1,0 +1,8 @@
+"0","M.data.2 <-"
+"0","  M.data.1 %>% "
+"0","  mutate(analysis = ifelse(analysis == ""Y"" &( Month < 3 | Month > 6), "
+"0","                           ""month"", analysis)) %>%   #刪除調查季(包含緩衝期)以外的資料"
+"0","  mutate(analysis = ifelse(analysis == ""Y"" &  Altitude<50, "
+"0","                           ""Y(50m)"", analysis)) %>%  "
+"0","  mutate(analysis = ifelse(analysis == ""Y"" &  TypeName.1 %in% ""非森林"", "
+"0","                           ""Y(NotForest)"", analysis))"

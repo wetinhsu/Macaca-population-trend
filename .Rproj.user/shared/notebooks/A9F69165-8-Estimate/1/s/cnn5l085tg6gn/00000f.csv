@@ -1,0 +1,8 @@
+"0","#分層抽樣""Year"", ""Survey"","
+"0",""
+"0","df %>% "
+"0","  .[, .(E.mean = mean(Macaca_sur),"
+"0","        E.var = var(Macaca_sur),"
+"0","        n = length(Macaca_sur)), by = c( ""Region2"")] %>% "
+"0","  .[ , list(MEAN = mean(E.mean),"
+"0","            VAR = sum((sum(n)-n)*(E.var/n))/sum(n))] "

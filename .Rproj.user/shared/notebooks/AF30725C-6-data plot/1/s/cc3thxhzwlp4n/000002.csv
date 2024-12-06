@@ -1,0 +1,7 @@
+"0","output.4<- M.data %>%  "
+"0","    .[Macaca_sur %in% 1,] %>%"
+"0","    .[,.(筆數=length(Macaca_sur),"
+"2","錯誤: unexpected input in:
+""    .[Macaca_sur %in% 1,] %>%
+    .[,.(\""
+"

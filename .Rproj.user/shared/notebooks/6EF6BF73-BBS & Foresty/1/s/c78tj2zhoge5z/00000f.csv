@@ -1,0 +1,8 @@
+"0","BBS.data <- read_excel(here(""./data/clean/for analysis_1521.xlsx""),"
+"0","                     sheet=1) %>% "
+"0","  mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0,Macaca_sur)) %>% "
+"0","  mutate_at(c(""Year"" ), as.character) %>% "
+"0","  mutate_at(c(""Survey"", ""Point"", ""Macaca_sur"","
+"0","              ""Month"", ""Day"", ""Distance"", ""Altitude"", ""julian.D""), as.numeric) %>% "
+"0","  mutate(data_source = ""BBS"") %>% "
+"0","  filter(analysis == ""Y"")"

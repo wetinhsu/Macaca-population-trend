@@ -1,0 +1,13 @@
+"0","allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D +  Region2 + (1|Site_N), "
+"0","             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型"
+"2","載入需要的命名空間：dfoptim
+"
+"2","載入需要的命名空間：optimx
+"
+"2","警告： Model failed to converge with max|grad| = 2.29722 (tol = 0.002, component 1)"
+"2","警告： Model is nearly unidentifiable: very large eigenvalue
+ - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+ - Rescale variables?"
+"1","bobyqa"
+"1"," "
+"1",": "

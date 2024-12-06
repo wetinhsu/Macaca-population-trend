@@ -1,0 +1,9 @@
+"0","output.1<- M.data %>% "
+"0","   .[analysis %in% ""Y"",] %>% "
+"0","   .[ ,TypeName:= ifelse(TypeName %in% ""針闊葉樹混"","
+"0","                        ""針闊葉樹混淆"","
+"0","                        TypeName)] %>% "
+"0","   .[is.na(Macaca_sur), Macaca_sur := 0] %>%"
+"0","   .[, .(N = .N, m = sum(Macaca_sur)), by = list(TypeName.1,TypeName)]"
+"2","Error in analysis %in% ""Y"" : object 'analysis' not found
+"

@@ -1,0 +1,23 @@
+"0","library(tidyverse)"
+"0","library(rtrim)"
+"2","Welcome to rtrim 2.0.6 Type ?`rtrim-package` to get started.
+"
+"2","
+載入套件：‘rtrim’
+
+"
+"2","下列物件被遮斷自 ‘package:stats’:
+
+    heatmap
+
+"
+"0","library(openxlsx)"
+"2","警告： 套件 ‘openxlsx’ 是用 R 版本 4.2.2 來建造的"
+"0","library(rtrim)"
+"0","library(readxl)"
+"0","library(here)"
+"0","library(flextable)"
+"0","library(RColorBrewer) "
+"0","library(sf)"
+"0",""
+"0",""

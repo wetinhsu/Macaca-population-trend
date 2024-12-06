@@ -1,0 +1,276 @@
+{
+  "KEYFRAMES": {
+    "camera": {
+      "groups": []
+    },
+    "layers": {
+      "AMA0105000010981_41d0bf6f_56c8_45d4_bfe0_70d1ba2b986e": {
+        "enabled": true,
+        "groups": []
+      },
+      "Buffered_6c86158f_9e02_4d5c_931b_beed14433024": {
+        "enabled": true,
+        "groups": []
+      },
+      "COUNTY_MOI_1081121_6fdfa40f_e0eb_4298_8a12_c1c1605b1bd6": {
+        "enabled": true,
+        "groups": []
+      },
+      "ELV50_遮罩_841401e7_ecc0_4350_a822_b65cb868364a": {
+        "enabled": true,
+        "groups": []
+      },
+      "Forest_2024_Sheet_1_de30b01d_ef08_4d05_9b54_fb4c8be0a59f": {
+        "enabled": true,
+        "groups": []
+      },
+      "TW_剪下_1011c8f0_dfa5_4b07_8925_080a5354a949": {
+        "enabled": true,
+        "groups": []
+      },
+      "TW_外框_6ab3d379_dbbf_437e_99fb_545c55245f5e": {
+        "enabled": true,
+        "groups": []
+      },
+      "_____all_BBS_____11baf401_cd44_44f9_9c4b_2560916aa5a1": {
+        "enabled": true,
+        "groups": []
+      },
+      "_____all_BBS________f1d46deb_6c22_460f_9a47_dd38b1f94b37": {
+        "enabled": true,
+        "groups": []
+      },
+      "_____all_Forest_____40f5db6e_b899_46b9_91b0_e5065680d166": {
+        "enabled": true,
+        "groups": []
+      },
+      "_____all_Forest________3639686d_702f_4817_bac1_1dfc54f57352": {
+        "enabled": true,
+        "groups": []
+      },
+      "_____all______ca43ad53_1f05_49db_b522_d7e547a2ab59": {
+        "enabled": true,
+        "groups": []
+      },
+      "for_analysis_1523_Sheet1_f556a8a2_f8f3_4d54_80bc_26c8aee4b38c": {
+        "enabled": true,
+        "groups": []
+      },
+      "fp:6254cc56": {
+        "enabled": true,
+        "groups": []
+      },
+      "g10km_3826_0_2200000_s_058e659f_ba31_4ecd_8b19_6cff9404b8cf": {
+        "enabled": true,
+        "groups": []
+      },
+      "全台保安林分布概略圖1051_ALL_f3fae260_6168_4d8f_a017_a43605de4cd7": {
+        "enabled": true,
+        "groups": []
+      },
+      "全島森林林型分布圖_7159585a_c54e_40fd_be7c_93e4d6c5ee1e": {
+        "enabled": true,
+        "groups": []
+      }
+    },
+    "repeat": false
+  },
+  "LAYERS": [
+    {
+      "geomType": 1,
+      "layerId": "_____all_Forest________3639686d_702f_4817_bac1_1dfc54f57352",
+      "name": "系統樣區-all-Forest系統樣區(猴)",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 1,
+      "layerId": "_____all_BBS________f1d46deb_6c22_460f_9a47_dd38b1f94b37",
+      "name": "系統樣區-all-BBS系統樣區(猴)",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 1,
+      "layerId": "_____all_Forest_____40f5db6e_b899_46b9_91b0_e5065680d166",
+      "name": "系統樣區-all-Forest系統樣區",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 1,
+      "layerId": "_____all_BBS_____11baf401_cd44_44f9_9c4b_2560916aa5a1",
+      "name": "系統樣區-all-BBS系統樣區",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 1,
+      "layerId": "_____all______ca43ad53_1f05_49db_b522_d7e547a2ab59",
+      "name": "系統樣區-all-系統樣區",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "g10km_3826_0_2200000_s_058e659f_ba31_4ecd_8b19_6cff9404b8cf",
+      "name": "g10km_3826_0_2200000_s",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 1,
+      "layerId": "for_analysis_1523_Sheet1_f556a8a2_f8f3_4d54_80bc_26c8aee4b38c",
+      "name": "for analysis_1523-Sheet1",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 1,
+      "layerId": "Forest_2024_Sheet_1_de30b01d_ef08_4d05_9b54_fb4c8be0a59f",
+      "name": "Forest-2024-Sheet 1",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "Buffered_6c86158f_9e02_4d5c_931b_beed14433024",
+      "name": "Buffered",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "ELV50_遮罩_841401e7_ecc0_4350_a822_b65cb868364a",
+      "name": "ELV50_遮罩",
+      "properties": {
+        "checkBox_Clickable": true,
+        "checkBox_Clip": true,
+        "checkBox_ExportAttrs": false,
+        "checkBox_Label": false,
+        "checkBox_Outline": true,
+        "checkBox_Underline": false,
+        "checkBox_Visible": true,
+        "colorButton_BgColor": [
+          255,
+          255,
+          255,
+          176
+        ],
+        "colorButton_ConnColor": [
+          192,
+          192,
+          208,
+          255
+        ],
+        "colorButton_Label": [
+          0,
+          0,
+          0,
+          255
+        ],
+        "colorButton_OtlColor": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "comboBox_FontFamily": "sans-serif",
+        "comboBox_ObjectType": "Polygon",
+        "comboBox_altitudeMode": null,
+        "comboEdit_Color": {
+          "comboData": 1,
+          "comboText": "Feature style",
+          "editText": "",
+          "type": 2
+        },
+        "comboEdit_Color2": {
+          "comboData": null,
+          "comboText": "None",
+          "editText": "",
+          "type": 7
+        },
+        "comboEdit_FilePath": {},
+        "comboEdit_Opacity": {
+          "comboData": 1,
+          "comboText": "Feature style",
+          "editText": "",
+          "type": 5
+        },
+        "comboEdit_altitude2": {},
+        "expression_Label": "\"COUNTYID\"",
+        "fieldExpressionWidget_altitude": "0",
+        "geomWidget0": {},
+        "geomWidget1": {},
+        "geomWidget2": {},
+        "geomWidget3": {},
+        "geomWidget4": {},
+        "groupBox_Background": true,
+        "groupBox_Conn": true,
+        "labelHeightWidget": {
+          "comboData": 1,
+          "comboText": "Relative",
+          "editText": "50",
+          "type": 6
+        },
+        "lineEdit_Name": "",
+        "mtlWidget0": {},
+        "mtlWidget1": {},
+        "radioButton_Expression": true,
+        "radioButton_IntersectingFeatures": true,
+        "slider_FontSize": 3
+      },
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "TW_外框_6ab3d379_dbbf_437e_99fb_545c55245f5e",
+      "name": "TW_外框",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "TW_剪下_1011c8f0_dfa5_4b07_8925_080a5354a949",
+      "name": "TW_剪下",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "全島森林林型分布圖_7159585a_c54e_40fd_be7c_93e4d6c5ee1e",
+      "name": "全島森林林型分布圖",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "AMA0105000010981_41d0bf6f_56c8_45d4_bfe0_70d1ba2b986e",
+      "name": "AMA0105000010981",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "全台保安林分布概略圖1051_ALL_f3fae260_6168_4d8f_a017_a43605de4cd7",
+      "name": "全台保安林分布概略圖1051_ALL",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "COUNTY_MOI_1081121_6fdfa40f_e0eb_4298_8a12_c1c1605b1bd6",
+      "name": "COUNTY_MOI_1081121",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "fp:6254cc56",
+      "name": "Flat Plane",
+      "properties": {},
+      "visible": false
+    }
+  ],
+  "Version": 20800
+}

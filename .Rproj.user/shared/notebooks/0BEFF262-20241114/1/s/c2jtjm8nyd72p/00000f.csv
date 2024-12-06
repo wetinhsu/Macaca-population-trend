@@ -1,0 +1,5 @@
+"0","# example:  Point Transects - With Vegetation Covariates"
+"0"," "
+"0","data(""thrasherDetectionData"") "
+"0","data(""thrasherSiteData"")"
+"0","head(thrasherDetectionData)"

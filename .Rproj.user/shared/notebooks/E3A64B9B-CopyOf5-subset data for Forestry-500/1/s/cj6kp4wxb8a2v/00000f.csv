@@ -1,0 +1,6 @@
+"0","M.data.1 <- "
+"0","M.data.1 %>% "
+"0","  mutate(TypeName.1 = ordered(TypeName.1,c(""闊葉林"", ""針葉林"",""混淆林"",""竹林"",""非森林""))) %>% "
+"0","  mutate(julian.D = ISOdatetime(Year, Month, Day, Hour, Minute, sec = 0) %>%"
+"0","           as.POSIXlt(format = ""%yyyy%mm%dd"") %>%"
+"0","           format(., ""%j"") %>% as.numeric())"
