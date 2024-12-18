@@ -1,0 +1,112 @@
+---
+title: "Untitled"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(sf)
+library(here)
+
+
+```
+
+
+```{r}
+M.data <- 
+  here("./data/clean/Forestry/for analysis/") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2020:2020)) %>% #如果只要2020~2022年，就寫2020:2022
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows()%>% 
+  mutate(DataID = 1:n(),.before = names(.)[1])
+```
+
+
+```{r}
+
+df1 <- 
+M.data %>% 
+  select(DataID ,Site_N:Macaca_dist,座標校正說明,
+                TWD97_X.ori:經校正_TWD97_Y.ori) %>% 
+  select(-Macaca_sur) %>% 
+  setNames(.,str_replace_all(colnames(.),
+                                    c("TWD97_X.ori" = "TWD97_X",
+                                      "TWD97_Y.ori" = "TWD97_Y",
+                                      "Macaca_sur.ori" = "Macaca_sur")
+                                    )) %>%
+  relocate(c('Macaca_sur'),.before = "Macaca_dist")
+```
+
+```{r}
+DF.0<- 
+lapply(paste0(here("data/raw/FORESTRYdata/"), "/", 2020), function(x){
+  list.files(x, full.names = T, pattern = "_v0") %>%  #讀取各2020資料夾內的excel檔名
+    lapply(., function(x){
+      x %>% 
+      excel_sheets(.) %>%   #讀取各excel內的sheet名
+      lapply(.,read_excel, path = x,
+             col_names = T, col_type = "text", cell_cols("D:T")) %>%  #讀取各sheet的內容
+      bind_rows()  
+    })
+  }) %>%
+  bind_rows()%>% 
+  setNames(str_replace_all(names(.),setNames(colname_en,colname_ch)))%>%
+  mutate(Survey = ifelse(Site_N == 'MA-G27-08', 1, Survey)) %>% 
+  select(  -Name, -Point, -Surveyor)
+```
+
+```{r}
+DF.o<- 
+full_join(df1, DF.0) %>% 
+ mutate(Site_N = ifelse(Site_N == 'MB-C11-10', 'MA-C11-10', Site_N)) %>% 
+  setNames(.,str_replace_all(colnames(.),
+                                    c("^TWD97_X" = "TWD97_X.ori",
+                                      "^TWD97_Y" = "TWD97_Y.ori",
+                                      "經校正_" = "")
+                                    )) %>% 
+ relocate(c('TWD97_X', 'TWD97_Y'),.before = "Hour")%>% 
+ relocate(c('座標校正說明','TWD97_X.ori', 'TWD97_Y.ori'),.after =  "Note")%>% 
+  arrange(str_sub(Site_N, 4,9), Survey, Point) 
+```
+
+
+```{r}
+Data_survey <- 
+ DF.o %>% 
+  left_join(table_Point, by = c('Site_N' = '獼猴樣區編號',
+                                'Point' = '樣點代號')) %>% 
+#  dplyr::select(-Site_N, -Point)%>% 
+  mutate(recorded = Sys.Date() %>% as.character, .before = names(.)[1])
+
+```
+
+```{r}
+Office_list <- 
+
+M.data %>% 
+  select(Office, Station, Site_N) %>% 
+  mutate(Site_N = ifelse(Site_N == 'MB-C11-10', 'MA-C11-10', Site_N)) %>% 
+  unique()
+```
+
+
+
+```{r}
+Data_survey_con2 <- 
+dbReadTable(con2, 'Data_survey')
+
+Data_survey <- 
+Data_survey %>% 
+  relocate("Point", .after = "Site_N")  
+
+dbWriteTable(con2, 'Data_survey5', Data_survey)
+
+dbDisconnect(con2)  
+```
+

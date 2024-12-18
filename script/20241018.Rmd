@@ -98,15 +98,33 @@ Data_survey <-
 
 
 ```{r}
-DF<-    
-   Office_list %>% 
-     left_join(., list_Point, by = c('Site_N' = '獼猴樣區編號')) %>% 
-     dplyr::select( names(Office_list),Point = 樣點代號) %>% 
-     right_join(.,DF.o, by = c('Site_N', 'Point')) 
+# DF<-    
+#    Office_list %>% 
+#      left_join(., list_Point, by = c('Site_N' = '獼猴樣區編號')) %>% 
+#      dplyr::select( names(Office_list),Point = 樣點代號) %>% 
+#      right_join(.,DF.o, by = c('Site_N', 'Point')) 
    
  #  [!is.na(DF.o$Macaca_sur),]
 ```
 
+```{r}
+con2 <- dbConnect(RSQLite::SQLite(), "data/raw/FORESTRYdata/data.db")
+
+
+Data_survey <- 
+dbReadTable(con2, 'Data_survey3')
+
+```
+
+```{r}
+DF<-    
+   Office_list %>% 
+     left_join(., list_Point, by = c('Site_N' = '獼猴樣區編號')) %>% 
+     dplyr::select( names(Office_list),Point = 樣點代號, PointID) %>% 
+     left_join(.,Data_survey, by = c('PointID')) 
+   
+ #  [!is.na(DF.o$Macaca_sur),]
+```
 
 
 
