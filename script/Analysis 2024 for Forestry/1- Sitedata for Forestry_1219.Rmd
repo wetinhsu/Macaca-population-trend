@@ -1,0 +1,141 @@
+```{r}
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(sf)
+library(here)
+
+library(DBI)
+library(RSQLite)
+```
+
+欄位名中英文對照
+```{r}
+colname_en <- c('Office','Station','Site_N','Name',
+                'Year','Month','Day',
+                'Survey','Surveyor','Point',
+                'TWD97_X','TWD97_Y','Hour','Minute',
+                'Macaca_sur','Macaca_dist','Macaca_voice','Habitat', 'Note')
+
+colname_ch <- c('分署','工作站','樣區編號','樣區名稱',
+                '年','月','日',
+                '旅次','調查者','樣點編號',
+                'X座標\\(TWD97\\)','Y座標\\(TWD97\\)','時','分',
+                '數量','距離','叫聲','棲地類型\\(主要\\)','備註')
+```
+
+
+
+樣點座標
+
+```{r}
+con <-  dbConnect(RSQLite::SQLite(), dbname="D:/R/test/DB/P_BBS.db")
+
+list_Point<- dbReadTable(con, "list_Point") %>%
+  select(`PointID`, 獼猴樣區編號,樣點代號,
+         'TWD97_X'=`X_97`, 'TWD97_Y' = `Y_97`) 
+table_Point<- dbReadTable(con, "table_Point")
+list_Site<- dbReadTable(con, "list_Site")
+
+
+
+
+
+
+dbDisconnect(con)  
+```
+
+
+各分署需執行調查的樣區
+```{r}
+Office_list <-
+  read_excel(
+  paste0(here("data/raw/FORESTRYdata/"), "/", 2024,"/林業署獼猴調查樣區列表.xlsx")
+  ) %>% 
+  mutate(Office = ordered(Office, c("宜蘭", "新竹", "臺中", "南投", "嘉義", "屏東", "花蓮", "臺東"))) %>% 
+  select(-birds)
+
+```
+
+
+回收的調查資料
+```{r}
+con2 <-  dbConnect(RSQLite::SQLite(),
+                   dbname="D:/R/test/Foresty_clean/Foresty_clean/data/clean/ForestyDB.db")
+
+data_raw <- dbReadTable(con2, "data_raw2") 
+
+DF.o<- 
+  data_raw %>% 
+  select(ID,`Name`:`備註`)%>% 
+  setNames(str_replace_all(names(.),setNames(colname_en,colname_ch)))
+```
+
+
+```{r}
+
+DF<-    
+   Office_list %>% 
+     left_join(., list_Point, by = c('Site_N' = '獼猴樣區編號')) %>% 
+     select( names(Office_list),Point = 樣點代號) %>% 
+     right_join(.,DF.o, by = c('Site_N', 'Point'))
+   
+```
+
+
+列出未調查的樣區
+```{r}
+
+DF.o %>%
+  filter(is.na(Macaca_sur)) %>% 
+  group_by(`Name`,`Site_N`,`Survey`,`Note`) %>% 
+  summarise(pp = paste(ordered(as.numeric(Point)), collapse = "、")) %>% 
+  mutate(NN = paste0('(樣點',pp,')\n\n',Note)) %>% 
+  reshape2::dcast(Name+Site_N ~ Survey, value = NN) %>% 
+  arrange(str_sub(Site_N, 4,9)) %>% 
+  right_join(Office_list, ., by = c('Site_N')) %>% 
+  setNames(str_replace_all(names(.),setNames(colname_ch,colname_en))) %>% 
+  flextable::flextable(.)
+#  write_xlsx(here("Report of Foresty_20231026/因故未調查樣區.xlsx"))
+
+
+```
+
+
+
+```{r}
+DF %>% 
+  filter(Macaca_sur %in% 0) %>% 
+  filter(! is.na(Macaca_dist) | !is.na(Macaca_voice) ) 
+
+DF %>% 
+  filter( Macaca_sur %in% c(1, 2)) %>% 
+  filter( is.na(Macaca_dist) | is.na(Macaca_voice) )
+```
+
+
+
+```{r}
+DF.0 <- 
+DF %>% 
+  split(., is.na(DF$Macaca_sur))
+```
+
+
+
+
+
+```{r}
+#確認旅次---
+DF <- 
+  DF %>% 
+  filter(!is.na(DF$Macaca_sur)) %>% 
+  reshape2::dcast(Year + Site_N ~ Survey, length, value.var = "Macaca_sur") %>% 
+  #計算第1旅次及第2旅次調查的樣點數
+  filter(`1` %in% 0 & `2` >= 6) %>%  #找出有第2旅次沒第1旅次的樣區
+  mutate( Survey = ifelse(!is.na(`1`),"1", Survey)) %>%#將第1次調查的旅次改回1
+  select(-`1`, -`2`) %>% 
+
+  rows_update(DF, .,  by = c("Year", "Site_N"))
+  
+```
