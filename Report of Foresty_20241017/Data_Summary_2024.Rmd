@@ -30,12 +30,3 @@ library(here)
 
 ```
 
-
-\newpage
- Trim  
-
-
-```{r child = here::here("script", "Analysis 2024 for Forestry","9-rtrim.Rmd")}
-
-```
-

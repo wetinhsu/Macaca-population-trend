@@ -65,6 +65,8 @@ con2 <-  dbConnect(RSQLite::SQLite(),
 
 data_raw <- dbReadTable(con2, "data_raw2") 
 
+dbDisconnect(con2)
+
 DF.o<- 
   data_raw %>% 
   select(ID,`Name`:`備註`)%>% 
@@ -77,8 +79,11 @@ DF.o<-
 DF<-    
    Office_list %>% 
      left_join(., list_Point, by = c('Site_N' = '獼猴樣區編號')) %>% 
-     select( names(Office_list),Point = 樣點代號) %>% 
-     right_join(.,DF.o, by = c('Site_N', 'Point'))
+     select( names(Office_list),PointID, Point = 樣點代號) %>% 
+     right_join(.,DF.o, by = c('Site_N', 'Point'))%>% 
+
+  rows_update(.,Office_list,   by = c("Site_N")) %>% 
+  relocate(PointID, .after = "Note")
    
 ```
 
@@ -115,7 +120,7 @@ DF %>%
 
 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 DF.0 <- 
 DF %>% 
   split(., is.na(DF$Macaca_sur))
@@ -139,3 +144,172 @@ DF <-
   rows_update(DF, .,  by = c("Year", "Site_N"))
   
 ```
+
+
+
+```{r}
+dfCheck_data <- 
+DF %>% 
+   mutate(Date = ISOdatetime(Year, Month, Day, Hour, Minute, sec = 0) ) %>%
+  group_by(Site_N, Survey) %>% 
+  arrange(Date, .by_group = T) %>%  #group內排序
+  mutate(time_2=  c(Date[2: n()], NA))%>% 
+  mutate(time_diff = difftime(time_2, Date, units='mins') %>% 
+           as.numeric())  %>% 
+  select(-time_2) %>% 
+  
+  mutate(day_diff = difftime(Date[n()], Date[1], units='days') %>% 
+           as.numeric() %>% round(.,0)) %>%
+  
+  ungroup() %>% 
+  
+  
+  mutate(analysis = "Y") %>% 
+  mutate(analysis = ifelse(time_diff<6 & !is.na(time_diff),
+                           paste0(analysis, ", 6min"), analysis)) %>% 
+  mutate(analysis = ifelse(day_diff > 7 & !is.na(day_diff), 
+                           paste0(analysis, ", 7day"), analysis)) %>% 
+  
+  mutate(analysis = ifelse(data.table::as.ITime(Date) > data.table::as.ITime("10:54"), 
+                           paste0(analysis, ", Toolate"), analysis))%>%
+  select(ID,analysis, time_diff, day_diff)
+  
+```
+
+
+
+```{r}
+
+DistCheck_data <- 
+DF %>% 
+ left_join(list_Point,
+            by = c('PointID',
+                   "Site_N" = "獼猴樣區編號",
+                   "Point"= "樣點代號" ),
+            suffix = c(".ori", "")) %>% 
+  
+  #為了計算距離，先轉成"數字格式"
+  mutate_at(c("TWD97_X", "TWD97_Y", "TWD97_X.ori", "TWD97_Y.ori"), as.numeric) %>% 
+  
+
+  #計算距離
+  mutate(point_diff = ifelse(
+    is.na(TWD97_X)| is.na(TWD97_Y), NA,
+    st_distance(
+      st_as_sf(., coords = c("TWD97_X.ori", "TWD97_Y.ori"),
+               crs = 3826, remove = F, na.fail = F),#調查位置
+      
+      st_as_sf(., coords = c("TWD97_X", "TWD97_Y"),
+               crs = 3826, remove = F, na.fail = F),#表定位置
+      by_element = TRUE) %>% 
+      as.numeric()
+    )) %>% 
+  #再轉回"文字格式"
+  mutate_at(c("TWD97_X", "TWD97_Y", "TWD97_X.ori", "TWD97_Y.ori"), as.character) %>% 
+  
+  mutate(analysis = "Y") %>% 
+  mutate(analysis = case_when(
+             point_diff > 51 | is.na(point_diff) ~"locate", 
+             # range of gps =50m
+             Point %in% "X" ~  "locate",
+             # range of gps =50m
+             TRUE ~ analysis)) %>% 
+  
+  select(ID,point_diff,analysis)
+
+```
+
+
+
+
+```{r}
+check_table <- 
+DF %>% 
+  left_join(dfCheck_data, by = "ID") %>% 
+  left_join(DistCheck_data, by = "ID", suffix = c("_1", "_2")) %>%
+  mutate(analysis = paste(analysis_1,analysis_2, sep = ",") %>% 
+           str_replace_all(., "\\,Y", "") %>% 
+           str_replace_all(., "Y,", "") %>% 
+           str_trim(.)) %>% 
+  select(-analysis_1, -analysis_2) %>% 
+  left_join(table_Point[,c('PointID', 'recorded')], by = "PointID") %>%
+  select(ID, analysis,time_diff,day_diff,point_diff, 'tagert_recorded'  = recorded) 
+
+
+```
+
+
+```{r}
+con3 <-  dbConnect(RSQLite::SQLite(),
+                   dbname="D:/R/test/Macaca-population-trend/data/raw/FORESTRYdata/data.db")
+
+forest3 <- dbReadTable(con3, "forest3") 
+
+dbDisconnect(con3)
+
+```
+
+
+
+```{r}
+M.data <-
+list_Point %>% 
+  select(PointID, TWD97_X, TWD97_Y) %>% 
+  left_join(forest3, by = "PointID")  %>%
+  left_join(DF,., by = "PointID", suffix = c(".ori", ""))  %>%
+   left_join(check_table, by = "ID")%>% 
+  
+  mutate(TypeName.1 = case_when(
+    str_detect(TypeName, "混")  ~ "混淆林",
+    str_detect(TypeName, "^竹林$") ~ "竹林",
+    str_detect(TypeName, "闊葉樹林型") ~ "闊葉林",
+    str_detect(TypeName, "針葉樹林型") ~ "針葉林",
+    TRUE ~ "非森林"
+    )) %>% 
+  mutate(TypeName.1 = ifelse(Distance > 20, "非森林", TypeName.1)) %>%
+  select(-ID, -tagert_recorded.x, -tagert_recorded.y) %>% 
+  
+  mutate(Macaca_sur.ori = Macaca_sur) %>% 
+  mutate(Macaca_sur = ifelse(
+    Macaca_sur %in% "1" & !is.na(Macaca_sur), 0,
+    ifelse(Macaca_sur %in% "2"& !is.na(Macaca_sur) , 1, Macaca_sur))
+    ) %>% 
+  mutate(Macaca_sur = as.numeric(Macaca_sur)) %>% 
+   mutate(Date = 
+            ISOdatetime(Year, Month, Day, Hour, Minute, sec = 0) %>%
+            as.character , .after = "Note")%>% 
+  
+   relocate(ends_with("ori"), .after = last_col()) %>% 
+   relocate(ends_with("diff"), .after = last_col())%>%
+  relocate('analysis', .before =  1)%>%
+  
+   arrange(Office, Site_N, Survey, Point) 
+
+
+  
+```
+
+
+```{r}
+
+ NOTE <- data.frame(
+   說明 = c(
+     "1. 欄位名有.ori 為調查者所填的原始數字",
+     "2. 欄位名有.diff 為輔助欄位，用於計算時間差及位置偏差 ",
+     "3. analysis中，
+     Toolate為10:54之後才開始調查的樣點；
+     locate為調查位置偏離表定座標50m以上的樣點；
+     6min為調查時間不足6分鐘的樣點；
+     7day為該旅次該樣區超過7天才完成調查。",
+     "本資料集為林業署獼猴調查資料的合併檔，並已完成清理動作。"
+     ))
+```
+
+```{r}
+write_xlsx( list('NOTE' = NOTE, 'Data' = M.data), here("data/clean/Forestry/full_combind/full_combind_Forestrydata_2024_V2.xlsx"))
+ 
+ #Part 3 可納入分析的資料----------------
+#(僅留下 距離A、B、海拔50m以上、森林、300m的猴群)---------- 
+
+```
+

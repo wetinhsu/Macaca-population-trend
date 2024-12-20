@@ -54,7 +54,7 @@ colname_ch <- c('分署','工作站','樣區編號','樣區名稱',
 
 ```{r}
 
-M.data <- read_excel(here("./data/clean/Forestry/full_combind/full_combind_Forestrydata_2024_V1.xlsx"), sheet = "Data")%>%
+M.data <- read_excel(here("./data/clean/Forestry/full_combind/full_combind_Forestrydata_2024_V2.xlsx"), sheet = "Data")%>%
        setNames(str_replace_all(names(.),setNames(colname_en,colname_ch))) %>%
     setNames(str_replace_all(names(.),
                              c("distance" = "Distance",
@@ -259,7 +259,7 @@ NOTE <- data.frame(
 write_xlsx( list('NOTE' = NOTE,
                  'Point_Summary' = point_summary,
                  'Data' = M.data.2), 
-            paste0(here("./data/clean/Forestry/for analysis/for analysis Forestrydata_2024_V1.xlsx")))
+            paste0(here("./data/clean/Forestry/for analysis/for analysis Forestrydata_2024_V2.xlsx")))
 
 
 

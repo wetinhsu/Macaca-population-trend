@@ -53,11 +53,12 @@ M.data <-
     TypeName.1 %in% "非森林" ~ "Not forest"
   )) %>% 
   
-  filter(analysis %in% "Y")
+  filter(analysis %in% "Y") %>% 
+  filter(Year > 2020)
 ```
 
 
-
+2020年的資料不列入分析
 ```{r include=FALSE}
 #---------------------------------------------------------------------
 
@@ -107,6 +108,16 @@ m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 + Offic
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 ```
+
+```{r include=FALSE}
+m2 <- glmer(Macaca_sur ~  TypeName.1 + + Altitude.1 + julian.D.1 + Office  + (1|Site_N) + (1|Year.re ), 
+            family = binomial, data = df,
+            control = glmerControl(optimizer = "bobyqa"))
+
+Anova(m2) 
+```
+
+
 
 <br/>  
 
@@ -193,10 +204,10 @@ sw(model.avg(d1, subset = delta < 2)) %>%
 <br/>
 
 最後的 model:   
-glmer(Macaca_sur ~ Year.re + Altitude.1 + julian.D.1+   Office  + (1|Site_N), family = binomial, data = df)
+glmer(Macaca_sur ~ Year.re + Altitude.1 + julian.D.1+  TypeName.1+  Office  + (1|Site_N), family = binomial, data = df)
 
 ```{r}
-m1.1 <- glmer(Macaca_sur ~ Year.re + Altitude.1 + julian.D.1+   Office  + (1|Site_N), 
+m1.1 <- glmer(Macaca_sur ~ Year.re + Altitude.1 + julian.D.1+ TypeName.1+  Office  + (1|Site_N), 
             family = binomial, data = df,
             control = glmerControl(optimizer = "bobyqa"))
 ```
@@ -312,7 +323,7 @@ glht(m1.1, linfct = c("Year.re = 0",
 ```
 
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
   group_by(Year, Survey) %>% 
   summarise(
@@ -321,7 +332,7 @@ M.data %>%
     E = m/N
   ) %>% 
   ggplot(., aes(x = factor(Year), y = E)) +
-  geom_boxplot()+
+  geom_boxplot(width = 0.4)+
   scale_y_continuous(limits =  c(0, 0.1),
                      breaks = seq(0,0.1,0.02))+
   labs(x = "Year",
@@ -329,12 +340,13 @@ M.data %>%
   theme_classic()+
   theme(
     aspect.ratio = 1,
+    text = element_text(size = 18),
     panel.border = element_blank()
   )
 ```
 
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
   group_by(Office,Year, Survey) %>% 
   summarise(
@@ -351,17 +363,18 @@ M.data %>%
   #          )
   # ) %>% 
   ggplot(., aes(x = factor(Office), y = E)) +
-  geom_boxplot()+
+  geom_boxplot(width = 0.4)+
   scale_y_continuous(limits =  c(0, 0.12),
                      breaks = seq(0,0.12,0.02))+
-  scale_x_discrete(limits = c( "新竹", "臺中",
-                               "南投","宜蘭",
-                            "嘉義", "屏東", "花蓮", "臺東"))+
+  scale_x_discrete(limits = c( "新竹","臺中", "宜蘭",
+                               "南投","花蓮",
+                            "嘉義", "屏東",  "臺東"))+
   labs(x = "  ",
        y = "Encounter rate (troop/point)")+
   theme_classic()+
   theme(
     aspect.ratio = 1,
+    text = element_text(size = 18),
     panel.border = element_blank()
   )
 ```

@@ -50,7 +50,7 @@ M.data <-
     說明：收到的資料，尚未刪減任何資料。  
      - 包括有回報因故無法調查的樣區。
 
-各林管處的調查人員人數
+各分署的調查人員人數
 
 ```{r 調查者的統計資料, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -99,7 +99,7 @@ List_surveyor %>%
 
 
   set_header_labels(
-    'Office' = "林管處",
+    'Office' = "分署",
     '2023_Site_n' = "樣區數",
     '2023_Person_n' = "調查者人數",
     '2024_Site_n' = "樣區數",
@@ -221,7 +221,7 @@ M.data %>%
   flextable(.) %>% 
 
   set_header_labels(
-    "Office"="林管處",
+    "Office"="分署",
     "1_Point_n"="樣點",
     "1_Good_n" = "無疏失的樣點",
     "1_prob" = "正確率%",
@@ -284,7 +284,7 @@ M.data %>%
   flextable(.)  %>% 
   
   set_header_labels(
-    "Office"="林管處",
+    "Office"="分署",
     "2024_Point_n"="樣點",
     "2024_Good_n" = "無疏失的樣點",
     "prob_diff" = "正確率%") %>% 
@@ -306,7 +306,7 @@ M.data %>%
 
 \newpage
 
-2024年各林管處各疏失資料類型的筆數
+2024年各分署各疏失資料類型的筆數
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -373,7 +373,7 @@ M.data %>%
   flextable(.) %>% 
 
   set_header_labels(
-    "Office"="林管處",
+    "Office"="分署",
 
     "2023_超過7日" = "超過7日",
     "2023_晚於11時" = "晚於11時",
@@ -396,7 +396,7 @@ M.data %>%
 
 \newpage
 
-篩選後的資料後，各林管處的獼猴調查統計
+篩選後的資料後，各分署的獼猴調查統計
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
@@ -598,9 +598,9 @@ M.data %>%
 E_rate_Forest %>% 
   mutate(TypeName.1 = ordered(TypeName.1, c('Forest',
                                             '闊葉林',
-                                       '針葉林',
                                        '竹林',
                                        '混淆林',
+                                       '針葉林',
                                        'less50',
                                        '非森林',
                                        'Total'))) %>% 
@@ -773,7 +773,7 @@ M.data %>%
 
 \newpage
 
-林管處的Encounter_rate
+分署的Encounter_rate
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 Office.d.n <-
@@ -811,7 +811,7 @@ M.data %>%
   scale_y_continuous(breaks = seq(0,0.15,0.05), limits = c(0,0.15))+
   scale_x_discrete(limits = c( "新竹", "臺中", "南投","宜蘭",
                             "嘉義", "屏東", "花蓮", "臺東"))+
-  labs(x = "林管處", y = "相對密度 (群/樣點)")+
+  labs(x = "分署", y = "相對密度 (群/樣點)")+
   theme(
     text = element_text(family="Microsoft JhengHei"),
     panel.border = element_rect(size = 1.5,fill = NA),
@@ -1231,7 +1231,7 @@ M.data %>%
   mutate(pp = str_replace_all(pp, "7day", "超過7日完成")) %>%
   mutate(pp = str_replace_all(pp, ",", "、")) %>%
   arrange(Office, Station, Surveyor) %>% 
-  setNames(., c("林管處","工作站", "調查者","樣區編號","樣區名稱","疏失類型", "旅次"))# %>% 
+  setNames(., c("分署","工作站", "調查者","樣區編號","樣區名稱","疏失類型", "旅次"))# %>% 
 #  writexl::write_xlsx(., here("./Report of Foresty_20211124/調查疏失名單.xlsx"))
 
 
@@ -1244,4 +1244,4 @@ M.data %>%
 
 \newpage
 
-2024年位在海拔50 m以上林管處轄內的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。
+2024年位在海拔50 m以上分署轄內的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。
