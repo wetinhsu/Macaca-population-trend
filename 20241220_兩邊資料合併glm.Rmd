@@ -92,7 +92,8 @@ bind_rows(M.data, M.data_F) %>%
 
 ```{r include=FALSE}
 df <- 
-  AllData 
+  AllData %>% 
+  mutate(SiteID = SiteID %>% as.character)
 ```
 
 
@@ -104,7 +105,7 @@ df$julian.D.1 <-  scale(df$julian.D,scale =T)
 
 
 ```{r}
-m1 <- glm(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 +  Region2 + Data, 
+m1 <- glm(Macaca_sur ~  TypeName.1 + Year + Altitude + julian.D +  Region2 + Data  + SiteID, 
             family = binomial, data = df)
 ```
 
@@ -119,19 +120,41 @@ Anova(m1)
 summary(m1)
 ```
 
-
 ```{r}
-df_fit <- 
-fitted(m1) %>% 
-  data.frame(fitted = .) %>% 
-  bind_cols(df,.)
+mean(c(50,3952))  #平均海拔
+mean(c(60,182))  #平均julian.D
 ```
 
 
 ```{r}
-ggplot(df_fit, aes(x = as.character(Year), y = fitted))+
-  geom_boxplot(aes(col = Data))
-  
+
+predict_empty <- 
+df %>% 
+  dplyr::select(TypeName.1, Year , Altitude ,julian.D ,Region2 ,Data) %>% 
+  mutate(Altitude = 2001) %>% 
+  mutate(julian.D = 121) %>% 
+  mutate(Year = NA) %>% 
+  unique()
+```
+
+
+```{r}
+pre_year <- 
+  lapply(c(2015:2024),
+         function(x){  predict_empty %>%  mutate(Year = x)}) %>%
+  bind_rows()
+
+pre_year_value <-
+  predict(m1, newdata = pre_year, type ="link")%>% 
+  data.frame(predict_value = .) %>% 
+  bind_cols(pre_year) 
+
+
+```
+
+
+```{r}
+boxplot(predict_value~ Year , data = pre_year_value)
 ```
 
 ```{r}
