@@ -105,7 +105,7 @@ df$julian.D.1 <-  scale(df$julian.D,scale =T)
 
 
 ```{r}
-m1 <- glm(Macaca_sur ~  TypeName.1 + Year + Altitude + julian.D +  Region2 + Data  + SiteID, 
+m1 <- glm(Macaca_sur ~  TypeName.1 + Year + Altitude + julian.D +  Region2 + Data  , 
             family = binomial, data = df)
 ```
 
