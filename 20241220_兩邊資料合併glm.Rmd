@@ -1,15 +1,17 @@
-```{r}
+---
+title: "獼猴資料合併分析(BBS&Forest)"
+output: word_document
+date: "`r Sys.Date()`"
+---
 
+```{r warning=FALSE, include=FALSE}
 library(tidyverse)
 library(lme4)
 library(car)
-library(multcomp)
 library(readxl)
-library(MuMIn)
-library(emmeans)
+library(flextable)
 library(here)
 ```
-
 
 ```{r include=FALSE}
 conty_order = c("宜蘭縣","基隆市","臺北市", "新北市",
@@ -32,7 +34,7 @@ Region2_order = c("North","Center",
                   "TW")
 ```
 
-```{r}
+```{r include=FALSE}
 library(DBI)
 library(RSQLite)
 
@@ -41,9 +43,8 @@ list_Site<- dbReadTable(con, "list_Site") %>%
   dplyr::select(SiteID, `縣市`, `樣區編號`, `獼猴樣區編號`)
 ```
 
-
-```{r}
-
+```{r include=FALSE}
+#讀取林業署的調查資料
 M.data_F <- 
   list.files(here("./data/clean/Forestry/for analysis/"),
              full.names = T,pattern = "xlsx$|xls$") %>% 
@@ -55,11 +56,13 @@ M.data_F <-
   right_join(list_Site, ., by = c("獼猴樣區編號" = "Site_N")) %>% 
   dplyr::select(`SiteID`:`獼猴樣區編號`,Survey, Point,
                 Macaca_sur,TypeName.1,Year,Altitude,julian.D) %>% 
-  mutate(Data = "Forest")
+  mutate(Data = "Forest")%>% 
+  filter(Year > 2020 & Year < 2024) 
   
 ```
 
-```{r}
+```{r include=FALSE}
+#讀取BBS的調查資料
 M.data <- read_excel(here("data/clean/for analysis_1523.xlsx"),
                      sheet=1, col_types = "text") %>% 
   mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur)) %>% 
@@ -67,11 +70,13 @@ M.data <- read_excel(here("data/clean/for analysis_1523.xlsx"),
   right_join(list_Site, ., by = c("樣區編號" = "Site_N")) %>% 
   dplyr::select(`SiteID`:`獼猴樣區編號`,Survey, Point,
                 Macaca_sur,TypeName.1,Year,Altitude,julian.D)%>% 
-  mutate(Data = "BBS")
+  mutate(Data = "BBS")%>% 
+  filter(Year > 2020 & Year < 2024) 
 ```
 
+```{r include=FALSE}
+#合併，並且劃分地理分區(Region)
 
-```{r}
 AllData <- 
 bind_rows(M.data, M.data_F) %>% 
   mutate(Region2 = case_when(
@@ -88,7 +93,26 @@ bind_rows(M.data, M.data_F) %>%
   mutate(Year.re = Year - min(Year) + 1) 
 ```
 
-#==============================================
+-   林保署資料：
+    -   年：2021\~2023
+    -   範圍：海拔50m以上的森林內\
+-   BBS資料：
+    -   年：2021\~2023
+    -   範圍：海拔50m以上的森林內\
+-   變數：
+    -   年：連續變數，林保署(2021\~2023) & BBS(2021\~2023)
+    -   森林類型：類別變數，闊葉林、竹林、混淆林、針葉林
+    -   海拔：連續變數，50m以上
+    -   調查日：連續變數，3月1日到6月30日，即第60\~182天
+    -   地理分區：類別變數，北部、中部、南部、西南、花蓮、台東
+    -   資料來源：類別變數，林保署(Forest) & BBS
+-   應變數(y)：猴群數量(1 or 0)\
+
+------------------------------------------------------------------
+
+\newpage
+
+建立估算model
 
 ```{r include=FALSE}
 df <- 
@@ -96,37 +120,73 @@ df <-
   mutate(SiteID = SiteID %>% as.character)
 ```
 
-
 ```{r include=FALSE}
 df$Altitude.1 <-  scale(df$Altitude,scale =T)
 df$julian.D.1 <-  scale(df$julian.D,scale =T)
 ```
 
+m1 \<- glm(Macaca_sur \~\
+TypeName.1 + Year + Altitude + julian.D + Region2 + Data, family = binomial, data = df)
 
-
-```{r}
-m1 <- glm(Macaca_sur ~  TypeName.1 + Year + Altitude + julian.D +  Region2 + Data  , 
+```{r message=FALSE, warning=FALSE, include=FALSE}
+m1 <- glm(Macaca_sur ~  
+            TypeName.1 + Year + Altitude + julian.D +  Region2 + Data, 
             family = binomial, data = df)
+
+```
+
+變數篩選
+
+```{r warning=FALSE, include=FALSE}
+options(na.action = "na.fail")
+d1<- MuMIn::dredge(m1,  trace = T)
+```
+
+```{r echo=FALSE}
+subset(d1, delta < 2)%>% 
+  as_flextable()%>% 
+  autofit() %>% 
+  colformat_double(., j = c(2,4,7), digits = 3) %>% 
+  colformat_double(., j = c(11,12), digits = 2) 
+```
+
+\br
+
+Analysis of Deviance Table
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+Anova(m1) %>% 
+  broom::tidy() %>%
+  flextable()%>% 
+  colformat_double(., j = c(2,4), digits = 3) 
 ```
 
 
 
-```{r}
-Anova(m1)
+Summary(m1)
 
+```{r echo=FALSE, warning=FALSE}
+as_flextable(m1)
 ```
 
-```{r}
-summary(m1)
-```
+\newpage
 
-```{r}
+設置一個dataframe - 欄位\
+- 年：2021\~2023\
+- 森林類型：類別變數，闊葉林、竹林、混淆林、針葉林\
+- 海拔：2001 m，海拔50m到3952m間的平均值\
+- 調查日：121，即第60\~182天的中間值\
+- 地理分區：類別變數，北部、中部、南部、西南、花蓮、台東\
+- 資料來源：類別變數，林保署(Forest) & BBS
+
+------------------------------------------------------------------------
+
+```{r include=FALSE}
 mean(c(50,3952))  #平均海拔
 mean(c(60,182))  #平均julian.D
 ```
 
-
-```{r}
+```{r include=FALSE}
 
 predict_empty <- 
 df %>% 
@@ -137,32 +197,44 @@ df %>%
   unique()
 ```
 
-
-```{r}
+```{r include=FALSE}
 pre_year <- 
-  lapply(c(2015:2024),
+  lapply(c(2021:2023),
          function(x){  predict_empty %>%  mutate(Year = x)}) %>%
   bind_rows()
+```
 
+```{r warning=FALSE, include=FALSE}
+summary(pre_year)
+```
+
+```{r include=FALSE}
 pre_year_value <-
-  predict(m1, newdata = pre_year, type ="link")%>% 
+  predict(m1, newdata = pre_year, type ="response")%>% 
   data.frame(predict_value = .) %>% 
   bind_cols(pre_year) 
 
 
 ```
 
-
-```{r}
-boxplot(predict_value~ Year , data = pre_year_value)
+```{r echo=FALSE}
+ggplot(aes(x = as.character(Year), y = predict_value) ,
+       data = pre_year_value)+
+  geom_boxplot(width = 0.3)+
+  geom_point(size = 1.2, col = "blue")+
+  labs(x = "Year")+
+  theme_classic()
 ```
 
-```{r}
-df_fit %>% 
-  group_by(Year, Data) %>% 
-  summarise(value = mean(fitted)) %>% 
-  ggplot(., aes(x = Year, y = value)) +
-  geom_point(aes(col = Data))+
-  geom_line(aes(col = Data))
-```
+\br
 
+```{r echo=FALSE}
+pre_year_value %>% 
+  group_by(Year) %>% 
+  summarise(Mean_predict = mean(predict_value) %>% round(4)
+            ) %>% 
+  
+  flextable(.)%>% 
+  autofit() %>% 
+  colformat_num(x = .,  big.mark="") 
+```
