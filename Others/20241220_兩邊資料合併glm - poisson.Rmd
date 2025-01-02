@@ -1,0 +1,248 @@
+---
+title: "獼猴資料合併分析(BBS&Forest)"
+output: word_document
+date: "`r Sys.Date()`"
+---
+
+```{r warning=FALSE, include=FALSE}
+library(tidyverse)
+library(lme4)
+library(car)
+library(broom)
+library(readxl)
+library(flextable)
+library(here)
+```
+
+```{r include=FALSE}
+conty_order = c("宜蘭縣","基隆市","臺北市", "新北市",
+                "桃園縣","桃園市","新竹市", "新竹縣","苗栗縣",
+                "臺中市","彰化縣", "南投縣","南投市",
+                "雲林縣","嘉義縣","嘉義市", "臺南市",
+                "高雄市", "屏東縣",
+                "花蓮縣", "台東縣","臺東縣",
+                "Total")
+TypeName_order = c("闊葉林",
+                   "針葉林",
+                   "混淆林",
+                   "竹林",
+                   "非森林",
+                   "Total")
+
+Region2_order = c("North","Center",
+                  "South","Southwest",
+                  "Hualien","Taitung",
+                  "TW")
+```
+
+```{r include=FALSE}
+library(DBI)
+library(RSQLite)
+
+con <-  dbConnect(RSQLite::SQLite(), dbname="D:/R/test/DB/P_BBS.db")
+list_Site<- dbReadTable(con, "list_Site") %>% 
+  dplyr::select(SiteID, `縣市`, `樣區編號`, `獼猴樣區編號`)
+```
+
+```{r include=FALSE}
+#讀取林業署的調查資料
+M.data_F <- 
+  list.files(here("./data/clean/Forestry/for analysis/"),
+             full.names = T,pattern = "xlsx$|xls$") %>% 
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows()%>% 
+  mutate(Site_N = str_replace_all(Site_N,'MB-C11-10','MA-C11-10')) %>% 
+  filter(analysis %in% "Y") %>% 
+  filter(Year > 2020) %>% 
+  right_join(list_Site, ., by = c("獼猴樣區編號" = "Site_N")) %>% 
+  dplyr::select(`SiteID`:`獼猴樣區編號`,Survey, Point,
+                Macaca_sur,TypeName.1,Year,Altitude,julian.D) %>% 
+  mutate(Data = "Forest")%>% 
+  filter(Year > 2020 & Year < 2024) 
+  
+```
+
+```{r include=FALSE}
+#讀取BBS的調查資料
+M.data <- read_excel(here("data/clean/for analysis_1523.xlsx"),
+                     sheet=1, col_types = "text") %>% 
+  mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur)) %>% 
+  filter(analysis %in% "Y") %>% 
+  right_join(list_Site, ., by = c("樣區編號" = "Site_N")) %>% 
+  dplyr::select(`SiteID`:`獼猴樣區編號`,Survey, Point,
+                Macaca_sur,TypeName.1,Year,Altitude,julian.D)%>% 
+  mutate(Data = "BBS")%>% 
+  filter(Year > 2020 & Year < 2024) 
+```
+
+```{r include=FALSE}
+#合併，並且劃分地理分區(Region)
+
+AllData <- 
+bind_rows(M.data, M.data_F) %>% 
+  mutate(Region2 = case_when(
+    縣市 %in% c("宜蘭縣","基隆市","臺北市","新北市",
+                  "桃園市","新竹市","新竹縣","苗栗縣") ~ "North",
+    縣市 %in% c("臺中市", "彰化縣","南投縣","南投市")~ "Center",
+    縣市 %in% c("雲林縣","嘉義縣","嘉義市", "臺南市")~ "Southwest",
+    縣市 %in% c("高雄市", "屏東縣")                  ~ "South",
+    縣市 %in% c("花蓮縣")                            ~ "Hualien",
+    縣市 %in% c("臺東縣")                            ~ "Taitung"
+  )) %>% 
+  mutate_at(c("Year", "Survey", "Point", "Macaca_sur","Altitude",
+               "julian.D"), as.numeric) %>% 
+  mutate(Year.re = Year - min(Year) + 1) 
+```
+
+-   林保署資料：
+    -   年：2021\~2023
+    -   範圍：海拔50m以上的森林內\
+-   BBS資料：
+    -   年：2021\~2023
+    -   範圍：海拔50m以上的森林內\
+-   變數：
+    -   年：連續變數，林保署(2021\~2023) & BBS(2021\~2023)
+    -   森林類型：類別變數，闊葉林、竹林、混淆林、針葉林
+    -   海拔：連續變數，50m以上
+    -   調查日：連續變數，3月1日到6月30日，即第60\~182天
+    -   地理分區：類別變數，北部、中部、南部、西南、花蓮、台東
+    -   資料來源：類別變數，林保署(Forest) & BBS
+-   應變數(y)：猴群數量(1 or 0)\
+
+------------------------------------------------------------------
+
+\newpage
+
+建立估算model
+
+```{r include=FALSE}
+df <- 
+  AllData %>% 
+  mutate(SiteID = SiteID %>% as.character)
+```
+
+```{r include=FALSE}
+df$Altitude.1 <-  scale(df$Altitude,scale =T)
+df$julian.D.1 <-  scale(df$julian.D,scale =T)
+```
+
+m1 \<- glm(Macaca_sur \~\
+TypeName.1 + Year + Altitude + julian.D + Region2 + Data, family = poisson(link = "log"), data = df)
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+m1 <- glm(Macaca_sur ~  
+            TypeName.1 + Year + Altitude + julian.D +  Region2 + Data, 
+            family = poisson(link = "log"), data = df)
+
+```
+
+變數篩選
+
+```{r warning=FALSE, include=FALSE}
+options(na.action = "na.fail")
+d1<- MuMIn::dredge(m1,  trace = T)
+```
+
+```{r echo=FALSE}
+subset(d1, delta < 2)%>% 
+  as_flextable()%>% 
+  autofit() %>% 
+  colformat_double(., j = c(2,4,7), digits = 3) %>% 
+  colformat_double(., j = c(11,12), digits = 2) 
+```
+
+\br
+
+Analysis of Deviance Table
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+Anova(m1) %>% 
+  broom::tidy() %>%
+  flextable()%>% 
+  colformat_double(., j = c(2,4), digits = 3) 
+```
+
+
+
+Summary(m1)
+
+```{r echo=FALSE, warning=FALSE}
+as_flextable(m1)
+```
+
+\newpage
+
+設置一個dataframe - 欄位\
+- 年：2021\~2023\
+- 森林類型：類別變數，闊葉林、竹林、混淆林、針葉林\
+- 海拔：2001 m，海拔50m到3952m間的平均值\
+- 調查日：121，即第60\~182天的中間值\
+- 地理分區：類別變數，北部、中部、南部、西南、花蓮、台東\
+- 資料來源：類別變數，林保署(Forest) & BBS
+
+------------------------------------------------------------------------
+
+```{r include=FALSE}
+mean(c(50,3952))  #平均海拔
+mean(c(60,182))  #平均julian.D
+```
+
+```{r include=FALSE}
+
+predict_empty <- 
+df %>% 
+  dplyr::select(TypeName.1, Year , Altitude ,julian.D ,Region2 ,Data) %>% 
+  mutate(Altitude = 2001) %>% 
+  mutate(julian.D = 121) %>% 
+  mutate(Year = NA) %>% 
+  unique()
+```
+
+```{r include=FALSE}
+pre_year <- 
+  lapply(c(2021:2023),
+         function(x){  predict_empty %>%  mutate(Year = x)}) %>%
+  bind_rows()
+```
+
+```{r warning=FALSE, include=FALSE}
+summary(pre_year)
+```
+
+```{r include=FALSE}
+pre_year_value <-
+  predict(m1, newdata = pre_year, type ="response")%>% 
+  data.frame(predict_value = .) %>% 
+  bind_cols(pre_year) 
+
+
+```
+
+
+
+```{r echo=FALSE}
+ggplot(aes(x = as.character(Year), y = predict_value) ,
+       data = pre_year_value)+
+  geom_boxplot(width = 0.3)+
+  geom_point(size = 1.2, col = "blue")+
+  labs(x = "Year")+
+  theme_classic()
+```
+
+\br
+
+```{r echo=FALSE}
+pre_year_value %>% 
+  group_by(Year) %>% 
+  summarise(Mean_predict = mean(predict_value) %>%  round(4)
+            ) %>% 
+  
+  flextable(.)%>% 
+  autofit() %>% 
+  colformat_num(x = .,  big.mark="") 
+```
+
+
+
+
+
