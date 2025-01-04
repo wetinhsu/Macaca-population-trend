@@ -1,4 +1,0 @@
-"0","M.data <- M.data %>% "
-"0","  mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur)) %>% "
-"0","  mutate(Year.re = Year - min(Year) + 1)"
-"0",""

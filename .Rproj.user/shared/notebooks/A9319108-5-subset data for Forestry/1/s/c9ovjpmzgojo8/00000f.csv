@@ -1,7 +1,0 @@
-"0","write_xlsx( list('NOTE' = NOTE,"
-"0","                 'Point_Summary' = point_summary,"
-"0","                 'Data' = M.data.2), "
-"0","            paste0(here(""./data/clean/Forestry/for analysis/for analysis Forestrydata_2024_V2.xlsx"")))"
-"0",""
-"0",""
-"0",""

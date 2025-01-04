@@ -1,3 +1,0 @@
-"0","DF.0 <- "
-"0","DF %>% "
-"0","  split(., is.na(DF$Macaca_sur))"

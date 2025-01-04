@@ -1,4 +1,0 @@
-"0","#bootstrap-------------------------"
-"0","bb<- df %>% setDT %>% "
-"0","  .[, A := ifelse(Macaca_dist %in% ""A"", Macaca_sur,0)] %>% "
-"0","  .[, AB := ifelse(Macaca_dist %in% c(""A"",""B""), Macaca_sur,0)]"

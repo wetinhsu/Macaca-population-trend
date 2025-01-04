@@ -1,5 +1,0 @@
-"0","par(mai=c(1,1,1.5,0.2))"
-"0","glht(m1.1, linfct = mcp(Office = ""Tukey"")) %>% cld()  %>% plot"
-"2","Warning: Completion with error > abseps"
-"2","Warning: Completion with error > abseps"
-"2","Warning: Completion with error > abseps"

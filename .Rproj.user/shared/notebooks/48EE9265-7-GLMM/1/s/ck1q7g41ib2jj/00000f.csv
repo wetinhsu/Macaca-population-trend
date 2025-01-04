@@ -1,4 +1,0 @@
-"0",""
-"0","m2 <- glmer(Macaca_sur ~ Altitude.1 + Year.re  +  julian.D.1 +  Region2 + (1|Site_N), "
-"0","            family = binomial, data = df,"
-"0","            control = glmerControl(optimizer = ""bobyqa""))"

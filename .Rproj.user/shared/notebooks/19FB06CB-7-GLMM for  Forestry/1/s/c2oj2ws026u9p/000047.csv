@@ -1,3 +1,0 @@
-"0",""
-"0",""
-"0","Anova(m1) %>% broom::tidy(.) %>% flextable()"

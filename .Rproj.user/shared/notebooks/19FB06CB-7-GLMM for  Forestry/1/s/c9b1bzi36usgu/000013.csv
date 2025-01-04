@@ -1,2 +1,0 @@
-"0","par(mai=c(1,1.5,1,1))"
-"0","glht(m1.1, linfct = mcp(Office = ""Tukey"")) %>% plot"

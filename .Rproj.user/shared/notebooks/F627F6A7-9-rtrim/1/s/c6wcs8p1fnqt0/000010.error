@@ -1,1 +1,0 @@
-{"frames":[],"message":"錯誤發生在 index(m1, \"imputed\", covars = F) %>% plot(., pct = T)：\n  沒有這個函式 \"%>%\"\n"}

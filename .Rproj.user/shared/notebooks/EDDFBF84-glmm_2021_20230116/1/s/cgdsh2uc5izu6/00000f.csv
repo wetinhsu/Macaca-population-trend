@@ -1,3 +1,0 @@
-"0","m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 +  ZONE41 + (1|Site_N), "
-"0","            family = binomial, data = df,"
-"0","            control = glmerControl(optimizer = ""bobyqa""))"

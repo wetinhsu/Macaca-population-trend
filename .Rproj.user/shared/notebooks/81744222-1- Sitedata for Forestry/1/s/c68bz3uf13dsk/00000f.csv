@@ -1,6 +1,0 @@
-"0","write_xlsx( list('NOTE' = NOTE, 'Data' = M.data), here(""data/clean/Forestry/full_combind/full_combind_Forestrydata_2022_V1.xlsx""))"
-"0"," "
-"0"," #Part 3 可納入分析的資料----------------"
-"0","#(僅留下 距離A、B、海拔50m以上、森林、300m的猴群)---------- "
-"0",""
-"0","  "

@@ -1,3 +1,0 @@
-"0","M.data <- read_excel(here(""./data/clean/Forestry/full_combind/full_combind_Forestrydata_2022_V1.xlsx""), sheet = ""Data"")%>% "
-"0","  select(-Macaca_voice, -Habitat ) %>% "
-"0","  mutate(Macaca_sur = ifelse(Macaca_dist %in% ""C"" , 0, Macaca_sur))"
