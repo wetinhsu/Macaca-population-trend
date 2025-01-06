@@ -324,6 +324,21 @@ glht(m1.1, linfct = c("Year.re = 0",
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+Year.d.n <-
+  M.data %>% 
+  group_by(Survey, Year) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
+  
+  group_by(Year) %>% 
+  summarise(mean_N = mean(N) %>% round(1), 
+            E25 = quantile(E,0.25),
+            E50 = quantile(E,0.50),
+            E75 = quantile(E,0.75)) %>% 
+  ungroup()
+
+
+
+
 M.data %>% 
   group_by(Year, Survey) %>% 
   summarise(
@@ -333,10 +348,23 @@ M.data %>%
   ) %>% 
   ggplot(., aes(x = factor(Year), y = E)) +
   geom_boxplot(width = 0.4)+
+  
+    geom_text(data = Year.d.n, 
+            aes(y = E75,
+                label = mean_N),
+            size = 4,
+            hjust = -0.2, 
+            vjust = -1,
+            position = position_dodge(0.9), show.legend = F)+
+
+  
   scale_y_continuous(limits =  c(0, 0.1),
                      breaks = seq(0,0.1,0.02))+
-  labs(x = "Year",
-       y = "Encounter rate (troop/point)")+
+  # labs(x = "Year",
+  #      y = "Encounter rate (troop/point)")+
+  
+    labs(x = "年份", y = "相對密度 (群/樣點)")+
+  
   theme_classic()+
   theme(
     aspect.ratio = 1,
@@ -347,6 +375,21 @@ M.data %>%
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+Office.d.n <-
+  M.data %>% 
+  group_by(Office,Survey, Year) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
+  
+  group_by(Office) %>% 
+  summarise(mean_N = mean(N) %>% round(1), 
+            E25 = quantile(E,0.25),
+            E50 = quantile(E,0.50),
+            E75 = quantile(E,0.75)) %>% 
+  ungroup()
+
+
+
+
 M.data %>% 
   group_by(Office,Year, Survey) %>% 
   summarise(
@@ -364,13 +407,23 @@ M.data %>%
   # ) %>% 
   ggplot(., aes(x = factor(Office), y = E)) +
   geom_boxplot(width = 0.4)+
+  
+    geom_text(data = Office.d.n, 
+            aes(y = E75,
+                label = mean_N),
+            size = 3,
+            hjust = -0.1, 
+            vjust = -1,
+            position = position_dodge(0.9), show.legend = F)+
+  
   scale_y_continuous(limits =  c(0, 0.12),
                      breaks = seq(0,0.12,0.02))+
   scale_x_discrete(limits = c( "新竹","臺中", "宜蘭",
                                "南投","花蓮",
                             "嘉義", "屏東",  "臺東"))+
-  labs(x = "  ",
-       y = "Encounter rate (troop/point)")+
+  # labs(x = "  ",
+  #      y = "Encounter rate (troop/point)")+
+  labs(x = "分署", y = "相對密度 (群/樣點)")+
   theme_classic()+
   theme(
     aspect.ratio = 1,
