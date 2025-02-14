@@ -1,0 +1,194 @@
+```{r message=FALSE, include=FALSE}
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(here)
+library(openxlsx)
+```
+
+樣區清單
+
+```{r}
+Office_list <-
+  read_excel(
+    paste0(here("data/raw/FORESTRYdata/"), "/", 2024,"/林業署獼猴調查樣區列表.xlsx")
+  ) %>% 
+  mutate(Office = ordered(Office, c("宜蘭", "新竹", "臺中", "南投", "嘉義", "屏東", "花蓮", "臺東"))) %>% 
+  select(-birds)
+
+
+```
+
+獼猴調查者名單
+
+```{r}
+list_m <- 
+"./林務局年報2023/名單/獼猴調查員名單.xlsx" %>% 
+  read_excel(., sheet=1, col_types = "text") %>% 
+  select(Site_N, Name) %>% 
+  mutate(Name = str_replace_all(Name, c("陳世輝" = "陳世暉",
+                                        "富興社區林國欽" = "林國欽"
+  )))%>% 
+  right_join(Office_list,.,by = c("Site_N")) %>% 
+  select(-Site_N) %>% 
+  unique()%>% 
+  mutate(項目 = "猴") 
+```
+
+繁殖鳥調查名單
+
+```{r}
+list_b <- 
+"./data/clean/2023鳥類調查資料概況.xlsx" %>% 
+  read_excel(., sheet="Surveyor", col_types = "text") %>% 
+  setNames(.,c("Site_N", "Name")) %>%  unique() %>% 
+  left_join(.,Office_list,by = c("Site_N")) %>% 
+  mutate(項目 = "鳥") 
+
+
+```
+
+工作站承辦名單
+
+```{r}
+
+list_work <- 
+"./林務局年報2023/名單/ALL_調查承辦名單__彙整.xlsx" %>% 
+  read_excel(., sheet=1, col_types = "text") %>% 
+  select(分署,	`姓名 (2023)`) %>% 
+  mutate(分署 = str_replace_all(分署, "站", "")) %>% 
+  right_join(unique(Office_list[,-3]),.,by = c("Station" = "分署")) %>% 
+ # filter(!is.na(Office)) %>% 
+  setNames(.,c('Office', 'Station', "Surveyor"))  %>% 
+  mutate(Office = as.character(Office)) %>% 
+  separate(.,Surveyor,
+           into = paste0("Surveyor","_",0:10),
+           sep ="、|,", extra = "drop", fill = "right") %>% 
+  reshape2::melt(., id.vars = c("Office","Station"),
+                 measure.vars = paste0("Surveyor","_",0:10),
+                 variable.name = "Surveyor", value.name = "Name",)%>% 
+  filter(!is.na(Name)) %>%
+  select(-Surveyor) %>% 
+  
+  mutate(項目 = "承辦") %>% 
+  mutate(Office = ifelse(is.na(Office),
+                         str_remove_all(Station, "分署"),
+                         Office)) %>% 
+  
+  mutate(Office = str_replace_all(Office, "台", "臺"))
+```
+
+工作站合併彙整
+
+```{r message=FALSE}
+list_all <- 
+  list_work %>% 
+  bind_rows(list_m,list_b) %>%
+  ungroup() %>% 
+  split(., .$Name) %>% 
+  lapply(., function(x){
+    
+    x %>% 
+      select(-Site_N) %>% 
+      unique() %>% 
+      group_by(Office, Station) %>% 
+      summarise(項目2 = paste0(項目, collapse = "、"))
+      
+  }) %>% 
+  bind_rows(.id = "Name") %>% 
+  arrange(Office, Station,項目2,Name) 
+
+```
+
+load範本
+
+```{r}
+# wb_0 <- loadWorkbook(file = "./林務局年報2023/寄送/臺灣獼猴與繁殖鳥年報_確認發送名單_範本.xlsx")
+# names(wb_0)
+
+#cloneWorksheet(wb0, "Sheet 2", clonedSheet = "工作站")
+
+
+list_all %>% ungroup() %>% 
+  split(.,.$Office) %>% 
+  
+  map(., function(x){
+    
+    wb_0 <- loadWorkbook(file = "./林務局年報2023/寄送/0臺灣獼猴與繁殖鳥年報_確認發送名單_範本.xlsx")
+    
+    Station0 <-  x %>% filter(str_detect(Station, "分署"))
+    
+  #  addWorksheet(wb, unique(Station0$Station))
+    
+    y_0 <- 
+        Station0 %>% 
+        select( '負責項目'  = 項目2, '姓名' = Name) %>% 
+          mutate(數量 = 1)
+    
+    writeData(wb_0,
+              sheet = "分署",
+              x = y_0,
+              colNames = F,
+            startCol = 1,
+            startRow = 7)
+    
+    
+    
+
+
+    x %>%
+      filter(str_detect(Station, "分署", negate=T)) %>%
+      split(., .$Station) %>%
+      lapply(., function(y){
+
+       # addWorksheet(wb, unique(y$Station))
+        unique(y$Station) %>% 
+      map(\(x)  
+          cloneWorksheet(wb_0, sheet = x, clonedSheet = "工作站"))
+
+        y_1 <-
+        y %>%
+        select( '負責項目'  = 項目2,'姓名' = Name)
+
+        writeData(wb_0,
+                  sheet = unique(y$Station),
+                  x = y_1,
+              colNames = T,
+            startCol = 1,
+            startRow = 13)
+        
+
+        
+      })
+    
+    removeWorksheet(wb_0, "工作站")
+
+
+    saveWorkbook(wb_0,
+                 file = paste0("./林務局年報2023/寄送/臺灣獼猴與繁殖鳥年報_確認發送名單_",unique(x$Office),
+                 ".xlsx"),
+                 overwrite = TRUE)
+    #openXL(wb_0)
+    
+    
+  })
+  
+
+```
+
+彙整版
+
+```{r}
+list_all %>% ungroup() %>% 
+select( "單位"= Station,
+        "調查項目"= `項目2`,
+        "姓名"= Name) %>% 
+  mutate(NO = 1:n(),.before = "單位") %>% 
+  write.xlsx(., "./林務局年報2023/寄送/臺灣獼猴與繁殖鳥年報_確認發送名單_彙整.xlsx")
+```
+
+分署及工作站地址
+
+```{r}
+
+```

@@ -113,6 +113,32 @@ List_surveyor %>%
 ```
 
 
+```{r}
+M.data %>% 
+  filter(! is.na(Macaca_sur)) %>% 
+  group_by(Office,Site_N, Year) %>% 
+  summarise(
+    # Surveyor_n = str_split(Surveyor, "、") %>%
+    #   c(.) %>% unique(.) %>% 
+    #   paste(., collapse = "、"),
+    Point_n = n(),
+    Point = Point %>% unique() %>% length() %>%length
+  ) %>% View
+  group_by(Office, Year) %>% 
+  summarise(
+    Point_n = sum(Point_n),
+    Point = sum(Point)
+  ) %>% 
+bind_rows(
+  group_by(.,Year) %>% 
+    summarise_at(c("Point_n", "Point"), sum) %>% 
+    mutate(Office = "Total")
+) %>% 
+  filter(Year %in% 2024)
+```
+
+
+
 <br/>
 
 
