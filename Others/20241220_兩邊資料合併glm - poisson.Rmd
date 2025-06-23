@@ -242,7 +242,33 @@ pre_year_value %>%
   colformat_num(x = .,  big.mark="") 
 ```
 
+```{r}
+library(boot)
+
+boot_function <- function(data, indices) {
+  boot_sample <- df[indices, ]  
+  model_boot <- glm(Macaca_sur ~  
+            TypeName.1 +
+              Year +
+              Altitude +
+              julian.D +
+              Region2 +
+              Data, family = poisson, data = boot_sample)
+  predicted_boot <- predict(model_boot, type = "response")
+  return(mean(predicted_boot))  
+}
 
 
+boot_results <- boot(df, boot_function, R = 1000)
 
+boot_ci <- boot.ci(boot_results, type = "perc")$percent[4:5]
+
+predicted_counts <- predict(m1, type = "response")
+total_population <- mean(predicted_counts)
+
+
+cat("估計總族群數量:", total_population, "\n")
+cat("95% 拔靴信賴區間:", boot_ci[1], "-", boot_ci[2], "\n")
+
+```
 
