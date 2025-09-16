@@ -66,7 +66,7 @@ M.data %>%
             vjust = -1,
             position = position_dodge(0.9), show.legend = F)+
   scale_y_continuous(breaks = seq(0,0.15,0.05), limits = c(0,0.15))+
-  scale_x_discrete(limits = c( "新竹", "宜蘭", "臺中", "南投",
+  scale_x_discrete(limits = c( "新竹", "臺中", "宜蘭", "南投",
                                "花蓮", "嘉義", "屏東","臺東")
   )+
   labs(x = "", y = "相對密度(群/樣點)")+
