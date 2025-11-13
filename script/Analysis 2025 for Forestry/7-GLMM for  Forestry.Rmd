@@ -1,0 +1,460 @@
+```{r include=FALSE}
+# data analysis
+
+library(tidyverse)
+library(lme4)
+library(car)
+library(multcomp)
+library(readxl)
+library(MuMIn)
+library(emmeans)
+library(here)
+library(showtext)
+
+library(flextable)
+library(ftExtra)
+
+showtext_auto()
+font_add("Microsoft JhengHei", "msjh.ttc")
+here::here()
+```
+
+
+```{r include=FALSE}
+#------------------------------------------------
+#Original data---- 
+
+M.data <- 
+  list.files(here("./data/clean/Forestry/for analysis/"),
+             full.names = T,pattern = "xlsx$|xls$") %>% 
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows() %>% 
+  
+  mutate(Office = str_replace_all(Office, c("羅東" = "宜蘭",
+                                            "東勢" = "臺中"))) %>%
+  
+  # mutate(Office = 
+  #          ordered(Office,
+  #                  levels = c("羅東", "新竹", "東勢", "南投",
+  #                             "嘉義", "屏東", "花蓮", "臺東"),
+  #                  labels = c("Luodong", "Hsinchu", "Dougshih", "Nantou",
+  #                             "Chiayi", "Pingtung", "Hualien", "Taitung")
+  #                  )
+  #        ) %>% 
+  
+  mutate_at(c("Year", "Survey","Month",
+              "Day", "Macaca_sur", "Distance", "julian.D", "Altitude"), as.numeric) %>% 
+  
+  mutate(TypeName.1 = case_when(
+    TypeName.1 %in% "闊葉林" ~ "broad_leaved",
+    TypeName.1 %in% "針葉林" ~ "coniferous",
+    TypeName.1 %in% "竹林" ~ "Bamboo",
+    TypeName.1 %in% "混淆林" ~ "mixed",
+    TypeName.1 %in% "非森林" ~ "Not forest"
+  )) %>% 
+  
+  filter(analysis %in% "Y") %>% 
+  filter(Year > 2020)
+```
+
+
+2020年的資料不列入分析
+```{r include=FALSE}
+#---------------------------------------------------------------------
+
+M.data <- M.data %>% 
+  mutate( Year.re = Year - min(Year) + 1)
+```
+
+
+```{r include=FALSE}
+#==============================================
+df <- 
+  M.data
+```
+
+
+Full model:   
+m1 <- glmer(猴群數 ~ 年 + 森林類型 + 海拔 + 調查日 + 林管處 + (1|Site_N), family = binomial, data = df)  
+
+說明：  
+1.	森林類型為類別變數：分別為闊葉林、針葉林、混淆林、竹林等4 種。  
+2.	海拔為連續變數，範圍海拔50m以上。  
+3.	調查日為連續變數：調查日為當年度的第n天。僅分析3~6月內的調查資料。  
+4.	樣區為隨機變數  
+5. 	分析總筆數：`r  nrow(df)` 筆；猴群`r  nrow(df[df$Macaca_sur %in% 1,])`群。  
+
+
+
+```{r eval=FALSE, include=FALSE}
+#-------------------------------------------
+
+allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D + Office +  (1|Site_N), 
+             family = binomial, data = df))   #嘗試使用一系列優化程序重新擬合glmer模型
+```
+
+
+```{r include=FALSE}
+df$Altitude.1 <-  scale(df$Altitude,scale =T)
+df$julian.D.1 <-  scale(df$julian.D,scale =T)
+```
+
+<br/> 
+  
+Full model:   
+m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 + Office  + (1|Site_N), family = binomial, data = df)
+```{r include=FALSE}
+m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 + Office  + (1|Site_N), 
+            family = binomial, data = df,
+            control = glmerControl(optimizer = "bobyqa"))
+```
+
+```{r include=FALSE}
+m2 <- glmer(Macaca_sur ~  TypeName.1 + + Altitude.1 + julian.D.1 + Office  + (1|Site_N) + (1|Year.re ), 
+            family = binomial, data = df,
+            control = glmerControl(optimizer = "bobyqa"))
+
+Anova(m2) 
+```
+
+
+
+<br/>  
+
+Anova(m1)   
+```{r echo=FALSE}
+Anova(m1) %>%
+  broom::tidy(.) %>%
+  mutate_at(c('statistic', 'p.value'),
+            function(x) sprintf("%.4f",x)) %>%
+  flextable()%>%
+    font(part = "all",fontname = "Arial Unicode MS") %>% 
+    align(.,align = "center", part = "body") %>% 
+    set_table_properties(layout = "autofit") 
+
+```
+<br/>  
+
+```{r eval=FALSE, include=FALSE}
+summary(m1)
+```
+<br/>  
+
+```{r eval=FALSE, include=FALSE}
+qqnorm(resid(m1))
+qqline(resid(m1))
+plot(fitted(m1),resid(m1))
+```
+
+
+```{r include=FALSE}
+#AICc==============================================
+options(na.action = "na.fail")
+d1<- dredge(m1,  trace = T)
+```
+
+<br/>
+
+Model selection table     
+```{r echo=FALSE}
+d1[d1$delta<2,]  %>% 
+  as.data.frame() %>% 
+  mutate_at(names(.)[c(1:3,6,10:11)],function(x) sprintf("%.3f",x)) %>%
+  mutate_at(names(.)[c(7:9)],function(x) sprintf("%.0f",x)) %>%
+  setNames(., str_remove_all(colnames(.),
+                              ".re$|.1$")) %>%
+  flextable()%>%
+    font(part = "all",fontname = "Arial Unicode MS") %>% 
+    align(.,align = "center", part = "body") 
+```
+<br/>
+
+
+importance(d1)   
+```{r include=FALSE}
+summary(model.avg(d1))
+```
+<br/> 
+
+```{r include=FALSE}
+summary(model.avg(d1, subset = delta < 2))
+```
+<br/>
+
+```{r echo=FALSE}
+sw(d1) %>% 
+   bind_rows() %>%t %>% as.data.frame() %>% 
+  mutate_at(c('V1'),function(x) sprintf("%.2f",x)) %>%
+  mutate(r_2 = rep(16,5)) %>% 
+  t %>%as.data.frame() %>% 
+  mutate( "  "= c("Sum of weights:", "N containing models:"), 
+           .before = names(.)[1]) %>%
+  setNames(., str_remove_all(colnames(.),
+                              ".re$|.1$")) %>% 
+  flextable()
+```
+<br/>
+
+```{r eval=FALSE, include=FALSE}
+sw(model.avg(d1, subset = delta < 2)) %>% 
+  print %>% as.data.frame()
+
+```
+
+<br/>
+
+最後的 model:   
+glmer(Macaca_sur ~ Year.re + Altitude.1 + julian.D.1+  TypeName.1+  Office  + (1|Site_N), family = binomial, data = df)
+
+```{r}
+m1.1 <- glmer(Macaca_sur ~ Year.re + Altitude.1 + julian.D.1+ TypeName.1+  Office  + (1|Site_N), 
+            family = binomial, data = df,
+            control = glmerControl(optimizer = "bobyqa"))
+```
+
+
+
+```{r echo=FALSE}
+
+Anova(m1.1)  %>% broom::tidy(.) %>%
+  mutate_at(c('statistic', 'p.value'),function(x) sprintf("%06.4f",x)) %>%
+  flextable()%>%
+    font(part = "all",fontname = "Arial Unicode MS") %>% 
+    align(.,align = "center", part = "body") %>% 
+    set_table_properties(layout = "autofit") 
+
+
+```
+
+<br/>
+Multiple Comparisons of Means: Tukey Contrasts  
+```{r eval=FALSE, include=FALSE}
+#-------------------------------------------
+
+
+summary(glht(m1.1, linfct = mcp(Office = "Tukey")))
+#2021年有跳出warning，所以找新的指令，也是事後檢定
+
+#summary(as.glht(pairs(emmeans(m1.1, ~Office))), test=adjusted("free"))
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+glht(m1.1, linfct = mcp(Office = "Tukey")) %>%  
+  summary %>% 
+  broom::tidy(.) %>%
+  dplyr::select(-`null.value`, -`term`) %>% 
+  
+  mutate(signif = gtools::stars.pval(adj.p.value)) %>% 
+  
+  mutate_at(c('estimate', 'std.error','statistic','adj.p.value'),
+            function(x)sprintf("%.3f",x)) %>% 
+
+  flextable() %>% 
+  autofit()%>% 
+  align(.,align = "center", part = "body") %>% 
+    set_table_properties(layout = "autofit") 
+```
+
+<br/>
+
+```{r echo=FALSE}
+summary(glht(m1.1, linfct = c("Year.re = 0",
+                            "Altitude.1 = 0")))%>% 
+  broom::tidy(.) %>%
+  dplyr::select(-`null.value`) %>% 
+  
+  mutate(signif = gtools::stars.pval(adj.p.value)) %>% 
+  mutate_at(c('estimate', 'std.error','statistic','adj.p.value'),
+            function(x)sprintf("%.3f",x)) %>% 
+
+  flextable() %>% 
+  autofit()
+```
+
+
+```{r include=FALSE}
+par(mai=c(1,1,1.5,0.2))
+glht(m1.1, linfct = mcp(Office = "Tukey")) %>% cld()  %>% plot
+```
+
+
+```{r include=FALSE}
+par(mai=c(1,1.5,1,1))
+glht(m1.1, linfct = mcp(Office = "Tukey")) %>% plot
+
+glht(m1.1, linfct = mcp(Office = "Tukey")) %>% 
+  confint %>% 
+  broom::tidy(.) %>% 
+  arrange(estimate) %>% 
+  mutate(color_e = ifelse(`conf.high`>0 & `conf.low`<0, 1, 0)) %>% 
+  mutate(lhs = factor(contrast, levels=unique(contrast))) %>%   # unique() returns values in the order they first appear in the data
+  ggplot(aes(x=lhs, y=estimate)) +
+  geom_hline(yintercept=0, linetype="11", colour="grey60") +
+  geom_segment(aes(xend=lhs, y=conf.low, yend=conf.high, color = factor(color_e)),
+               linewidth=0.4,
+               arrow=arrow(ends="both",
+                           length=unit(0.05, "inches"), angle=70),
+               show.legend = F) + 
+  labs(x = "", y = "estimate")+
+  geom_point() +
+  coord_flip() +
+  theme_classic()
+```
+
+```{r eval=FALSE, include=FALSE}
+glht(m1.1, linfct = c("Year.re = 0",
+                      "Altitude.1 = 0")) %>%
+  confint() %>% 
+  broom::tidy(.) %>% 
+  arrange(estimate) %>% 
+  mutate(lhs = factor(contrast, levels=unique(contrast))) %>%   # unique() returns values in the order they first appear in the data
+  ggplot(aes(x=lhs, y=estimate)) +
+  geom_hline(yintercept=0, linetype="11", colour="grey60") +
+  geom_segment(aes(xend=lhs, y=conf.low, yend=conf.high),
+               linewidth=0.4, 
+               arrow=arrow(ends="both",
+                           length=unit(0.05, "inches"),
+                           angle=70)) + 
+  geom_point() +
+  coord_flip() +
+  labs(x = "", y = "estimate")+
+  theme_classic()
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+Year.d.n <-
+  M.data %>% 
+  group_by(Survey, Year) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
+  
+  group_by(Year) %>% 
+  summarise(mean_N = mean(N) %>% round(1), 
+            E25 = quantile(E,0.25),
+            E50 = quantile(E,0.50),
+            E75 = quantile(E,0.75)) %>% 
+  ungroup()
+
+
+
+
+M.data %>% 
+  group_by(Year, Survey) %>% 
+  summarise(
+    N = n(),
+    m = Macaca_sur %>% as.numeric() %>% sum,
+    E = m/N
+  ) %>% 
+  ggplot(., aes(x = factor(Year), y = E)) +
+  geom_boxplot(width = 0.4)+
+  
+    geom_text(data = Year.d.n, 
+            aes(y = E75,
+                label = mean_N),
+            size = 4,
+            hjust = -0.2, 
+            vjust = -1,
+            position = position_dodge(0.9), show.legend = F)+
+
+  
+  scale_y_continuous(limits =  c(0, 0.1),
+                     breaks = seq(0,0.1,0.02))+
+  # labs(x = "Year",
+  #      y = "Encounter rate (troop/point)")+
+  
+    labs(x = "年份", y = "相對密度 (群/樣點)")+
+  
+  theme_classic()+
+  theme(
+    aspect.ratio = 1,
+    text = element_text(size = 18),
+    panel.border = element_blank()
+  )
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+Office.d.n <-
+  M.data %>% 
+  group_by(Office,Survey, Year) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
+  
+  group_by(Office) %>% 
+  summarise(mean_N = mean(N) %>% round(1), 
+            E25 = quantile(E,0.25),
+            E50 = quantile(E,0.50),
+            E75 = quantile(E,0.75)) %>% 
+  ungroup()
+
+
+
+
+M.data %>% 
+  group_by(Office,Year, Survey) %>% 
+  summarise(
+    N = n(),
+    m = Macaca_sur %>% as.numeric() %>% sum,
+    E = m/N
+  )  %>% 
+  # mutate(Office = 
+  #          ordered(Office,
+  #                  labels = c( "新竹", "臺中", "南投","宜蘭",
+  #                             "嘉義", "屏東", "花蓮", "臺東"),
+  #                  levels = c("Hsinchu", "Dougshih", "Nantou","Luodong", 
+  #                             "Chiayi", "Pingtung", "Hualien", "Taitung")
+  #          )
+  # ) %>% 
+  ggplot(., aes(x = factor(Office), y = E)) +
+  geom_boxplot(width = 0.4)+
+  
+    geom_text(data = Office.d.n, 
+            aes(y = E75,
+                label = mean_N),
+            size = 3,
+            hjust = -0.1, 
+            vjust = -1,
+            position = position_dodge(0.9), show.legend = F)+
+  
+  scale_y_continuous(limits =  c(0, 0.12),
+                     breaks = seq(0,0.12,0.02))+
+  scale_x_discrete(limits = c( "新竹","臺中", "宜蘭",
+                               "南投","花蓮",
+                            "嘉義", "屏東",  "臺東"))+
+  # labs(x = "  ",
+  #      y = "Encounter rate (troop/point)")+
+  labs(x = "分署", y = "相對密度 (群/樣點)")+
+  theme_classic()+
+  theme(
+    aspect.ratio = 1,
+    text = element_text(size = 18),
+    panel.border = element_blank()
+  )
+```
+
+
+```{r eval=FALSE, include=FALSE}
+M.data %>% 
+  group_by(TypeName.1, Year, Survey) %>% 
+  summarise(
+    N = n(),
+    m = Macaca_sur %>% as.numeric() %>% sum,
+    E = m/N
+  ) %>% 
+  ggplot(., aes(x = factor(TypeName.1), y = E)) +
+  geom_boxplot()+
+  scale_y_continuous(limits =  c(0, 0.08),
+                     breaks = seq(0,0.08,0.02))+
+  labs(x = "Year",
+       y = "Encounter rate (troop/point)")+
+  theme_classic()
+```
+
+
+```{r eval=FALSE, include=FALSE}
+emmip(m1,TypeName.1 ~ Office , Is =T)
+
+```
+
+
+
