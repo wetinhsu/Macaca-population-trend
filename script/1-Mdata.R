@@ -7,6 +7,66 @@ library(writexl)
 #-----------------------------------------------------------
 
 
+dfo  <- data.table::fread("../bbs_handover_temp_v20190123 - WT/dfs2.csv",
+                          head=T, encoding = "UTF-8", na.strings = "")   #UTF-8
+
+
+S1523<- 
+  dfo %>% 
+  filter(年 %in% 2015:2023) %>% 
+  filter(species_nr == 841) %>%  # 841台灣獼猴
+  filter(species_nr == 841) %>% 
+  mutate(source = "BBS") %>% 
+  
+  dplyr::select(DataID,
+                Site_N = `樣區編號`,
+         Point = `樣點編號`,
+         Year = 年,
+         Survey = `調查旅次編號`,
+         數量,
+         結群,
+         Macaca_dist = `距離`,
+         Time = `時段`,
+         source) %>% 
+  mutate_at(c("DataID","Point", "Year","Survey","數量"), as.character)
+
+
+
+M_1523 <- read_xlsx("./data/raw/歷年獼猴資料整理_20241022明剛.xlsx",
+          sheet = "工作表1", col_types = "text")%>% 
+  filter(年 %in%  2015:2023)%>% 
+  mutate(source = "mingun")%>% 
+  
+  dplyr::select(Site_N = `樣區編號`,
+         Point = `樣點編號`,
+         Year = 年,
+         Survey = `調查旅次編號`,
+         數量,
+         結群,
+         Macaca_dist = `距離`,
+         Time = `時段`,
+         source)
+
+
+
+full_join(S1523, M_1523, by = c(
+  "Site_N","Point","Year","Survey",
+  "數量","結群","Macaca_dist","Time"
+)) %>% 
+  arrange(Year,Site_N,Point, Survey)  %>% 
+  
+  openxlsx::write.xlsx(., "D:/待處理工作夾(做完要歸檔)/dfs2_獼猴資料更新.xlsx")
+
+
+
+  split(., .$Site_N)%>% 
+  map(., function(x){ 
+    x %>%
+      split(., .$Year)
+    }) 
+
+
+
 # M22<- 
 #   read_xlsx("./data/raw/2022樣區內獼猴調查.xlsx",
 #             sheet = "工作表1", col_types = "text")%>% 
