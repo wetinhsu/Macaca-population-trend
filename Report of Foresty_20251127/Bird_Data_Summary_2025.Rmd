@@ -8,12 +8,14 @@ output:
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE,
+knitr::opts_chunk$set(
+	echo = FALSE,
+	fig.asp = 1,
+	fig.width = 6,
 	message = FALSE,
 	warning = FALSE,
-                      root.dir = "../",
-                      fig.width = 6,
-                      fig.asp = 1)
+	root.dir = "../"
+)
 #library(here)
 ```
 
