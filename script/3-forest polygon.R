@@ -2,7 +2,6 @@
 library(tidyverse)
 library(sf)
 library(DBI)
-library(dbx)
 
 #--------------------------------------------------------------------
 n_nest <- 
@@ -23,7 +22,7 @@ n_nest <-
 
 #--------------------------------------------------------------------
 #read BBS Point XYdata
-con <- dbxConnect(adapter="sqlite", dbname="D:/R/test/DB/P_BBS.db")
+con <-  dbConnect(RSQLite::SQLite(), dbname="D:/R/test/DB/P_BBS.db")
 list_Point<-
   dbReadTable(con, "list_Point") %>% 
   arrange(樣區編號, 獼猴樣區編號,as.numeric(樣點代號)) 
@@ -37,7 +36,7 @@ dfo  <- data.table::fread("D:/R/test/bbs_handover_temp_v20190123 - WT/dfs2.csv",
 #--------------------------------------------------------------------
 #read forest spatial data
 
-path <- "D:/R/test/第四次森林資源調查全島森林林型分布圖"
+path <- "D:/R/SHP圖層/第四次森林資源調查全島森林林型分布圖"
 
 nc.b <- st_read(paste0(path,"/","全島森林林型分布圖.shp"), crs=3826) %>% 
   arrange(TypeName, st_geometry_type(geometry), FunctionTy,Function) %>% 
@@ -68,14 +67,14 @@ Sys.time()
 
 #--------------------------------------------------------------------
 library(readxl)
-M.all <- read_excel("./data/clean/Macaca/Macaca_1523_v1.xlsx", col_types = "text") 
+M.all <- read_excel("./data/clean/Macaca/Macaca_1524_v1.xlsx", col_types = "text") 
 
 S.all <- 
 #  read_excel("data/clean/Site/Site_2022_v1.xlsx", col_types = "text") %>% 
   
   bind_rows(
     
-    S1523%>% mutate_if(is.numeric, as.character)
+    S1524%>% mutate_if(is.numeric, as.character)
     
   )
 
@@ -87,5 +86,5 @@ M.data <-
   left_join(.,st_point_1 , by = "PointID") 
 
 
-write_xlsx(M.data, "./data/clean/forest_combind_data_1523.xlsx")
+write_xlsx(M.data, "./data/clean/forest_combind_data_1524.xlsx")
 

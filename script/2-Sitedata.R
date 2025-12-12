@@ -2,11 +2,10 @@
 library(tidyverse)
 library(sf)
 library(DBI)
-library(dbx)
 library(readxl)
 library(writexl)
 #--------------------------------------------------------------------
-con <- dbxConnect(adapter="sqlite", dbname="D:/R/test/DB/P_BBS.db")
+con <-  dbConnect(RSQLite::SQLite(), dbname="D:/R/test/DB/P_BBS.db")
 list_Point<-
   dbReadTable(con, "list_Point") %>% 
   arrange(樣區編號, 獼猴樣區編號,as.numeric(樣點代號)) 
@@ -58,9 +57,9 @@ xy.now <-
 dfo  <- data.table::fread("D:/R/test/bbs_handover_temp_v20190123 - WT/dfs2.csv",
                           head=T, encoding = "UTF-8", na.strings = "")   #UTF-8
 
-S1523<- 
+S1524<- 
   dfo %>% 
-  filter(年 %in% 2015:2023) %>% 
+  filter(年 %in% 2015:2024) %>% 
   filter(! 時段  %in% c("Supplementary")) %>% 
   select(年, 樣區編號, 樣點編號, 調查旅次編號, 月, 日, `開始時間（時）`, `開始時間（分）`) %>% 
   setNames(., c("Year", "Site_N", "Point",  "Survey", "Month", "Day", "Hour", "Minute")) %>% 

@@ -2,7 +2,7 @@
 title: "Bird_Data_Summary"
 date: "`r format(Sys.time(), '%Y-%m-%d')`"
 output:
-  officedown::rdocx_document
+  word_document: default
 
 ---
 

@@ -38,9 +38,9 @@ need_update %>%
   setNames(str_replace_all(colnames(.), "recorded", "tagert_recorded"))
 
 
-
-dbxUpsert(con3, "forest3",
-          update_forest, where_cols=c("PointID"))
+# 
+# dbxUpsert(con3, "forest3",
+#           update_forest, where_cols=c("PointID"))
 
 
 
@@ -58,8 +58,8 @@ list_Point %>%
   filter(!is.na(Altitude)) %>% 
   dplyr::select(PointID, Altitude) 
 
-dbxUpdate(con3, "forest3",
-          update_Alt, where_cols=c("PointID"))
+# dbxUpdate(con3, "forest3",
+#           update_Alt, where_cols=c("PointID"))
 
 
 update_Alt <- 
@@ -75,18 +75,30 @@ update_Alt <-
 #  filter(!is.na(Altitude)) %>% 
   dplyr::select(PointID, Altitude) 
 
+# 
+# aa <- 
+# update_forest %>% 
+#   full_join(update_Alt, by = "PointID") %>% 
+#   rows_upsert(forest3, .,by =c("PointID"))
+# 
+# 
+# 
+# DBI::dbWriteTable(con3,"forest3", aa, overwrite = TRUE)
+# 
 
-aa <- 
-update_forest %>% 
-  full_join(update_Alt, by = "PointID") %>% 
-  rows_upsert(forest3, .,by =c("PointID"))
+for (i in 1:nrow(update_forest)) {
+  dbExecute(con3, 
+  " UPDATE forest3
+    SET TypeName = ?,
+    Distance = ?
+    WHERE PointID = ?",
+            params = list(update_forest$TypeName[i],
+                          update_forest$Distance[i],
+                          update_forest$PointID[i])
+  )
+}
 
-
-
-DBI::dbWriteTable(con3,"forest3", aa, overwrite = TRUE)
-
-
-
+#還有upsert的問題
 
 
 for (i in 1:nrow(update_Alt)) {
