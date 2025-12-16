@@ -1,0 +1,660 @@
+---
+title: '20250901-猴群數估算'
+output: word_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(sf)
+library(here)
+library(DBI)
+library(data.table)
+ library(flextable)
+
+```
+
+
+```{r}
+
+con <-  dbConnect(RSQLite::SQLite(), dbname="D:/R/test/DB/P_BBS.db")
+list_Point<-
+  dbReadTable(con, "list_Point") %>% 
+  arrange(樣區編號, 獼猴樣區編號,as.numeric(樣點代號)) 
+list_Site<-
+  dbReadTable(con, "list_Site") 
+table_point<-
+  dbReadTable(con, "table_point") 
+
+dbDisconnect(con)
+```
+
+
+```{r}
+se <- function(x){sd(x)/sqrt(length(x))}
+```
+
+
+# **BBS**
+
+```{r include=FALSE}
+
+M.data <- read_excel(here("./data/clean/for analysis_1524.xlsx"),
+                     sheet=1) %>% 
+  filter(analysis %in% "Y") %>%
+  mutate_at(c("Year", "Survey", "Point", "Macaca_sur",
+              "Month", "Day", "Distance"), as.numeric)
+```
+
+相對密度(群/樣點)圖
+
+```{r include=FALSE}
+
+E_year <-
+M.data %>% 
+  setDT %>% 
+  .[, .(N = length(Macaca_sur),
+        m = sum(Macaca_sur, na.rm=T)
+        ),
+   by =  c('Year', 'Survey')] %>% 
+  .[,Encounter_rate := m/N] %>% 
+  
+  .[, .(
+    Mean_N = mean(N)%>% round(3),
+    SD_N = se(N) %>% round(3),
+    Mean_m = mean(m)%>% round(3),
+    SD_m = se(m) %>% round(3),
+    Mean_E = mean(Encounter_rate)%>% round(3),
+    SD_E = se(Encounter_rate) %>% round(3)),
+  by =  c('Year')] 
+
+
+
+
+```
+
+
+
+```{r echo=FALSE}
+p <- 
+ggplot(E_year, aes(x = Year, y = Mean_E))+
+  geom_point()+
+  geom_line()+
+  labs(y = "(相對密度)")+
+  theme_classic()
+
+```
+
+
+
+```{r include=FALSE}
+df <- 
+  M.data %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[, Year := as.numeric(Year)] %>% 
+  setDT %>% 
+  .[!(TypeName.1 %in% "非森林"), ]%>% 
+  right_join(list_Site[,c('SiteID', '樣區編號','獼猴樣區編號')], .,
+             by = c("樣區編號" = "Site_N")) 
+
+#bootstrap-------------------------
+bb<- df %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]
+
+#A僅使用25m內的猴群
+#AB使用100m內的猴群
+
+```
+
+
+\newpage
+
+
+# **林業署**
+
+```{r include=FALSE}
+
+M.data_F <- 
+  here("./data/clean/Forestry/for analysis/") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2020:2025)) %>% #如果只要2020~2022年，就寫2020:2022
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows() %>% 
+
+  mutate_at(c("Year", "Survey","Month",
+              "Day", "Macaca_sur", "Distance", "Altitude", "julian.D"), as.numeric) %>% 
+  filter(analysis %in% "Y") %>% 
+  filter(Year > 2020) %>% 
+  mutate_at(c("Year"), as.integer)%>% 
+  mutate(Site_N = str_replace_all(Site_N,"MB-C11-10","MA-C11-10"))
+```
+
+相對密度(群/樣點)圖
+
+```{r include=FALSE}
+
+E_year_F <-
+M.data_F %>% 
+  setDT %>% 
+  .[, .(N = length(Macaca_sur),
+        m = sum(Macaca_sur, na.rm=T)
+        ),
+   by =  c('Year', 'Survey')] %>% 
+  .[,Encounter_rate := m/N] %>% 
+  
+.[, .(
+    Mean_N = mean(N)%>% round(3),
+    SD_N = se(N) %>% round(3),
+    Mean_m = mean(m)%>% round(3),
+    SD_m = se(m) %>% round(3),
+    Mean_E = mean(Encounter_rate)%>% round(3),
+    SD_E = se(Encounter_rate) %>% round(3)),
+  by =  c('Year')]  
+
+```
+
+
+```{r echo=FALSE}
+library(RColorBrewer)
+
+p2 <- 
+ggplot(data = E_year_F, aes(x = Year, y = Mean_E))+
+  geom_point()+
+  geom_line()+
+  
+  labs(y = "(相對密度)")+
+  theme_classic()
+
+
+E_year_F %>% mutate(data_source = "Foresty") %>% 
+  bind_rows(E_year %>% mutate(data_source = "BBS")) %>% 
+ggplot(data = ., aes(x = Year, y = Mean_E))+
+  geom_point(aes(col = data_source))+
+  geom_line(aes(col = data_source))+
+geom_errorbar(
+  aes(x =Year,
+      ymin = Mean_E-SD_E,
+      ymax = Mean_E+SD_E,
+      col = data_source), width = 0.1)+
+  
+  scale_color_brewer(palette = "Set2")+
+  scale_x_continuous(breaks = 2015:2025)+
+  theme_classic()+
+  theme(text = element_text(size = 18))
+```
+
+
+
+```{r include=FALSE}
+df_F <- 
+  M.data_F %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[, Year := as.numeric(Year)] %>% 
+  .[, Office := ifelse(Office == "東勢", "臺中", Office)] %>% 
+  .[, Office := ifelse(Office == "羅東", "宜蘭", Office)] %>% 
+  setDT %>% 
+  .[!(TypeName.1 %in% "非森林"), ]%>% 
+  right_join(list_Site[,c('SiteID', '樣區編號','獼猴樣區編號')], .,
+             by = c("獼猴樣區編號" = "Site_N")) 
+
+#bootstrap-------------------------
+bb_F<- df_F %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]
+
+#A僅使用25m內的猴群
+#AB使用100m內的猴群
+
+```
+
+
+#合併檢測--------------
+
+
+```{r}
+
+combine_bb <- 
+bb_F %>% 
+  select(SiteID,Year, 樣區編號,獼猴樣區編號, Point, Survey, Macaca_sur, Macaca_dist,AB) %>% 
+  mutate(data_source = "Foresty") %>% 
+  bind_rows(
+    bb %>% 
+      select(SiteID,Year, 樣區編號,獼猴樣區編號, Point, Survey,
+         Macaca_sur, Macaca_dist,AB)%>%
+      mutate(data_source = "BBS") %>% 
+      mutate(Point = Point %>% as.character())  %>% 
+      anti_join(bb_F[, c('SiteID','Year')],
+                by = c('SiteID','Year'))
+    ) %>% 
+  filter(Year %in% c(2021:2024)) 
+
+combine_bb %>%
+  
+  group_by(Year, SiteID, Point, Survey) %>% 
+  summarise(n = n()) %>% 
+  filter(n>1) %>% select(-n) %>% 
+  left_join(list_Site, by = "SiteID")
+  
+
+#移除匯入BBS調查資料的林保署鳥類調查樣區( = 重複的資料)
+```
+
+
+```{r}
+
+combine_bb %>% 
+  left_join(table_point[,c('SiteID', "樣點代號",'X_97','Y_97')],
+            by = c("SiteID", "Point" = "樣點代號"))%>%
+write_xlsx(
+.,
+  here("./Report of Foresty_20251127/合併估算/troops_2021-2024.xlsx")
+)
+
+```
+
+```{r}
+
+
+path <- "D:/R/SHP圖層"
+
+town <- st_read(paste0(path,"/","鄉(鎮、市、區)界線(TWD97經緯度)1131028/TOWN_MOI_1131028.shp"), crs=4326) %>% 
+  st_transform(crs=3826)
+
+
+summary(town)
+
+town_list_Point <- 
+list_Point %>% 
+  filter(!is.na(X_97)) %>% 
+  st_as_sf(., coords = c("X_97", "Y_97"), crs = 3826) %>% 
+  st_join(.,town) %>% 
+  st_drop_geometry()
+
+town_combine_bb <- 
+town_list_Point %>% 
+  right_join(.,combine_bb,
+             by = c("樣區編號","獼猴樣區編號", "樣點代號"="Point")) 
+
+```
+
+
+#2021~2024年的調查資料
+```{r}
+town_combine_bb %>% 
+  group_by(COUNTYNAME) %>% 
+  summarise(樣點數 = PointID %>% unique() %>% length,
+            筆數 = PointID  %>% length,
+            '猴群數' = AB %>% sum )
+```
+
+
+```{r}
+summary_COUNT_combine <- 
+town_combine_bb %>% 
+  group_by(COUNTYNAME, Year, Survey) %>% 
+  summarise(N = PointID %>% unique() %>% length,
+            m = AB %>% sum,
+            E = m / N,
+            .groups =  'drop') %>%
+  group_by(COUNTYNAME) %>% 
+  summarise(Mean_N = mean(N),
+              Se_N =  se(N),
+              Mean_m = mean(m),
+              Se_m = se(m),
+              Mean_E = mean(E) ,
+              Se_E = se(E),
+            .groups =  'drop') %>% 
+  mutate_at(c('Se_N','Se_m','Se_E'), function(x)round(x,3)) %>% 
+  mutate_at(c('Mean_N','Mean_m','Mean_E'), function(x)round(x,3)) %>% 
+
+  arrange(-Mean_E)
+
+summary_COUNT_combine 
+```
+
+```{r}
+
+summary_COUNT_combine %>% 
+  mutate(
+    COUNTYNAME = sapply(COUNTYNAME,
+                        function(x) paste(str_split(x, "")[[1]], collapse = "\n")),
+    COUNTYNAME = reorder(COUNTYNAME, -Mean_E)) %>% 
+  ggplot(data = , aes(COUNTYNAME, Mean_E))+
+  geom_col(aes(fill = -Mean_E))+
+  labs(x = "",y ="Encounter_rate")+
+  scale_color_brewer(palette = "Set2")+
+  theme_classic()+
+  theme(text = element_text(size = 18),
+        legend.position = "none")
+
+```
+
+```{r}
+
+town_combine_bb %>% 
+  group_by(COUNTYNAME, data_source) %>% 
+  summarise(樣點數 = PointID %>% unique() %>% length,
+            筆數 = PointID  %>% length,
+            '猴群數' = AB %>% sum,
+            .groups =  'drop' ) %>% 
+  pivot_wider(., id_cols = 'COUNTYNAME',
+              names_from = 'data_source',
+              values_from =c('樣點數', '筆數', '猴群數')) %>% 
+  arrange(-`樣點數_BBS`) %>% 
+  flextable()   %>% 
+  colformat_double()  %>%
+  separate_header()  %>% 
+  align(align = "center", part = "all")  %>%
+  valign(valign = "center", part = "header")  %>% 
+  autofit()
+```
+
+
+```{r}
+summary_TOWN_combine <- 
+town_combine_bb %>% 
+  group_by(COUNTYNAME,TOWNNAME, Year, Survey) %>% 
+  summarise(N = PointID %>% unique() %>% length,
+            m = AB %>% sum,
+            E = m / N,
+            .groups =  'drop') %>%
+  group_by(COUNTYNAME,TOWNNAME) %>% 
+  summarise(Mean_N = mean(N),
+              Se_N =  se(N),
+              Mean_m = mean(m),
+              Se_m = se(m),
+              Mean_E = mean(E) ,
+              Se_E = se(E),
+            .groups =  'drop') %>% 
+  mutate_at(c('Se_N','Se_m','Se_E'), function(x)round(x,3)) %>% 
+  mutate_at(c('Mean_N','Mean_m','Mean_E'), function(x)round(x,3)) %>% 
+
+  arrange(-Mean_E)
+
+```
+
+
+```{r}
+
+summary_TOWN_combine %>% 
+  mutate(
+    TOWNNAME = sapply(TOWNNAME,
+                        function(x) paste(str_split(x, "")[[1]], collapse = "\n")),
+    TOWNNAME = reorder(TOWNNAME, -Mean_E)) %>% 
+  filter(Mean_E>0) %>% 
+  ggplot(data = , aes(TOWNNAME, Mean_E))+
+  geom_col(aes(fill = -Mean_E))+
+  labs(x = "",y ="Encounter_rate")+
+  scale_color_brewer(palette = "Set2")+
+  theme_classic()+
+  theme(text = element_text(size = 12),
+        legend.position = "none")
+
+```
+
+
+
+\newpage
+
+# **BBS與林業署的資料 (用1:1混和)**
+
+
+```{r echo=FALSE}
+#bootstrap-------------------------
+bb_all<- town_combine_bb %>% setDT %>% 
+  .[,list(Year, AB, COUNTYNAME,TOWNNAME, data_source)] 
+
+```
+
+```{r include=FALSE}
+
+#重複抽樣10000次----
+bootstrap_AB_all <- 
+bb_all %>% 
+  split(., .$Year) %>% 
+  lapply(., function(x){
+    replicate(10000, mean(sample(x$AB, replace = TRUE), na.rm = T)) 
+  })%>% 
+  lapply(., function(x){
+    data.frame(
+    'q_1' = quantile(x, probs = 0.025),
+     'mm' = mean(x),
+    'q_3' = quantile(x, probs = 0.975)
+    )
+  }) %>% 
+  bind_rows(.id = 'Year') %>% 
+  mutate('Year'  = as.integer(Year))
+
+
+  row.names(bootstrap_AB_all) <- NULL
+      
+
+
+```
+
+海拔50m以上的森林總面積=21028.14 (km^2^)\
+方法：bootstrap\
+重複抽樣：10,000次\
+單位面積的半徑: 100m
+
+```{r echo=FALSE}
+per_Area <- (0.1*0.1*pi)   #100m半徑的單位原面積
+
+troop_M_all <- 
+ bootstrap_AB_all %>%
+   setDT %>% 
+   .[ , 'M_troops' := (21028.14/per_Area)*mm] %>% 
+  .[ , 'q1_troops' := (21028.14/per_Area)*q_1] %>% 
+  .[ , 'q3_troops' := (21028.14/per_Area)*q_3] %>% 
+  .[, 'log_troops':= log(M_troops)]%>% 
+  .[ , 'COUNT' := M_troops*25] %>% 
+  .[ Year >2020 & Year < 2025, ] 
+
+
+```
+
+猴群數  
+```{r echo=FALSE}
+
+ggplot()+
+  
+  geom_point(data = troop_M_all,
+             aes(x = Year, y = M_troops),
+             col = "red")+
+  geom_line(data = troop_M_all,
+             aes(x = Year, y = M_troops),
+             col = "red", lty = 2, alpha = 0.4)+
+  geom_errorbar(data = troop_M_all,
+                aes(x =Year ,ymin = q1_troops,
+                    ymax = q3_troops),width=0.1,
+             col = "red", alpha = 0.4)+
+  geom_text(data = troop_M_all,
+             aes( x = Year, y = M_troops, label = round(M_troops,0)),
+            size = 3, nudge_x = 0.4, nudge_y = 1000,
+            col = "red")+
+  
+  scale_x_continuous(breaks = 2015:2024)+
+  labs(y = "猴群數(95%CI)")+
+  
+
+  theme_classic()
+
+```
+
+\br
+
+黑線 ：純BBS資料+ ELE 50m 的**本島**森林\
+紅線：BBS與林業署資料混和(1:1)+ ELE 50m 的**本島**森林  
+
+\newpage
+
+\br  
+用BBS及林業署調查資料估算  
+```{r echo=FALSE}
+troop_M_all %>% 
+  mutate('年' = as.character(Year)) %>% 
+  mutate(
+    '群數' = round(M_troops),
+    "群數(95%CI)" = paste0(round(q1_troops), "~", round(q3_troops))
+  ) %>% 
+  mutate(
+    '隻數' = round(M_troops*25),
+    "隻數(95%CI)" = paste0(round(q1_troops*25), "~", round(q3_troops*25))
+    ) %>% 
+  select(年, `群數`:`隻數(95%CI)`) %>% 
+  flextable::flextable() 
+```
+
+
+估計**縣市**猴群數 
+50m以上的森林，2021-2024的資料bootstraps
+
+
+```{r include=FALSE}
+
+#重複抽樣10000次----
+bootstrap_AB_all_COUNTY <- 
+bb_all %>% 
+  split(., .$COUNTYNAME) %>% 
+  lapply(., function(x){
+    replicate(10000, mean(sample(x$AB, replace = TRUE), na.rm = T)) 
+  })%>% 
+  lapply(., function(x){
+    data.frame(
+    'q_1' = quantile(x, probs = 0.025),
+     'mm' = mean(x),
+    'q_3' = quantile(x, probs = 0.975)
+    )
+  }) %>% 
+  bind_rows(.id = 'COUNTYNAME') 
+
+
+  row.names(bootstrap_AB_all_COUNTY) <- NULL
+
+
+```
+
+
+
+海拔50m以上的森林在各縣市面積 (km^2^)\
+方法：bootstrap\
+重複抽樣：10,000次\
+單位面積的半徑: 100m
+
+
+```{r}
+
+forest_town<- read_xlsx(
+  here("Report of Foresty_20251127/合併估算/鄉鎮內50m以上的森林面積.xlsx")) %>% 
+  select(-perimeter) %>% 
+  mutate(area = area/1000000) %>%   #換成km2
+setDT
+```
+
+
+
+```{r echo=FALSE}
+per_Area <- (0.1*0.1*pi)   #100m半徑的單位原面積
+
+COUNTY_M_all <- 
+  forest_town %>% 
+  .[, .(area = sum(area)), by = 'COUNTYNAME'] %>% 
+  left_join(bootstrap_AB_all_COUNTY, .,by = 'COUNTYNAME') %>% setDT %>% 
+  .[ , 'M_troops' := (area/per_Area)*mm] %>% 
+  .[ , 'q1_troops' := (area/per_Area)*q_1] %>% 
+  .[ , 'q3_troops' := (area/per_Area)*q_3] %>% 
+  .[, 'log_troops':= log(M_troops)]%>% 
+  .[ , 'COUNT' := M_troops*25]  
+
+
+```
+
+
+```{r echo=FALSE}
+COUNTY_M_all %>% 
+  mutate(
+    '相對密度' = round(mm,3),
+    "相對密度(95%CI)" = paste0(round(q_1,3), "~", round(q_3,3))
+  ) %>% 
+  mutate(
+    '群數' = round(M_troops),
+    "群數(95%CI)" = paste0(round(q1_troops), "~", round(q3_troops))
+  ) %>% 
+  mutate(
+    '隻數' = round(M_troops*25),
+    "隻數(95%CI)" = paste0(round(q1_troops*25), "~", round(q3_troops*25))
+    ) %>% 
+  select(COUNTYNAME, `相對密度`:`隻數(95%CI)`) %>% arrange(-群數) %>% 
+  flextable::flextable() 
+```
+
+
+估計**部分鄉鎮**猴群數 
+50m以上的森林，2021-2024的資料bootstraps
+
+大埔,番路,阿里山,古坑,林內
+
+```{r include=FALSE}
+
+#重複抽樣10000次----
+bootstrap_AB_all_TOWN <- 
+bb_all %>% 
+  filter(str_detect(TOWNNAME, "大埔|番路|阿里山|古坑|林內")) %>% 
+  split(., .$TOWNNAME) %>% 
+  lapply(., function(x){
+    replicate(10000, mean(sample(x$AB, replace = TRUE), na.rm = T)) 
+  })%>% 
+  lapply(., function(x){
+    data.frame(
+    'q_1' = quantile(x, probs = 0.025),
+     'mm' = mean(x),
+    'q_3' = quantile(x, probs = 0.975)
+    )
+  }) %>% 
+  bind_rows(.id = 'TOWNNAME') 
+
+
+  row.names(bootstrap_AB_all_TOWN) <- NULL
+
+
+```
+
+```{r}
+per_Area <- (0.1*0.1*pi)   #100m半徑的單位原面積
+
+TOWN_M_all <- 
+  forest_town %>% 
+  left_join(bootstrap_AB_all_TOWN, .,by = 'TOWNNAME') %>% setDT %>% 
+  .[ , 'M_troops' := (area/per_Area)*mm] %>% 
+  .[ , 'q1_troops' := (area/per_Area)*q_1] %>% 
+  .[ , 'q3_troops' := (area/per_Area)*q_3] %>% 
+  .[, 'log_troops':= log(M_troops)]%>% 
+  .[ , 'COUNT' := M_troops*25] 
+
+
+```
+
+
+```{r echo=FALSE}
+TOWN_M_all %>% 
+  mutate(
+    '相對密度' = round(mm,3),
+    "相對密度(95%CI)" = paste0(round(q_1,3), "~", round(q_3,3))
+  ) %>% 
+  mutate(
+    '群數' = round(M_troops),
+    "群數(95%CI)" = paste0(round(q1_troops), "~", round(q3_troops))
+  ) %>% 
+  mutate(
+    '隻數' = round(M_troops*25),
+    "隻數(95%CI)" = paste0(round(q1_troops*25), "~", round(q3_troops*25))
+    ) %>% 
+  select(COUNTYNAME, TOWNNAME,`相對密度`:`隻數(95%CI)`) %>% arrange(-群數) %>% 
+  flextable::flextable() 
+```
+
