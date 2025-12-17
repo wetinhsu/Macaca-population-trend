@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="縣市的調查相對密度-相對密度">
+        <SrcDataSource relativeToVRT="1">縣市的調查相對密度.xlsx</SrcDataSource>
+        <!--Header=False-->
+        <SrcLayer>相對密度</SrcLayer>
+        <Field name="COUNTYNAME" src="COUNTYNAME" type="String"/>
+        <Field name="Mean_N" src="Mean_N" type="Real"/>
+        <Field name="Se_N" src="Se_N" type="Real"/>
+        <Field name="Mean_m" src="Mean_m" type="Real"/>
+        <Field name="Se_m" src="Se_m" type="Real"/>
+        <Field name="Mean_E" src="Mean_E" type="Real"/>
+        <Field name="Se_E" src="Se_E" type="Real"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="縣市的調查相對密度-bootstrap">
+        <SrcDataSource relativeToVRT="1">縣市的調查相對密度.xlsx</SrcDataSource>
+        <!--Header=False-->
+        <SrcLayer>bootstrap</SrcLayer>
+        <Field name="COUNTYNAME" src="COUNTYNAME" type="String"/>
+        <Field name="q_1" src="q_1" type="Real"/>
+        <Field name="mm" src="mm" type="Real"/>
+        <Field name="q_3" src="q_3" type="Real"/>
+        <Field name="area" src="area" type="Real"/>
+        <Field name="M_troops" src="M_troops" type="Real"/>
+        <Field name="q1_troops" src="q1_troops" type="Real"/>
+        <Field name="q3_troops" src="q3_troops" type="Real"/>
+        <Field name="log_troops" src="log_troops" type="String"/>
+        <Field name="COUNT" src="COUNT" type="Real"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>

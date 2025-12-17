@@ -5,7 +5,9 @@ date: "`r Sys.Date()`"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,
+	fig.asp = 1,
+	fig.width = 6)
 
 library(tidyverse)
 library(readxl)
@@ -15,7 +17,9 @@ library(here)
 library(DBI)
 library(data.table)
  library(flextable)
-
+library(RColorBrewer)
+library(showtext)
+showtext_auto()
 ```
 
 
@@ -31,6 +35,16 @@ table_point<-
   dbReadTable(con, "table_point") 
 
 dbDisconnect(con)
+```
+
+
+```{r}
+
+forest_town<- read_xlsx(
+  here("Report of Foresty_20251127/合併估算/鄉鎮內50m以上的森林面積.xlsx")) %>% 
+  select(-perimeter) %>% 
+  mutate(area = area/1000000) %>%   #換成km2
+setDT
 ```
 
 
@@ -162,15 +176,6 @@ M.data_F %>%
 ```{r echo=FALSE}
 library(RColorBrewer)
 
-p2 <- 
-ggplot(data = E_year_F, aes(x = Year, y = Mean_E))+
-  geom_point()+
-  geom_line()+
-  
-  labs(y = "(相對密度)")+
-  theme_classic()
-
-
 E_year_F %>% mutate(data_source = "Foresty") %>% 
   bind_rows(E_year %>% mutate(data_source = "BBS")) %>% 
 ggplot(data = ., aes(x = Year, y = Mean_E))+
@@ -183,9 +188,36 @@ geom_errorbar(
       col = data_source), width = 0.1)+
   
   scale_color_brewer(palette = "Set2")+
-  scale_x_continuous(breaks = 2015:2025)+
+  scale_x_continuous(breaks = 2015:2025,
+                     labels = c(2015,"",2017,"",2019,"",2021,"",2023,"",2025))+
+  scale_y_continuous(breaks = seq(0,0.05,0.01), limits = c(0,0.05))+
+  labs(x = "", y = "Encounter_rate(群/樣點)")+
   theme_classic()+
-  theme(text = element_text(size = 18))
+  theme(text = element_text(size = 18),
+        axis.title.y = element_text(angle = 270),
+        legend.position = "top")
+
+```
+
+相對密度(群/樣點)  
+```{r}
+combine_bb_outout <-
+E_year_F %>% mutate(data_source = "Foresty") %>% 
+  bind_rows(E_year %>% mutate(data_source = "BBS"))
+
+combine_bb_outout
+```
+
+
+
+```{r}
+combine_bb_outout %>%
+write_xlsx(
+.,
+  here("./Report of Foresty_20251127/合併估算/年的相對密度.xlsx")
+) 
+  
+
 ```
 
 
@@ -215,9 +247,8 @@ bb_F<- df_F %>% setDT %>%
 
 #合併檢測--------------
 
-
+合併及擷取2021~2024的資料  
 ```{r}
-
 combine_bb <- 
 bb_F %>% 
   select(SiteID,Year, 樣區編號,獼猴樣區編號, Point, Survey, Macaca_sur, Macaca_dist,AB) %>% 
@@ -231,8 +262,59 @@ bb_F %>%
       anti_join(bb_F[, c('SiteID','Year')],
                 by = c('SiteID','Year'))
     ) %>% 
-  filter(Year %in% c(2021:2024)) 
+  filter(Year %in% c(2021:2024))
+```
 
+藍色數字為平均樣區數
+```{r}
+
+combine_bb %>% 
+  setDT %>% 
+  .[, .(N = length(Macaca_sur),
+        m = sum(Macaca_sur, na.rm=T)
+        ),
+   by =  c('Year', 'Survey')] %>% 
+  .[,Encounter_rate := m/N] %>% 
+  .[, Mean_N := mean(N),   by =  c('Year')] %>% 
+  
+  ggplot(., aes(x = as.character(Year), y = Encounter_rate))+
+  geom_boxplot(width = 0.3, linewidth = 0.4, fill= gray(.9))+
+  stat_summary(fun = mean, geom = "text", 
+               aes(label = round(Mean_N, 2)),
+               hjust = -0.5,
+               vjust = -3.2, color = "blue")+
+  
+
+  scale_y_continuous(breaks = seq(0,0.05,0.01), limits = c(0,0.05))+
+  labs(x = "", y = "Encounter_rate(群/樣點)")+
+  theme(
+    panel.border = element_rect(size = 1.5,fill = NA),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text = element_text(size = 20,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black"),
+    axis.title.y = element_text(angle = 270,
+                                vjust = -1, hjust = 0.5),
+    legend.position = "top"
+  )
+```
+```{r}
+combine_bb %>% 
+  setDT %>% 
+  .[, .(N = length(Macaca_sur),
+        m = sum(Macaca_sur, na.rm=T)
+        ),
+   by =  c('Year', 'Survey', 'data_source')] %>% 
+  .[,Encounter_rate := m/N] %>% 
+  .[, Mean_N := mean(N),   by =  c('Year','data_source')] %>% 
+  
+  ggplot(., aes(x = as.character(Year), y = Encounter_rate))+
+  geom_boxplot( aes(fill= data_source))
+```
+
+
+
+```{r include=FALSE}
 combine_bb %>%
   
   group_by(Year, SiteID, Point, Survey) %>% 
@@ -257,9 +339,9 @@ write_xlsx(
 
 ```
 
+
+
 ```{r}
-
-
 path <- "D:/R/SHP圖層"
 
 town <- st_read(paste0(path,"/","鄉(鎮、市、區)界線(TWD97經緯度)1131028/TOWN_MOI_1131028.shp"), crs=4326) %>% 
@@ -268,6 +350,11 @@ town <- st_read(paste0(path,"/","鄉(鎮、市、區)界線(TWD97經緯度)11310
 
 summary(town)
 
+
+```
+
+
+```{r}
 town_list_Point <- 
 list_Point %>% 
   filter(!is.na(X_97)) %>% 
@@ -284,12 +371,48 @@ town_list_Point %>%
 
 
 #2021~2024年的調查資料
+
+
+
 ```{r}
+summary__combine <- 
+town_combine_bb %>% 
+  group_by( Year, Survey) %>% 
+  summarise(N = PointID %>% unique() %>% length,
+            m = AB %>% sum,
+            E = m / N,
+            .groups =  'drop') %>%
+  group_by(Year) %>% 
+  summarise(Mean_N = mean(N),
+              Se_N =  se(N),
+              Mean_m = mean(m),
+              Se_m = se(m),
+              Mean_E = mean(E) ,
+              Se_E = se(E),
+            .groups =  'drop') %>% 
+  mutate_at(c('Se_N','Se_m','Se_E'), function(x)round(x,3)) %>% 
+  mutate_at(c('Mean_N','Mean_m','Mean_E'), function(x)round(x,3)) 
+```
+
+調查資料的E
+```{r}
+summary__combine %>% 
+  flextable()
+```
+
+
+
+縣市
+```{r}
+COUNT_combine_bb_outout <-
 town_combine_bb %>% 
   group_by(COUNTYNAME) %>% 
   summarise(樣點數 = PointID %>% unique() %>% length,
             筆數 = PointID  %>% length,
-            '猴群數' = AB %>% sum )
+            '猴群數' = AB %>% sum ) 
+
+
+  
 ```
 
 
@@ -313,8 +436,12 @@ town_combine_bb %>%
   mutate_at(c('Mean_N','Mean_m','Mean_E'), function(x)round(x,3)) %>% 
 
   arrange(-Mean_E)
+```
 
-summary_COUNT_combine 
+調查資料的E
+```{r}
+summary_COUNT_combine %>% 
+  flextable()
 ```
 
 ```{r}
@@ -323,29 +450,87 @@ summary_COUNT_combine %>%
   mutate(
     COUNTYNAME = sapply(COUNTYNAME,
                         function(x) paste(str_split(x, "")[[1]], collapse = "\n")),
-    COUNTYNAME = reorder(COUNTYNAME, -Mean_E)) %>% 
-  ggplot(data = , aes(COUNTYNAME, Mean_E))+
-  geom_col(aes(fill = -Mean_E))+
+    COUNTYNAME = reorder(COUNTYNAME, -Mean_E)) %>%
+  
+  ggplot(data = ., aes(COUNTYNAME, Mean_E))+
+  geom_bar(aes(fill = -Mean_E), stat = "identity") +
   labs(x = "",y ="Encounter_rate")+
   scale_color_brewer(palette = "Set2")+
   theme_classic()+
-  theme(text = element_text(size = 18),
+  theme(
+    text = element_text(size = 18),
         legend.position = "none")
 
 ```
 
+藍色數字為平均樣區數
 ```{r}
+COUNTY__sorted <- town_combine_bb %>% 
+  group_by(COUNTYNAME, Year, Survey) %>% 
+  summarise(N = PointID %>% unique() %>% length,
+            m = AB %>% sum,
+            .groups =  'drop') %>% setDT %>% 
+
+   .[,Encounter_rate := m/N] %>% 
+   .[, Mean_N := mean(N), by =  c('COUNTYNAME')] %>%
+  .[, Mean_E := mean(Encounter_rate), by =  c('COUNTYNAME')] %>%
+  arrange(desc(Mean_E)) %>% .$COUNTYNAME %>% unique()
+
+town_nn <- 
+lapply(COUNTY__sorted,
+       function(x) paste(str_split(x, "")[[1]], collapse = "\n")) %>% unlist()
+
+
 
 town_combine_bb %>% 
-  group_by(COUNTYNAME, data_source) %>% 
+  group_by(COUNTYNAME, Year, Survey) %>% 
+  summarise(N = PointID %>% unique() %>% length,
+            m = AB %>% sum,
+            .groups =  'drop') %>% setDT %>% 
+
+   .[,Encounter_rate := m/N] %>% 
+   .[, Mean_N := mean(N),   by =  c('COUNTYNAME')] %>% 
+  
+  ggplot(., aes(x = COUNTYNAME, y = Encounter_rate))+
+  geom_boxplot(width = 0.3, linewidth = 0.4, fill= gray(.9))+
+  stat_summary(fun = mean, geom = "text", 
+               aes(label = round(Mean_N, 1)),
+               hjust = 0,
+               vjust = -7, color = "blue")+
+  scale_x_discrete(limit = COUNTY__sorted , labels = town_nn)+
+  scale_y_continuous(breaks = seq(0,0.2,0.05), limits = c(0,0.2))+
+  labs(x = "", y = "Encounter_rate(群/樣點)")+
+  theme(
+    panel.border = element_rect(size = 1.5,fill = NA),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text.x = element_text(size = 12,colour = "black", angle = 0),
+    axis.text.y = element_text(size = 18,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black"),
+    axis.title.y = element_text(angle = 270,
+                                vjust = -1, hjust = 0.5),
+    legend.position = "top"
+  )
+```
+
+
+
+鄉鎮
+
+```{r}
+town_combine_bb_outout <- 
+town_combine_bb %>% 
+  group_by(COUNTYNAME,TOWNNAME, data_source) %>% 
   summarise(樣點數 = PointID %>% unique() %>% length,
             筆數 = PointID  %>% length,
             '猴群數' = AB %>% sum,
             .groups =  'drop' ) %>% 
-  pivot_wider(., id_cols = 'COUNTYNAME',
+  pivot_wider(., id_cols = c('COUNTYNAME','TOWNNAME'),
               names_from = 'data_source',
               values_from =c('樣點數', '筆數', '猴群數')) %>% 
-  arrange(-`樣點數_BBS`) %>% 
+  arrange(-`樣點數_BBS`) 
+
+town_combine_bb_outout%>% 
   flextable()   %>% 
   colformat_double()  %>%
   separate_header()  %>% 
@@ -378,24 +563,90 @@ town_combine_bb %>%
 
 ```
 
+調查資料的E  (前20名, 全部有186個鄉鎮)
+```{r}
+summary_TOWN_combine%>% 
+  arrange(-Mean_E) %>% 
+  slice(1:20) %>% 
+  flextable()
+```
+
+
 
 ```{r}
 
 summary_TOWN_combine %>% 
-  mutate(
+  mutate(    
     TOWNNAME = sapply(TOWNNAME,
                         function(x) paste(str_split(x, "")[[1]], collapse = "\n")),
     TOWNNAME = reorder(TOWNNAME, -Mean_E)) %>% 
   filter(Mean_E>0) %>% 
+  slice_max(order_by = Mean_E, n = 20) %>% 
   ggplot(data = , aes(TOWNNAME, Mean_E))+
-  geom_col(aes(fill = -Mean_E))+
+  geom_bar(aes(fill = -Mean_E), stat = "identity") +
+  #geom_col(aes(fill = -Mean_E))+
   labs(x = "",y ="Encounter_rate")+
   scale_color_brewer(palette = "Set2")+
   theme_classic()+
-  theme(text = element_text(size = 12),
+  theme(text = element_text(size = 18),
         legend.position = "none")
 
 ```
+
+藍色數字為平均樣區數
+```{r}
+TOWN__sorted <- town_combine_bb %>%
+  filter(str_detect(TOWNNAME, "大埔|番路|阿里山|古坑|林內")) %>% 
+  group_by(TOWNNAME, Year, Survey) %>% 
+  summarise(N = PointID %>% unique() %>% length,
+            m = AB %>% sum,
+            .groups =  'drop') %>% setDT %>% 
+
+   .[,Encounter_rate := m/N] %>% 
+   .[, .(Mean_N = mean(N),
+         Mean_E = mean(Encounter_rate)), by =  c('TOWNNAME')] %>%
+#  slice_max(order_by = Mean_E, n = 50) %>% 
+  arrange(desc(Mean_E)) %>% .$TOWNNAME %>% unique()
+
+town_nn2 <- 
+lapply(TOWN__sorted,
+       function(x) paste(str_split(x, "")[[1]], collapse = "\n")) %>% unlist()
+
+
+
+
+town_combine_bb %>% 
+  filter(str_detect(TOWNNAME, "大埔|番路|阿里山|古坑|林內")) %>% 
+  group_by(TOWNNAME, Year, Survey) %>% 
+  summarise(N = PointID %>% unique() %>% length,
+            m = AB %>% sum,
+            .groups =  'drop') %>% setDT %>% 
+
+   .[,Encounter_rate := m/N] %>% 
+   .[, Mean_N := mean(N),   by =  c('TOWNNAME')] %>% 
+  
+  ggplot(., aes(x = TOWNNAME, y = Encounter_rate))+
+  geom_boxplot(width = 0.3, linewidth = 0.4, fill= gray(.9))+
+  stat_summary(fun = mean, geom = "text", 
+               aes(label = round(Mean_N, 1)),
+               hjust = 0,
+               vjust = -9, color = "blue")+
+  scale_x_discrete(limit = TOWN__sorted , labels = town_nn2)+
+  # scale_y_continuous(breaks = seq(0,0.2,0.05), limits = c(0,0.2))+
+  labs(x = "", y = "Encounter_rate(群/樣點)")+
+  theme(
+    panel.border = element_rect(size = 1.5,fill = NA),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text.x = element_text(size = 18,colour = "black", angle = 0),
+    axis.text = element_text(size = 20,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black"),
+    axis.title.y = element_text(angle = 270,
+                                vjust = -1, hjust = 0.5),
+    legend.position = "top"
+  )
+```
+
 
 
 
@@ -410,6 +661,12 @@ bb_all<- town_combine_bb %>% setDT %>%
   .[,list(Year, AB, COUNTYNAME,TOWNNAME, data_source)] 
 
 ```
+
+
+海拔50m以上的森林總面積=21028.14 (km^2^)\
+方法：bootstrap\
+重複抽樣：10,000次\
+單位面積的半徑: 100m
 
 ```{r include=FALSE}
 
@@ -432,7 +689,7 @@ bb_all %>%
 
 
   row.names(bootstrap_AB_all) <- NULL
-      
+     
 
 
 ```
@@ -441,7 +698,6 @@ bb_all %>%
 方法：bootstrap\
 重複抽樣：10,000次\
 單位面積的半徑: 100m
-
 ```{r echo=FALSE}
 per_Area <- (0.1*0.1*pi)   #100m半徑的單位原面積
 
@@ -452,52 +708,19 @@ troop_M_all <-
   .[ , 'q1_troops' := (21028.14/per_Area)*q_1] %>% 
   .[ , 'q3_troops' := (21028.14/per_Area)*q_3] %>% 
   .[, 'log_troops':= log(M_troops)]%>% 
-  .[ , 'COUNT' := M_troops*25] %>% 
-  .[ Year >2020 & Year < 2025, ] 
+  .[ , 'COUNT' := M_troops*25] 
 
 
 ```
 
-猴群數  
-```{r echo=FALSE}
 
-ggplot()+
-  
-  geom_point(data = troop_M_all,
-             aes(x = Year, y = M_troops),
-             col = "red")+
-  geom_line(data = troop_M_all,
-             aes(x = Year, y = M_troops),
-             col = "red", lty = 2, alpha = 0.4)+
-  geom_errorbar(data = troop_M_all,
-                aes(x =Year ,ymin = q1_troops,
-                    ymax = q3_troops),width=0.1,
-             col = "red", alpha = 0.4)+
-  geom_text(data = troop_M_all,
-             aes( x = Year, y = M_troops, label = round(M_troops,0)),
-            size = 3, nudge_x = 0.4, nudge_y = 1000,
-            col = "red")+
-  
-  scale_x_continuous(breaks = 2015:2024)+
-  labs(y = "猴群數(95%CI)")+
-  
-
-  theme_classic()
-
-```
-
-\br
-
-黑線 ：純BBS資料+ ELE 50m 的**本島**森林\
-紅線：BBS與林業署資料混和(1:1)+ ELE 50m 的**本島**森林  
-
-\newpage
-
-\br  
-用BBS及林業署調查資料估算  
-```{r echo=FALSE}
-troop_M_all %>% 
+```{r}
+troop_M_all  %>% 
   mutate('年' = as.character(Year)) %>% 
+  mutate(
+    '相對密度' = round(mm,3),
+    "相對密度(95%CI)" = paste0(round(q_1,3), "~", round(q_3,3))
+  ) %>% 
   mutate(
     '群數' = round(M_troops),
     "群數(95%CI)" = paste0(round(q1_troops), "~", round(q3_troops))
@@ -506,9 +729,56 @@ troop_M_all %>%
     '隻數' = round(M_troops*25),
     "隻數(95%CI)" = paste0(round(q1_troops*25), "~", round(q3_troops*25))
     ) %>% 
-  select(年, `群數`:`隻數(95%CI)`) %>% 
+  select(年, `相對密度`:`隻數(95%CI)`) %>% 
   flextable::flextable() 
 ```
+
+```{r echo=FALSE}
+
+ggplot(troop_M_all, aes(x = Year, y = M_troops))+
+  geom_point()+
+  geom_errorbar(aes(ymin = q1_troops,
+                    ymax = q3_troops),width=0.1)+
+  geom_text(data = troop_M_all, 
+            aes(y = M_troops,
+                label = as.integer(M_troops)),
+            size = 4.5,
+            hjust = -0.1, 
+            vjust = -1,
+            position = position_dodge(0.9), show.legend = F)+
+  
+  scale_y_continuous(breaks = seq(0,27500,5000), limits = c(0,28000))+
+
+  labs(x = "",y = "猴群數(95%CI)")+
+
+  theme_classic()+
+  theme(
+    panel.border = element_rect(linewidth = 1.5,fill = NA),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text = element_text(size = 18,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black"),
+    axis.title.y = element_text(angle = 270,
+                              vjust = 0, hjust = 0.5),
+    legend.position = "top"
+  )
+
+```
+
+
+
+```{r}
+
+troop_M_all%>%
+write_xlsx(
+.,
+  here("./Report of Foresty_20251127/合併估算/年的相對密度_bootstrap.xlsx")
+) 
+  
+
+```
+
+
 
 
 估計**縣市**猴群數 
@@ -547,18 +817,8 @@ bb_all %>%
 單位面積的半徑: 100m
 
 
+
 ```{r}
-
-forest_town<- read_xlsx(
-  here("Report of Foresty_20251127/合併估算/鄉鎮內50m以上的森林面積.xlsx")) %>% 
-  select(-perimeter) %>% 
-  mutate(area = area/1000000) %>%   #換成km2
-setDT
-```
-
-
-
-```{r echo=FALSE}
 per_Area <- (0.1*0.1*pi)   #100m半徑的單位原面積
 
 COUNTY_M_all <- 
@@ -573,6 +833,8 @@ COUNTY_M_all <-
 
 
 ```
+
+用縣市的資料分別抽樣，再依各縣市50m以上的森林面積，去估算
 
 
 ```{r echo=FALSE}
@@ -592,6 +854,61 @@ COUNTY_M_all %>%
   select(COUNTYNAME, `相對密度`:`隻數(95%CI)`) %>% arrange(-群數) %>% 
   flextable::flextable() 
 ```
+
+```{r echo=FALSE}
+COUNTY_M_all_sorted <- COUNTY_M_all %>%
+  arrange(desc(M_troops)) %>% .$COUNTYNAME
+
+COUNTY_nn <- 
+lapply(COUNTY_M_all_sorted,
+       function(x) paste(str_split(x, "")[[1]], collapse = "\n")) %>% unlist()
+
+
+COUNTY_M_all %>%
+ggplot(., aes(x = COUNTYNAME, y = M_troops))+
+  geom_point()+
+  geom_errorbar(aes(ymin = q1_troops,
+                    ymax = q3_troops),width=0.1)+
+  geom_text(data = COUNTY_M_all, 
+            aes(y = M_troops,
+                label = as.integer(M_troops)),
+            size = 4.5,
+            hjust = -0.1, 
+            vjust = -1,
+            position = position_dodge(0.9), show.legend = F)+
+  scale_x_discrete(limit = COUNTY_M_all_sorted, label = COUNTY_nn )+
+  scale_y_continuous(breaks = seq(0,9000,1000), limits = c(0,9000))+
+
+  labs(x = "",y = "猴群數(95%CI)")+
+
+  theme_classic()+
+  theme(
+    axis.text.x = element_text(angle = 0),
+    panel.border = element_rect(linewidth = 1.5,fill = NA),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text = element_text(size = 14,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black"),
+    axis.title.y = element_text(angle = 270,
+                              vjust = 0, hjust = 0.5),
+    legend.position = "top"
+  )
+```
+
+
+
+```{r}
+list(
+ '筆數' = COUNT_combine_bb_outout,
+ '相對密度' =  summary_COUNT_combine,
+ 'bootstrap' =  COUNTY_M_all)%>%
+write_xlsx(
+.,
+  here("./Report of Foresty_20251127/合併估算/縣市的調查相對密度.xlsx")
+)
+ 
+```
+
 
 
 估計**部分鄉鎮**猴群數 
@@ -656,5 +973,58 @@ TOWN_M_all %>%
     ) %>% 
   select(COUNTYNAME, TOWNNAME,`相對密度`:`隻數(95%CI)`) %>% arrange(-群數) %>% 
   flextable::flextable() 
+```
+
+```{r echo=FALSE}
+TOWN_M_all_sorted <- TOWN_M_all %>%
+  arrange(desc(M_troops)) %>% .$TOWNNAME
+
+TOWN_nn_3 <- 
+lapply(TOWN_M_all_sorted ,
+       function(x) paste(str_split(x, "")[[1]], collapse = "\n")) %>% unlist()
+
+TOWN_M_all %>%
+ggplot(., aes(x = TOWNNAME, y = M_troops))+
+  geom_point()+
+  geom_errorbar(aes(ymin = q1_troops,
+                    ymax = q3_troops),width=0.1)+
+  geom_text(data = TOWN_M_all, 
+            aes(y = M_troops,
+                label = as.integer(M_troops)),
+            size = 4.5,
+            hjust = -0.7, 
+            vjust = -1,
+            position = position_dodge(0.9), show.legend = F)+
+  scale_x_discrete(limit = TOWN_M_all_sorted, labels = TOWN_nn_3 )+
+#  scale_y_continuous(breaks = seq(0,9000,1000), limits = c(0,9000))+
+
+  labs(x = "",y = "猴群數(95%CI)")+
+
+  theme_classic()+
+  theme(
+    axis.text.x = element_text(angle = 0),
+    panel.border = element_rect(linewidth = 1.5,fill = NA),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    axis.text = element_text(size = 20,colour = "black"),
+    axis.title = element_text(size = 18,colour = "black"),
+    axis.title.y = element_text(angle = 270,
+                              vjust = 0, hjust = 0.5),
+    legend.position = "top"
+  )
+```
+
+
+
+
+```{r}
+list(
+ '筆數' = town_combine_bb_outout,
+ '相對密度' =  summary_TOWN_combine,
+ 'bootstrap' =  TOWN_M_all)%>%
+write_xlsx(
+.,
+  here("./Report of Foresty_20251127/合併估算/鄉鎮的調查相對密度.xlsx")
+)
 ```
 
