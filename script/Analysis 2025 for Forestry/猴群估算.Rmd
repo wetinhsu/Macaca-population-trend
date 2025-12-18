@@ -191,7 +191,7 @@ geom_errorbar(
   scale_x_continuous(breaks = 2015:2025,
                      labels = c(2015,"",2017,"",2019,"",2021,"",2023,"",2025))+
   scale_y_continuous(breaks = seq(0,0.05,0.01), limits = c(0,0.05))+
-  labs(x = "", y = "Encounter_rate(群/樣點)")+
+  labs(x = "", y = "Encounter rate (群/樣點)")+
   theme_classic()+
   theme(text = element_text(size = 18),
         axis.title.y = element_text(angle = 270),
@@ -281,12 +281,14 @@ combine_bb %>%
   geom_boxplot(width = 0.3, linewidth = 0.4, fill= gray(.9))+
   stat_summary(fun = mean, geom = "text", 
                aes(label = round(Mean_N, 2)),
-               hjust = -0.5,
-               vjust = -3.2, color = "blue")+
+               position = position_nudge(x = 0, y = 0.0065),
+               # hjust = 0.3,
+               # vjust = -5,
+               color = "blue")+
   
 
   scale_y_continuous(breaks = seq(0,0.05,0.01), limits = c(0,0.05))+
-  labs(x = "", y = "Encounter_rate(群/樣點)")+
+  labs(x = "", y = "Encounter rate (群/樣點)")+
   theme(
     panel.border = element_rect(size = 1.5,fill = NA),
     panel.grid = element_blank(),
@@ -390,8 +392,8 @@ town_combine_bb %>%
               Mean_E = mean(E) ,
               Se_E = se(E),
             .groups =  'drop') %>% 
-  mutate_at(c('Se_N','Se_m','Se_E'), function(x)round(x,3)) %>% 
-  mutate_at(c('Mean_N','Mean_m','Mean_E'), function(x)round(x,3)) 
+  mutate_at(c('Se_N','Se_m','Se_E','Mean_E'), function(x)round(x,3)) %>% 
+  mutate_at(c('Mean_N','Mean_m'), function(x)round(x,2)) 
 ```
 
 調查資料的E
@@ -432,8 +434,8 @@ town_combine_bb %>%
               Mean_E = mean(E) ,
               Se_E = se(E),
             .groups =  'drop') %>% 
-  mutate_at(c('Se_N','Se_m','Se_E'), function(x)round(x,3)) %>% 
-  mutate_at(c('Mean_N','Mean_m','Mean_E'), function(x)round(x,3)) %>% 
+  mutate_at(c('Se_N','Se_m','Se_E','Mean_E'), function(x)round(x,3)) %>% 
+  mutate_at(c('Mean_N','Mean_m'), function(x)round(x,2)) %>% 
 
   arrange(-Mean_E)
 ```
@@ -474,6 +476,7 @@ COUNTY__sorted <- town_combine_bb %>%
    .[,Encounter_rate := m/N] %>% 
    .[, Mean_N := mean(N), by =  c('COUNTYNAME')] %>%
   .[, Mean_E := mean(Encounter_rate), by =  c('COUNTYNAME')] %>%
+ # .[, median_E := median(Encounter_rate), by =  c('COUNTYNAME')] %>%View
   arrange(desc(Mean_E)) %>% .$COUNTYNAME %>% unique()
 
 town_nn <- 
@@ -495,11 +498,14 @@ town_combine_bb %>%
   geom_boxplot(width = 0.3, linewidth = 0.4, fill= gray(.9))+
   stat_summary(fun = mean, geom = "text", 
                aes(label = round(Mean_N, 1)),
-               hjust = 0,
-               vjust = -7, color = "blue")+
+               position = position_nudge(x = 0, y = 0.05),
+               angle = 270,
+               # hjust = 0,
+                vjust = -0.1,
+               color = "blue")+
   scale_x_discrete(limit = COUNTY__sorted , labels = town_nn)+
   scale_y_continuous(breaks = seq(0,0.2,0.05), limits = c(0,0.2))+
-  labs(x = "", y = "Encounter_rate(群/樣點)")+
+  labs(x = "", y = "Encounter rate (群/樣點)")+
   theme(
     panel.border = element_rect(size = 1.5,fill = NA),
     panel.grid = element_blank(),
@@ -556,8 +562,8 @@ town_combine_bb %>%
               Mean_E = mean(E) ,
               Se_E = se(E),
             .groups =  'drop') %>% 
-  mutate_at(c('Se_N','Se_m','Se_E'), function(x)round(x,3)) %>% 
-  mutate_at(c('Mean_N','Mean_m','Mean_E'), function(x)round(x,3)) %>% 
+  mutate_at(c('Se_N','Se_m','Se_E','Mean_E'), function(x)round(x,3)) %>% 
+  mutate_at(c('Mean_N','Mean_m'), function(x)round(x,2)) %>% 
 
   arrange(-Mean_E)
 
@@ -629,11 +635,13 @@ town_combine_bb %>%
   geom_boxplot(width = 0.3, linewidth = 0.4, fill= gray(.9))+
   stat_summary(fun = mean, geom = "text", 
                aes(label = round(Mean_N, 1)),
-               hjust = 0,
-               vjust = -9, color = "blue")+
+               position = position_nudge(x = 0, y = 0.07),
+                hjust = -0.1,
+               # vjust = -9,
+               color = "blue")+
   scale_x_discrete(limit = TOWN__sorted , labels = town_nn2)+
   # scale_y_continuous(breaks = seq(0,0.2,0.05), limits = c(0,0.2))+
-  labs(x = "", y = "Encounter_rate(群/樣點)")+
+  labs(x = "", y = "Encounter rate (群/樣點)")+
   theme(
     panel.border = element_rect(size = 1.5,fill = NA),
     panel.grid = element_blank(),
@@ -741,7 +749,7 @@ ggplot(troop_M_all, aes(x = Year, y = M_troops))+
                     ymax = q3_troops),width=0.1)+
   geom_text(data = troop_M_all, 
             aes(y = M_troops,
-                label = as.integer(M_troops)),
+                label = as.integer(round(M_troops))),
             size = 4.5,
             hjust = -0.1, 
             vjust = -1,
@@ -869,13 +877,21 @@ ggplot(., aes(x = COUNTYNAME, y = M_troops))+
   geom_point()+
   geom_errorbar(aes(ymin = q1_troops,
                     ymax = q3_troops),width=0.1)+
-  geom_text(data = COUNTY_M_all, 
-            aes(y = M_troops,
-                label = as.integer(M_troops)),
-            size = 4.5,
-            hjust = -0.1, 
-            vjust = -1,
-            position = position_dodge(0.9), show.legend = F)+
+  # geom_text(data = COUNTY_M_all, 
+  #           aes(y = M_troops,
+  #               label = as.integer(round(M_troops))),
+  #           angle = 270,
+  #           size = 4.5,
+  #           hjust = -0.1, 
+  #           vjust = -1,
+  #           position = position_dodge(0.9), show.legend = F)+
+  
+  stat_summary(fun = mean, geom = "text", 
+               aes(label = as.integer(round(M_troops))),
+               position = position_nudge(x = 0, y = 1300),
+               angle = 270
+               )+
+  
   scale_x_discrete(limit = COUNTY_M_all_sorted, label = COUNTY_nn )+
   scale_y_continuous(breaks = seq(0,9000,1000), limits = c(0,9000))+
 
@@ -990,7 +1006,7 @@ ggplot(., aes(x = TOWNNAME, y = M_troops))+
                     ymax = q3_troops),width=0.1)+
   geom_text(data = TOWN_M_all, 
             aes(y = M_troops,
-                label = as.integer(M_troops)),
+                label = as.integer(round(M_troops))),
             size = 4.5,
             hjust = -0.7, 
             vjust = -1,

@@ -253,9 +253,9 @@ overall
 ```{r echo=FALSE}
 plot(overall(m1, "imputed"), axes = F)
 axis(1, at = 2015:2024, cex.axis=1.5)
-axis(2, cex.axis=1.5)
+axis(2, cex.axis=1.5, las = 2)
 box()
-title( "imputed" )
+
 ```
 
 heatmap
