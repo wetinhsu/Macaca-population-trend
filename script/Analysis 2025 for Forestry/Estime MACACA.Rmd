@@ -1,6 +1,7 @@
 ---
-title: '20250901-猴群數估算'
-output: word_document
+title: "20250901-猴群數估算"
+output:
+  word_document: default
 date: "`r Sys.Date()`"
 ---
 
@@ -50,6 +51,9 @@ setDT
 
 ```{r}
 se <- function(x){sd(x)/sqrt(length(x))}
+
+
+per_Area <- (0.1*0.1*pi)   #100m(=0.1km)半徑的單位原面積
 ```
 
 
@@ -148,7 +152,7 @@ M.data_F <-
   mutate(Site_N = str_replace_all(Site_N,"MB-C11-10","MA-C11-10"))
 ```
 
-相對密度(群/樣點)圖
+相對密度(群/樣點)
 
 ```{r include=FALSE}
 
@@ -159,7 +163,7 @@ M.data_F %>%
         m = sum(Macaca_sur, na.rm=T)
         ),
    by =  c('Year', 'Survey')] %>% 
-  .[,Encounter_rate := m/N] %>% 
+  .[,Encounter_rate := m/N ] %>% 
   
 .[, .(
     Mean_N = mean(N)%>% round(3),
@@ -192,12 +196,49 @@ geom_errorbar(
                      labels = c(2015,"",2017,"",2019,"",2021,"",2023,"",2025))+
   scale_y_continuous(breaks = seq(0,0.05,0.01), limits = c(0,0.05))+
   labs(x = "", y = "Encounter rate (群/樣點)")+
-  theme_classic()+
-  theme(text = element_text(size = 18),
+  theme(
+        text = element_text(size = 18),
         axis.title.y = element_text(angle = 270),
         legend.position = "top")
 
 ```
+
+
+
+```{r echo=FALSE}
+library(RColorBrewer)
+library(grid)
+
+E_year_F %>% mutate(data_source = "Foresty") %>% 
+  bind_rows(E_year %>% mutate(data_source = "BBS")) %>% 
+  filter(data_source %in% "BBS") %>% 
+ggplot(data = ., aes(x = Year, y = Mean_E/per_Area))+
+  geom_point(aes(col = data_source, size = 3))+
+  geom_line(aes(col = data_source), linewidth = 1)+
+
+  
+  scale_color_brewer(palette = "Set2")+
+  scale_x_continuous(breaks = 2015:2025,
+                     labels = c(2015,"",2017,"",2019,"",2021,"",2023,"",2025))+
+ scale_y_continuous(breaks = seq(0,1,0.2), limits = c(0,1))+
+  labs(x = "",
+       y = "",
+       title = expression(paste("猴群密度 (群 / km"^2,")")) 
+            ) +
+  
+  
+  
+  theme_classic()+
+
+  theme(
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        text = element_text(size = 18, face = "plain"),
+         axis.title.y = element_text(angle = 270),
+        legend.position = "None")
+
+```
+
 
 相對密度(群/樣點)  
 ```{r}
@@ -265,6 +306,10 @@ bb_F %>%
   filter(Year %in% c(2021:2024))
 ```
 
+
+
+
+
 藍色數字為平均樣區數
 ```{r}
 
@@ -274,23 +319,23 @@ combine_bb %>%
         m = sum(Macaca_sur, na.rm=T)
         ),
    by =  c('Year', 'Survey')] %>% 
-  .[,Encounter_rate := m/N] %>% 
+  .[,E_km2 := m/N/per_Area] %>% 
   .[, Mean_N := mean(N),   by =  c('Year')] %>% 
   
-  ggplot(., aes(x = as.character(Year), y = Encounter_rate))+
+  ggplot(., aes(x = as.character(Year), y = E_km2))+
   geom_boxplot(width = 0.3, linewidth = 0.4, fill= gray(.9))+
   stat_summary(fun = mean, geom = "text", 
                aes(label = round(Mean_N, 2)),
-               position = position_nudge(x = 0, y = 0.0065),
+               position = position_nudge(x = 0, y = 0.21),
                # hjust = 0.3,
                # vjust = -5,
                color = "blue")+
   
 
-  scale_y_continuous(breaks = seq(0,0.05,0.01), limits = c(0,0.05))+
-  labs(x = "", y = "Encounter rate (群/樣點)")+
+  scale_y_continuous(breaks = seq(0,1.5,0.5), limits = c(0,1.5))+
+  labs(x = "", y = expression(paste("猴群密度 (群 / km"^2,")")))+
   theme(
-    panel.border = element_rect(size = 1.5,fill = NA),
+    panel.border = element_rect(linewidth = 1.5,fill = NA),
     panel.grid = element_blank(),
     panel.background = element_blank(),
     axis.text = element_text(size = 20,colour = "black"),
@@ -383,6 +428,7 @@ town_combine_bb %>%
   summarise(N = PointID %>% unique() %>% length,
             m = AB %>% sum,
             E = m / N,
+            E_km2 =  m / N/per_Area,
             .groups =  'drop') %>%
   group_by(Year) %>% 
   summarise(Mean_N = mean(N),
@@ -391,8 +437,11 @@ town_combine_bb %>%
               Se_m = se(m),
               Mean_E = mean(E) ,
               Se_E = se(E),
+            Mean_E_km2 = mean(E_km2) ,
+              Se_E_km2 = se(E_km2),
             .groups =  'drop') %>% 
-  mutate_at(c('Se_N','Se_m','Se_E','Mean_E'), function(x)round(x,3)) %>% 
+  mutate_at(c('Se_N','Se_m','Se_E','Mean_E',
+              'Mean_E_km2','Se_E_km2'), function(x)round(x,3)) %>% 
   mutate_at(c('Mean_N','Mean_m'), function(x)round(x,2)) 
 ```
 
@@ -425,6 +474,7 @@ town_combine_bb %>%
   summarise(N = PointID %>% unique() %>% length,
             m = AB %>% sum,
             E = m / N,
+            E_km2 =  m / N/per_Area,
             .groups =  'drop') %>%
   group_by(COUNTYNAME) %>% 
   summarise(Mean_N = mean(N),
@@ -433,8 +483,11 @@ town_combine_bb %>%
               Se_m = se(m),
               Mean_E = mean(E) ,
               Se_E = se(E),
+            Mean_E_km2 = mean(E_km2) ,
+              Se_E_km2 = se(E_km2),
             .groups =  'drop') %>% 
-  mutate_at(c('Se_N','Se_m','Se_E','Mean_E'), function(x)round(x,3)) %>% 
+  mutate_at(c('Se_N','Se_m','Se_E','Mean_E',
+              'Mean_E_km2','Se_E_km2'), function(x)round(x,3)) %>% 
   mutate_at(c('Mean_N','Mean_m'), function(x)round(x,2)) %>% 
 
   arrange(-Mean_E)
@@ -467,6 +520,8 @@ summary_COUNT_combine %>%
 
 藍色數字為平均樣區數
 ```{r}
+n.name <- read_xlsx(here::here("./script/Analysis 2025 for Forestry/00.xlsx"))
+
 COUNTY__sorted <- town_combine_bb %>% 
   group_by(COUNTYNAME, Year, Survey) %>% 
   summarise(N = PointID %>% unique() %>% length,
@@ -475,12 +530,22 @@ COUNTY__sorted <- town_combine_bb %>%
 
    .[,Encounter_rate := m/N] %>% 
    .[, Mean_N := mean(N), by =  c('COUNTYNAME')] %>%
-  .[, Mean_E := mean(Encounter_rate), by =  c('COUNTYNAME')] %>%
- # .[, median_E := median(Encounter_rate), by =  c('COUNTYNAME')] %>%View
+  .[, Mean_E := mean(Encounter_rate), by =  c('COUNTYNAME')] %>% 
   arrange(desc(Mean_E)) %>% .$COUNTYNAME %>% unique()
 
 town_nn <- 
-lapply(COUNTY__sorted,
+  town_combine_bb %>% 
+  group_by(COUNTYNAME, Year, Survey) %>% 
+  summarise(N = PointID %>% unique() %>% length,
+            m = AB %>% sum,
+            .groups =  'drop') %>% setDT %>% 
+
+   .[,Encounter_rate := m/N] %>% 
+   .[, Mean_N := mean(N), by =  c('COUNTYNAME')] %>%
+  .[, Mean_E := mean(Encounter_rate), by =  c('COUNTYNAME')] %>% 
+  arrange(desc(Mean_E))%>%
+  left_join(n.name, by = 'COUNTYNAME') %>% .$COUNTYNAME2 %>% unique() %>% 
+lapply(.,
        function(x) paste(str_split(x, "")[[1]], collapse = "\n")) %>% unlist()
 
 
@@ -491,21 +556,21 @@ town_combine_bb %>%
             m = AB %>% sum,
             .groups =  'drop') %>% setDT %>% 
 
-   .[,Encounter_rate := m/N] %>% 
+   .[,E_km2 := m/N/per_Area] %>% 
    .[, Mean_N := mean(N),   by =  c('COUNTYNAME')] %>% 
   
-  ggplot(., aes(x = COUNTYNAME, y = Encounter_rate))+
+  ggplot(., aes(x = COUNTYNAME, y = E_km2))+
   geom_boxplot(width = 0.3, linewidth = 0.4, fill= gray(.9))+
   stat_summary(fun = mean, geom = "text", 
                aes(label = round(Mean_N, 1)),
-               position = position_nudge(x = 0, y = 0.05),
+               position = position_nudge(x = 0, y = 1.7),
                angle = 270,
-               # hjust = 0,
-                vjust = -0.1,
+           #     hjust = -0.1,
+           #     vjust = 0,
                color = "blue")+
   scale_x_discrete(limit = COUNTY__sorted , labels = town_nn)+
-  scale_y_continuous(breaks = seq(0,0.2,0.05), limits = c(0,0.2))+
-  labs(x = "", y = "Encounter rate (群/樣點)")+
+  scale_y_continuous(breaks = seq(0,5,1), limits = c(0,5.3))+
+  labs(x = "", y = expression(paste("猴群密度 (群 / km"^2,")")))+
   theme(
     panel.border = element_rect(size = 1.5,fill = NA),
     panel.grid = element_blank(),
@@ -553,6 +618,7 @@ town_combine_bb %>%
   summarise(N = PointID %>% unique() %>% length,
             m = AB %>% sum,
             E = m / N,
+            E_km2 = m / N/per_Area ,
             .groups =  'drop') %>%
   group_by(COUNTYNAME,TOWNNAME) %>% 
   summarise(Mean_N = mean(N),
@@ -561,9 +627,12 @@ town_combine_bb %>%
               Se_m = se(m),
               Mean_E = mean(E) ,
               Se_E = se(E),
+            Mean_E_km2 = mean(E_km2) ,
+              Se_E_km2 = se(E_km2),
             .groups =  'drop') %>% 
-  mutate_at(c('Se_N','Se_m','Se_E','Mean_E'), function(x)round(x,3)) %>% 
-  mutate_at(c('Mean_N','Mean_m'), function(x)round(x,2)) %>% 
+  mutate_at(c('Se_N','Se_m','Se_E','Mean_E',
+              'Mean_E_km2','Se_E_km2'), function(x)round(x,3)) %>% 
+  mutate_at(c('Mean_N','Mean_m'), function(x)round(x,2))%>% 
 
   arrange(-Mean_E)
 
@@ -628,20 +697,19 @@ town_combine_bb %>%
             m = AB %>% sum,
             .groups =  'drop') %>% setDT %>% 
 
-   .[,Encounter_rate := m/N] %>% 
+   .[,E_km2 := m/N/per_Area] %>% 
    .[, Mean_N := mean(N),   by =  c('TOWNNAME')] %>% 
   
-  ggplot(., aes(x = TOWNNAME, y = Encounter_rate))+
+  ggplot(., aes(x = TOWNNAME, y = E_km2))+
   geom_boxplot(width = 0.3, linewidth = 0.4, fill= gray(.9))+
   stat_summary(fun = mean, geom = "text", 
                aes(label = round(Mean_N, 1)),
-               position = position_nudge(x = 0, y = 0.07),
-                hjust = -0.1,
-               # vjust = -9,
+               position = position_nudge(x = 0.1, y = 1.8),
+               angle=270,
                color = "blue")+
   scale_x_discrete(limit = TOWN__sorted , labels = town_nn2)+
   # scale_y_continuous(breaks = seq(0,0.2,0.05), limits = c(0,0.2))+
-  labs(x = "", y = "Encounter rate (群/樣點)")+
+  labs(x = "", y = expression(paste("猴群密度 (群 / km"^2,")")))+
   theme(
     panel.border = element_rect(size = 1.5,fill = NA),
     panel.grid = element_blank(),
@@ -677,7 +745,7 @@ bb_all<- town_combine_bb %>% setDT %>%
 單位面積的半徑: 100m
 
 ```{r include=FALSE}
-
+set.seed(1)
 #重複抽樣10000次----
 bootstrap_AB_all <- 
 bb_all %>% 
@@ -794,7 +862,7 @@ write_xlsx(
 
 
 ```{r include=FALSE}
-
+set.seed(2)
 #重複抽樣10000次----
 bootstrap_AB_all_COUNTY <- 
 bb_all %>% 
@@ -933,7 +1001,7 @@ write_xlsx(
 大埔,番路,阿里山,古坑,林內
 
 ```{r include=FALSE}
-
+set.seed(3)
 #重複抽樣10000次----
 bootstrap_AB_all_TOWN <- 
 bb_all %>% 
@@ -963,9 +1031,9 @@ per_Area <- (0.1*0.1*pi)   #100m半徑的單位原面積
 TOWN_M_all <- 
   forest_town %>% 
   left_join(bootstrap_AB_all_TOWN, .,by = 'TOWNNAME') %>% setDT %>% 
-  .[ , 'M_troops' := (area/per_Area)*mm] %>% 
-  .[ , 'q1_troops' := (area/per_Area)*q_1] %>% 
-  .[ , 'q3_troops' := (area/per_Area)*q_3] %>% 
+  .[ , 'M_troops' := area*mm/per_Area] %>% 
+  .[ , 'q1_troops' := area*q_1/per_Area] %>% 
+  .[ , 'q3_troops' := area*q_3/per_Area] %>% 
   .[, 'log_troops':= log(M_troops)]%>% 
   .[ , 'COUNT' := M_troops*25] 
 
