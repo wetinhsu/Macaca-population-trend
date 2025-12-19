@@ -213,11 +213,17 @@ E_year_F %>% mutate(data_source = "Foresty") %>%
   bind_rows(E_year %>% mutate(data_source = "BBS")) %>% 
   filter(data_source %in% "BBS") %>% 
 ggplot(data = ., aes(x = Year, y = Mean_E/per_Area))+
-  geom_point(aes(col = data_source, size = 3))+
-  geom_line(aes(col = data_source), linewidth = 1)+
+  geom_point(aes(col = "#893944", size = 3))+
+  geom_line(aes(col = "#893944"), linewidth = 1)+
+  
+  geom_errorbar(
+  aes(x =Year,
+      ymin = (Mean_E/per_Area)-(SD_E/per_Area),
+      ymax = (Mean_E/per_Area)+(SD_E/per_Area),
+      col = "#893944"), width = 0.1)+
 
   
-  scale_color_brewer(palette = "Set2")+
+#  scale_color_brewer(palette = "Set2")+
   scale_x_continuous(breaks = 2015:2025,
                      labels = c(2015,"",2017,"",2019,"",2021,"",2023,"",2025))+
  scale_y_continuous(breaks = seq(0,1,0.2), limits = c(0,1))+
@@ -646,6 +652,33 @@ summary_TOWN_combine%>%
   flextable()
 ```
 
+```{r}
+town_combine_bb %>% 
+  filter(str_detect(TOWNNAME, "大埔|番路|阿里山|古坑|林內")) %>% 
+  group_by(COUNTYNAME,TOWNNAME, Year, Survey) %>% 
+  summarise(N = PointID %>% unique() %>% length,
+            m = AB %>% sum,
+            E = m / N,
+            E_km2 = m / N/per_Area ,
+            .groups =  'drop') %>%
+  group_by(COUNTYNAME,TOWNNAME) %>% 
+  summarise(N_Mean = mean(N),
+              N_Se =  se(N),
+            N_range =paste0(min(N),"~", max(N)),
+              m_Mean = mean(m),
+              m_Se = se(m),
+              E_Mean = mean(E) ,
+              E_Se = se(E),
+              'E km2_Mean' = mean(E_km2) ,
+              'E km2_Se' = se(E_km2),
+            .groups =  'drop') %>% 
+  mutate_at(c('N_Se','m_Se','E_Mean','E_Se',
+              'E km2_Mean','E km2_Se'), function(x)round(x,3)) %>%
+  mutate_at(c('N_Mean','m_Mean'), function(x)round(x,2))%>% 
+  
+  flextable() %>% 
+  separate_header() 
+```
 
 
 ```{r}
@@ -755,9 +788,9 @@ bb_all %>%
   })%>% 
   lapply(., function(x){
     data.frame(
-    'q_1' = quantile(x, probs = 0.025),
-     'mm' = mean(x),
-    'q_3' = quantile(x, probs = 0.975)
+    'q_1' = quantile(x/per_Area, probs = 0.025),
+     'mm' = mean(x/per_Area),
+    'q_3' = quantile(x/per_Area, probs = 0.975)
     )
   }) %>% 
   bind_rows(.id = 'Year') %>% 
@@ -780,9 +813,9 @@ per_Area <- (0.1*0.1*pi)   #100m半徑的單位原面積
 troop_M_all <- 
  bootstrap_AB_all %>%
    setDT %>% 
-   .[ , 'M_troops' := (21028.14/per_Area)*mm] %>% 
-  .[ , 'q1_troops' := (21028.14/per_Area)*q_1] %>% 
-  .[ , 'q3_troops' := (21028.14/per_Area)*q_3] %>% 
+   .[ , 'M_troops' := (21028.14)*mm] %>% 
+  .[ , 'q1_troops' := (21028.14)*q_1] %>% 
+  .[ , 'q3_troops' := (21028.14)*q_3] %>% 
   .[, 'log_troops':= log(M_troops)]%>% 
   .[ , 'COUNT' := M_troops*25] 
 
@@ -794,8 +827,8 @@ troop_M_all <-
 troop_M_all  %>% 
   mutate('年' = as.character(Year)) %>% 
   mutate(
-    '相對密度' = round(mm,3),
-    "相對密度(95%CI)" = paste0(round(q_1,3), "~", round(q_3,3))
+    '相對密度_km2' = round(mm,3),
+    "相對密度_km2(95%CI)" = paste0(round(q_1,3), "~", round(q_3,3))
   ) %>% 
   mutate(
     '群數' = round(M_troops),
@@ -805,7 +838,7 @@ troop_M_all  %>%
     '隻數' = round(M_troops*25),
     "隻數(95%CI)" = paste0(round(q1_troops*25), "~", round(q3_troops*25))
     ) %>% 
-  select(年, `相對密度`:`隻數(95%CI)`) %>% 
+  select(年, `相對密度_km2`:`隻數(95%CI)`) %>% 
   flextable::flextable() 
 ```
 
@@ -872,9 +905,9 @@ bb_all %>%
   })%>% 
   lapply(., function(x){
     data.frame(
-    'q_1' = quantile(x, probs = 0.025),
-     'mm' = mean(x),
-    'q_3' = quantile(x, probs = 0.975)
+    'q_1' = quantile(x/per_Area, probs = 0.025),
+     'mm' = mean(x/per_Area),
+    'q_3' = quantile(x/per_Area, probs = 0.975)
     )
   }) %>% 
   bind_rows(.id = 'COUNTYNAME') 
@@ -901,9 +934,9 @@ COUNTY_M_all <-
   forest_town %>% 
   .[, .(area = sum(area)), by = 'COUNTYNAME'] %>% 
   left_join(bootstrap_AB_all_COUNTY, .,by = 'COUNTYNAME') %>% setDT %>% 
-  .[ , 'M_troops' := (area/per_Area)*mm] %>% 
-  .[ , 'q1_troops' := (area/per_Area)*q_1] %>% 
-  .[ , 'q3_troops' := (area/per_Area)*q_3] %>% 
+  .[ , 'M_troops' := (area)*mm] %>% 
+  .[ , 'q1_troops' := (area)*q_1] %>% 
+  .[ , 'q3_troops' := (area)*q_3] %>% 
   .[, 'log_troops':= log(M_troops)]%>% 
   .[ , 'COUNT' := M_troops*25]  
 
@@ -916,8 +949,8 @@ COUNTY_M_all <-
 ```{r echo=FALSE}
 COUNTY_M_all %>% 
   mutate(
-    '相對密度' = round(mm,3),
-    "相對密度(95%CI)" = paste0(round(q_1,3), "~", round(q_3,3))
+    '相對密度_km2' = round(mm,3),
+    "相對密度_km2(95%CI)" = paste0(round(q_1,3), "~", round(q_3/per_Area,3))
   ) %>% 
   mutate(
     '群數' = round(M_troops),
@@ -927,7 +960,7 @@ COUNTY_M_all %>%
     '隻數' = round(M_troops*25),
     "隻數(95%CI)" = paste0(round(q1_troops*25), "~", round(q3_troops*25))
     ) %>% 
-  select(COUNTYNAME, `相對密度`:`隻數(95%CI)`) %>% arrange(-群數) %>% 
+  select(COUNTYNAME, `相對密度_km2`:`隻數(95%CI)`) %>% arrange(-群數) %>% 
   flextable::flextable() 
 ```
 
@@ -935,8 +968,15 @@ COUNTY_M_all %>%
 COUNTY_M_all_sorted <- COUNTY_M_all %>%
   arrange(desc(M_troops)) %>% .$COUNTYNAME
 
+# COUNTY_nn <- 
+# lapply(COUNTY_M_all_sorted,
+#        function(x) paste(str_split(x, "")[[1]], collapse = "\n")) %>% unlist()
+
 COUNTY_nn <- 
-lapply(COUNTY_M_all_sorted,
+COUNTY_M_all %>%
+  arrange(desc(M_troops)) %>%
+  left_join(n.name, by = 'COUNTYNAME') %>% .$COUNTYNAME2 %>% unique() %>% 
+lapply(.,
        function(x) paste(str_split(x, "")[[1]], collapse = "\n")) %>% unlist()
 
 
@@ -1012,9 +1052,9 @@ bb_all %>%
   })%>% 
   lapply(., function(x){
     data.frame(
-    'q_1' = quantile(x, probs = 0.025),
-     'mm' = mean(x),
-    'q_3' = quantile(x, probs = 0.975)
+    'q_1' = quantile(x/per_Area, probs = 0.025),
+     'mm' = mean(x/per_Area),
+    'q_3' = quantile(x/per_Area, probs = 0.975)
     )
   }) %>% 
   bind_rows(.id = 'TOWNNAME') 
@@ -1031,9 +1071,9 @@ per_Area <- (0.1*0.1*pi)   #100m半徑的單位原面積
 TOWN_M_all <- 
   forest_town %>% 
   left_join(bootstrap_AB_all_TOWN, .,by = 'TOWNNAME') %>% setDT %>% 
-  .[ , 'M_troops' := area*mm/per_Area] %>% 
-  .[ , 'q1_troops' := area*q_1/per_Area] %>% 
-  .[ , 'q3_troops' := area*q_3/per_Area] %>% 
+  .[ , 'M_troops' := area*mm] %>% 
+  .[ , 'q1_troops' := area*q_1] %>% 
+  .[ , 'q3_troops' := area*q_3] %>% 
   .[, 'log_troops':= log(M_troops)]%>% 
   .[ , 'COUNT' := M_troops*25] 
 
@@ -1044,8 +1084,8 @@ TOWN_M_all <-
 ```{r echo=FALSE}
 TOWN_M_all %>% 
   mutate(
-    '相對密度' = round(mm,3),
-    "相對密度(95%CI)" = paste0(round(q_1,3), "~", round(q_3,3))
+    '相對密度_km2' = round(mm,3),
+    "相對密度_km2(95%CI)" = paste0(round(q_1,3), "~", round(q_3,3))
   ) %>% 
   mutate(
     '群數' = round(M_troops),
@@ -1055,7 +1095,7 @@ TOWN_M_all %>%
     '隻數' = round(M_troops*25),
     "隻數(95%CI)" = paste0(round(q1_troops*25), "~", round(q3_troops*25))
     ) %>% 
-  select(COUNTYNAME, TOWNNAME,`相對密度`:`隻數(95%CI)`) %>% arrange(-群數) %>% 
+  select(COUNTYNAME, TOWNNAME,`相對密度_km2`:`隻數(95%CI)`) %>% arrange(-群數) %>% 
   flextable::flextable() 
 ```
 

@@ -32,13 +32,14 @@ M.data <-
   mutate_at(c("Year", "Survey","Month",
               "Day", "Macaca_sur", "Distance", "Altitude", "julian.D"), as.numeric) 
 
+per_Area <- (0.1*0.1*pi) 
 #------
 Office.d.n <-
   M.data %>% 
   #  filter(Year == 2023) %>% 
   filter(analysis %in% "Y") %>% 
   group_by(Office,Survey, Year) %>% 
-  summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()/per_Area) %>% 
   
   group_by(Office) %>% 
   summarise(mean_N = mean(N) %>% round(1), 
@@ -53,7 +54,7 @@ M.data %>%
   #  filter(Year == 2023) %>% 
   filter(analysis %in% "Y") %>% 
   group_by(Office, Survey, Year) %>% 
-  summarise(E = sum(Macaca_sur)/n()) %>% 
+  summarise(E = sum(Macaca_sur)/n()/per_Area) %>% 
   mutate(Year = as.character(Year)) %>% 
   
   ggplot(., aes(x = Office, y = E)) +
@@ -65,11 +66,12 @@ M.data %>%
             hjust = -0.1, 
             vjust = -1,
             position = position_dodge(0.9), show.legend = F)+
-  scale_y_continuous(breaks = seq(0,0.15,0.05), limits = c(0,0.15))+
+  scale_y_continuous(breaks = seq(0,3.5,0.5), limits = c(0,3.5))+
   scale_x_discrete(limits = c( "新竹", "臺中", "宜蘭", "南投",
                                "花蓮", "嘉義", "屏東","臺東")
   )+
-  labs(x = "", y = "相對密度(群/樣點)")+
+#  labs(x = "", y = "相對密度(群/樣點)")+
+  labs(x = "", y = expression(paste("猴群密度 (群 / km"^2,")")))+
   theme(
     text = element_text(family="Microsoft JhengHei"),
     panel.border = element_rect(linewidth = 1.5,fill = NA),
@@ -81,7 +83,7 @@ M.data %>%
                               vjust = -1, hjust = 0.5),
     legend.position = "top"
   )
-ggsave(here("./林務局年報2024/Office2.PNG"),
+ggsave(here("./林務局年報2024/Office3.PNG"),
        dpi = 300,
        width = 895,
        height = 879,

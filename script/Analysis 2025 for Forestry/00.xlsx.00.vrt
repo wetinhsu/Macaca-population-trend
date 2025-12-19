@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="縣市簡稱">
+        <SrcDataSource relativeToVRT="1">00.xlsx</SrcDataSource>
+        <!--Header=True-->
+        <SrcSql dialect="sqlite">SELECT * FROM '00' LIMIT 22 OFFSET 1</SrcSql>
+        <Field name="COUNTYNAME" src="Field1" type="String"/>
+        <Field name="COUNTYNAME2" src="Field2" type="String"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>
