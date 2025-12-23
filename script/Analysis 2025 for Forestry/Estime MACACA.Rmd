@@ -313,7 +313,22 @@ bb_F %>%
 ```
 
 
+相對密度(群/樣點)  
+```{r}
 
+combine_bb%>% 
+  setDT %>% 
+  .[, .(N = length(Macaca_sur)
+        ),
+   by =  c('Year', 'Survey', 'data_source')] %>% 
+  
+.[, .(
+    Mean_N = mean(N)%>% round(3)),
+  by =  c('Year', 'data_source')] %>% 
+  pivot_wider(id_cols = "Year",
+              names_from = "data_source",
+              values_from = "Mean_N")
+```
 
 
 藍色數字為平均樣區數

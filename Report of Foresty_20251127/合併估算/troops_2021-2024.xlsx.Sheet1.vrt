@@ -15,6 +15,7 @@
         <Field name="AB" src="AB" type="Integer"/>
         <Field name="data_source" src="data_source" type="String"/>
         <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>EPSG:3826</LayerSRS>
         <GeometryField encoding="PointFromColumns" x="X_97" y="Y_97"/>
     </OGRVRTLayer>
 </OGRVRTDataSource>

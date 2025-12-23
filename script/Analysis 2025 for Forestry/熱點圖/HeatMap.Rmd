@@ -1,0 +1,688 @@
+---
+title: "HeatMap"
+output: word_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(auk)
+library(arrow)
+library(dplyr)
+library(ebirdst)
+library(fields)
+library(ggplot2)
+library(glue)
+library(gridExtra)
+library(lubridate)
+library(ranger)
+library(rnaturalearth)
+library(scam)
+library(sf)
+library(terra)
+library(tidyr)
+
+library(readxl)
+library(here)
+library(stringr)
+```
+
+
+
+
+```{r}
+library(DBI)
+con <-  dbConnect(RSQLite::SQLite(), dbname="D:/R/test/DB/P_BBS.db")
+list_Point<-
+  dbReadTable(con, "list_Point") %>% 
+  arrange(樣區編號, 獼猴樣區編號,as.numeric(樣點代號)) 
+list_Site<-
+  dbReadTable(con, "list_Site") 
+table_point<-
+  dbReadTable(con, "table_point") 
+
+dbDisconnect(con)
+
+list_Point_sf <- 
+  list_Point %>% 
+  filter(!is.na(X_97)) %>% 
+  select(樣區編號, 獼猴樣區編號,樣點代號, X_97, Y_97)
+
+
+```
+
+
+
+# **BBS**
+
+```{r include=FALSE}
+
+M.data <- read_excel(here("./data/clean/for analysis_1524.xlsx"),
+                     sheet=1, col_types = "text") %>% 
+  filter(analysis %in% "Y") %>%
+  # mutate_at(c("Year", "Survey", "Point", "Macaca_sur",
+  #             "Month", "Day", "Distance"), as.character) %>% 
+  right_join(list_Point_sf, ., by=c("樣區編號" = "Site_N",
+                                    "樣點代號" = "Point"),
+             suffix = c("", ".y")) %>% 
+  mutate(julian.D = as.numeric(julian.D)) %>% 
+  select(樣區編號:`Minute`,-Time, 'day_of_year' = julian.D)
+  
+  
+```
+
+
+
+# **林業署**
+
+```{r include=FALSE}
+
+M.data_F <- 
+  here("./data/clean/Forestry/for analysis/") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2020:2025)) %>% #如果只要2020~2022年，就寫2020:2022
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows() %>% 
+
+  mutate_at(c("Year", "Survey","Month",
+              "Day", "Macaca_sur", "Distance"), as.character) %>% 
+  filter(analysis %in% "Y") %>% 
+
+  mutate(Site_N = str_replace_all(Site_N,"MB-C11-10","MA-C11-10")) %>% 
+  right_join(list_Point_sf, ., by=c("獼猴樣區編號" = "Site_N",
+                                    "樣點代號" = "Point"),
+             suffix = c("", ".y"))  %>% 
+  mutate(julian.D = as.numeric(julian.D)) %>% 
+  select(樣區編號:`Y_97`,`Year`:`Macaca_dist`,-Surveyor,  'day_of_year' = julian.D)
+  
+  
+```
+
+# **合併及擷取2021-2024**  
+```{r}
+source("D:/R/test/Macaca-population-trend/script/Analysis 2025 for Forestry/熱點圖/environment.R")
+
+combine_bb <- 
+M.data_F %>% 
+  bind_rows( 
+    ##移除有匯入BBS的林保署鳥類樣區
+    M.data%>% 
+      anti_join(M.data_F[, c('獼猴樣區編號', "樣區編號",'Year')],
+                by = c('獼猴樣區編號', "樣區編號",'Year'))
+    ) %>% 
+  filter(Year %in% c(2021:2024)) %>% 
+  st_as_sf(coords = c("X_97", "Y_97"), crs = 3826) %>% 
+  st_join(environment_sf) %>% 
+  st_drop_geometry() %>% 
+  select(-c(`Bio02`:`Bio11`, `Bio13`:`Bio19`),
+         -starts_with('Tmax'),
+         -starts_with('Tmin'),
+         -starts_with('Tra')
+         )
+  
+```
+
+
+```{r}
+observations <- combine_bb  |>
+  filter(Macaca_sur == 1 & Macaca_dist %in% c('A', 'B')) %>% 
+  # add a binary variable for detection
+  mutate(species_observed = TRUE)
+
+#observations and "zero-fill"
+zf <-
+left_join(combine_bb, observations) |>
+  mutate(species_observed = coalesce(species_observed, FALSE) ,
+         observation_count = ifelse(species_observed, 1, 0))
+
+sum(zf$species_observed)
+
+# ├ 應用努力量過濾 / Apply effort filters ----
+# 其實我前面已經filter過資料了
+
+zf_filtered <- zf
+
+# 將清單按 20/80 比例分割為測試集與訓練集 / split checklists into 20/80 test/train
+zf_filtered $type <- if_else(runif(nrow(zf_filtered )) <= 0.8, "train", "test")
+table(zf_filtered $type) / nrow(zf_filtered )
+
+```
+
+```{r}
+# ├ 觀測分佈圖 / Observations map ----
+
+# 用於背景的國家邊界 / country boundaries for context
+countries <- ne_countries(scale = 10, continent = "Asia") |>
+  select(name)
+
+
+checklists_sf <- zf_filtered |>
+  # 轉換為空間點 / convert to spatial points
+  st_as_sf(coords = c("x", "y"), crs = 3826) |>
+  select(species_observed) %>% 
+  st_transform(crs = 4326)
+
+
+# 繪圖 / map
+par(mar = c(0.25, 0.25, 0.25, 0.25))
+# 設置繪圖區域 / set up plot area
+plot(st_geometry(checklists_sf),
+     col = NA, border = NA)
+# 國家邊界 / country boundaries
+plot(countries, col = "#cfcfcf", border = "#888888", lwd = 0.5, add = TRUE)
+
+# eBird 觀測點 / ebird observations
+# 未觀測到 / not observed
+plot(filter(checklists_sf, !species_observed),
+     pch = 19, cex = 0.05, col = alpha("#555555", 0.1),
+     add = TRUE)
+# 有觀測到 / observed
+plot(filter(checklists_sf, species_observed),
+     pch = 19, cex = 0.15, col = alpha("#4daf4a", 0.5),
+     add = TRUE)
+# 圖例 / legend
+legend("topleft", bty = "n",
+       col = c("#555555", "#4daf4a"),
+       legend = c("Macaca_check", "Detections"),
+       pch = 19)
+box()
+```
+
+```{r}
+# ├ 時空子抽樣 / Spatiotemporal subsampling ----
+
+# 每年每個 1km x 1km x 1周的網格抽樣一份清單 / sample one checklist per 1 km x 1 km x 1 week grid for each year
+# 獨立抽樣偵測與未偵測數據 / sample detection/non-detection independently
+# 按類型（測試/訓練）分層 / stratify by type (test/train)
+
+zf_filtered <- 
+zf_filtered %>%
+  bind_cols(
+    zf_filtered %>%  
+      st_as_sf(coords = c("x", "y"), crs = 3826) %>% 
+      st_transform(crs = 4326) %>% 
+      st_coordinates(zf_filtered) %>% 
+      as.data.frame() %>% 
+      setNames(., c("longitude", "latitude")) %>% 
+      st_drop_geometry()
+                       
+) %>% 
+  mutate(year = Year) 
+
+
+checklists_ss <- grid_sample_stratified(zf_filtered,
+                                        res = c(1000, 1000, 7),
+                                        obs_column = "species_observed",
+                                        by_year = TRUE,
+                                        case_control = TRUE,
+                                        sample_by = "type")
+
+
+
+# explore impact of sampling
+# original data
+nrow(zf_filtered)
+count(zf_filtered, species_observed) |>
+  mutate(percent = n / sum(n))
+# after sampling
+nrow(checklists_ss)
+count(checklists_ss, species_observed) |>
+  mutate(percent = n / sum(n))
+
+
+
+```
+
+```{r}
+# pred_grid <- read_parquet("D:/待處理工作夾(做完要歸檔)/ebird-workshop_taiwan-2025/data/prediction-grid_1km_tw.parquet") 
+
+pred_grid <- environment_sf %>%
+  st_drop_geometry() %>%
+  as_tibble() %>%
+  # 2. 補足模型預測所需的標準化變數
+  # 這裡設定的值是為了讓全島的預測結果是在相同的「努力量」基準下比較
+  mutate(
+    year = 2024,
+    day_of_year = 136,           # 代表 5 月 15 日
+    solar_noon_diff = 0,         # 設定在正午
+    effort_distance_km = 1,      # 標準化：步行 1 公里
+    effort_hours = 1,            # 標準化：費時 1 小時
+    effort_speed_kmph = 1,       # 標準化：時速 1 公里
+    number_observers = 1         # 標準化：1 位觀察者
+  )
+
+# load the raster template for the grid
+r <- rast("D:/待處理工作夾(做完要歸檔)/ebird-workshop_taiwan-2025/data/prediction-grid_1km_tw.tif") |>
+  rast()
+
+elevation <- pred_grid |>
+  # convert to spatial features
+  st_as_sf(coords = c("x", "y"), crs = 3826) %>% 
+  st_transform(crs = crs(r)) |>
+  # rasterize points
+  rasterize(r, field = "ELE")
+
+# make a map of elevation
+plot(elevation,
+     axes = FALSE, box = FALSE, col = viridis(10),
+     main = "Elevation [m]")
+
+
+```
+
+
+```{r}
+
+# Relative abundance model ----
+
+# filter to training data, select only the columns to be used in the model
+checklists_train <- checklists_ss |>
+  filter(type == "train") |>
+  select(species_observed, observation_count,
+         year, day_of_year,
+         `Temp01`:`DSW`
+         )
+
+
+# calculate detection frequency
+detection_freq <- mean(checklists_train$species_observed)
+n_detections <- sum(checklists_train$species_observed)
+
+
+```
+
+```{r}
+# ├ Range ----
+
+# train a balanced binary classification forest for range boundary
+# remove observation_count prior to training model
+train_er <- select(checklists_train, -observation_count)
+train_er$species_observed <- factor(train_er$species_observed)
+rf_range <- ranger(
+  formula = species_observed ~ .,
+  data = train_er,
+  importance = "impurity",
+  sample.fraction = c(detection_freq, detection_freq)
+)
+
+```
+
+```{r}
+
+# ├ Encounter rate ----
+
+# train a balanced probability forest for encounter rate
+rf_er <- ranger(
+  formula = species_observed ~ .,
+  data = train_er,
+  importance = "impurity",
+  probability = TRUE,
+  sample.fraction = c(detection_freq, detection_freq),
+  min.node.size = ceiling(n_detections * 0.02)
+)
+
+```
+
+```{r}
+
+# ├ Calibration ----
+
+# predicted encounter rate based on out of bag samples
+er_pred <- rf_er$predictions[, "TRUE"]
+# observed detection, converted back from factor
+det_obs <- as.integer(checklists_train$species_observed == "TRUE")
+# construct a data frame to train the scam model
+obs_pred <- data.frame(obs = det_obs, pred = er_pred)
+
+# train calibration model
+calibration_model <- scam(obs ~ s(pred, k = 6, bs = "mpi"),
+                          gamma = 2,
+                          data = obs_pred)
+
+
+
+# 校準圖 / calibration plot
+# 將預測的遭遇率以 0.02 為間隔分組，計算每組的平均觀測率 / group predicted rate into bins, calculate mean obs rate
+er_breaks <- seq(0, 1, by = 0.02)
+mean_er <- obs_pred |>
+  mutate(er_bin = cut(pred, breaks = er_breaks, include.lowest = TRUE)) |>
+  group_by(er_bin) |>
+  summarise(n_checklists = n(),
+            pred = mean(pred),
+            obs = mean(obs),
+            .groups = "drop")
+
+# 使用校準模型進行預測 / make predictions from the calibration model
+calibration_curve <- data.frame(pred = er_breaks)
+cal_pred <- predict(calibration_model, calibration_curve, type = "response")
+calibration_curve$calibrated <- cal_pred
+
+
+# 比較分組平均遭遇率與校準模型 / compared binned mean encounter rates to calibration model
+ggplot(calibration_curve) +
+  aes(x = pred, y = calibrated) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_line(color = "blue") +
+  geom_point(data = mean_er,
+             aes(x = pred, y = obs),
+             size = 2, alpha = 0.6,
+             show.legend = FALSE) +
+  labs(x = "Estimated encounter rate",
+       y = "Observed encounter rate",
+       title = "Calibration model") +
+  coord_equal(xlim = c(0, 1), ylim = c(0, 1))
+```
+
+```{r}
+# ├ 數量模型 / Count ----
+
+# 障礙模型：僅篩選出偵測到的數據用於數量模型 / hurdle: subset to detections only for the count model
+train_count <- checklists_train |>
+  filter(!is.na(observation_count), species_observed) |>
+  select(-species_observed)
+
+# 插件法：將預測的遭遇率作為額外的協變量添加 / plugin: add predicted encounter rate as additional covariate
+predicted_er <- predict(rf_er, data = train_count, type = "response")
+predicted_er <- predicted_er$predictions[, "TRUE"]
+train_count$predicted_er <- predicted_er
+
+# 訓練用於數量的回歸森林 / train a regression forest for count
+rf_count <- ranger(
+  formula = observation_count ~ .,
+  data = train_count,
+  importance = "impurity"
+)
+```
+
+```{r}
+# 預測 / Prediction ----
+
+# 將標準化的努力量協變量添加到預測網格 / add standardized effort covariates to prediction grid
+# 2024-05-15 正午前 5 小時，2公里1小時的單人觀測清單
+# 2024-05-15 at 5 hours before solar noon, 2 km, 1 hour traveling checklist with 1 observer
+pred_grid_eff <- pred_grid |>
+  mutate(observation_date = ymd("2024-03-01"),
+         year = year(observation_date),
+         day_of_year = yday(observation_date),
+         #solar_noon_diff = -5,
+         # effort_distance_km = 2,
+         # effort_hours = 1,
+         # effort_speed_kmph = 2,
+         number_observers = 1)
+```
+
+
+```{r}
+# 估計分佈範圍 / estimate range
+pred_range <- predict(rf_range, data = pred_grid_eff, type = "response")
+pred_range <- as.integer(pred_range$predictions == "TRUE")
+
+# 估計遭遇率 / estimate encounter rate
+pred_er <- predict(rf_er, data = pred_grid_eff, type = "response")
+pred_er <- pred_er$predictions[, "TRUE"]
+
+# 應用校準 / apply calibration
+pred_er_cal <- predict(calibration_model,
+                        data.frame(pred = pred_er),
+                        type = "response") |>
+  as.numeric()
+
+# 限制在 0-1 之間 / constrain to 0-1
+pred_er_cal[pred_er_cal < 0] <- 0
+pred_er_cal[pred_er_cal > 1] <- 1
+
+# 估計數量 / estimate count
+pred_grid_eff$predicted_er <- pred_er
+pred_count <- predict(rf_count, data = pred_grid_eff, type = "response")
+pred_count <- pred_count$predictions
+
+
+# 將預測結果與單元 ID 及坐標合併 / combine predictions with cell id and coordinates
+predictions <- data.frame(cell_id = pred_grid_eff$GRIDID,
+                          x = pred_grid_eff$x,
+                          y = pred_grid_eff$y,
+                          range = pred_range,
+                          encounter_rate = pred_er_cal,
+                          count = pred_count,
+                          abundance = pred_range * pred_er_cal * pred_count
+                          )
+
+
+# ├ 預測結果柵格化 / Rasterize predictions ----
+
+# 將預測結果插入柵格模板 / insert predictions into the raster template
+r_pred <- predictions |>
+  # 轉換為空間特徵 / convert to spatial features
+  st_as_sf(coords = c("x", "y"), crs = 3826) %>% 
+  st_transform(crs = st_crs(r)) |>
+  # 柵格化 / rasterize
+  rasterize(r, field = c("range",
+                         "encounter_rate",
+                         "count",
+                         "abundance" ))
+
+```
+
+```{r}
+# ├ 預測地圖 / Prediction maps ----
+
+countries_proj <- st_transform(countries, st_crs(r))
+tw_boundary <- filter(countries_proj, name == "Taiwan") |>
+  st_geometry()
+
+# 繪製遭遇率地圖 / map encounter rate
+par(mar = c(4, 0.25, 0.25, 0.25))
+plot(tw_boundary, col = NA, border = NA)
+plot(countries_proj, col = "#cfcfcf", border = "#888888", lwd = 0.5,
+     add = TRUE)
+
+
+# 定義分位數斷點，排除零值 / define quantile breaks, excluding zeros
+brks <- ifel(r_pred[["encounter_rate"]] > 0, r_pred[["encounter_rate"]], NA) |>
+  global(fun = quantile,
+         probs = seq(0, 0.1, 0.001), na.rm = TRUE) |>
+  as.numeric() |>
+  unique()
+
+
+
+# 標註最小值、中位數與最大值 / label the bottom, middle, and top value
+lbls <- round(c(min(brks), median(brks), max(brks)), 3)
+# eBird 狀態與趨勢調色板 / ebird status and trends color palette
+pal <- ebirdst_palettes(length(brks) - 1)
+plot(r_pred[["encounter_rate"]],
+     col = c("#e6e6e6", pal), breaks = c(0, brks),
+     maxpixels = ncell(r_pred),
+     legend = FALSE, axes = FALSE, bty = "n",
+     add = TRUE)
+box()
+
+# 圖例 / legend
+par(new = TRUE, mar = c(0, 0, 0, 0))
+title <- glue("encounter rate (May 2024)")
+image.plot(zlim = c(0, 1), legend.only = TRUE,
+            col = pal, breaks = seq(0, 1, length.out = length(brks)),
+            smallplot = c(0.15, 0.85, 0.05, 0.08),
+            horizontal = TRUE,
+            axis.args = list(at = c(0, 0.5, 1), labels = lbls,
+                             fg = "black", col.axis = "black",
+                             cex.axis = 0.75, lwd.ticks = 0.5,
+                             padj = -1.5),
+            legend.args = list(text = title,
+                               side = 3, col = "black",
+                               cex = 1, line = 0.1))
+```
+
+
+```{r}
+# 繪製範圍內的相對豐度圖 / map relative abundance in range
+par(mar = c(4, 0.25, 0.25, 0.25))
+plot(tw_boundary, col = NA, border = NA)
+plot(countries_proj, col = "#cfcfcf", border = "#888888", lwd = 0.5, add = TRUE)
+
+
+
+
+# 定義分位數斷點，排除零值 / define quantile breaks, excluding zeros
+brks <- ifel(r_pred[["abundance"]] > 0, r_pred[["abundance"]], NA) |>
+  global(fun = quantile,
+         probs = seq(0, 1, 0.1), na.rm = TRUE) |>
+  as.numeric() |>
+  unique()
+lbls <- round(c(min(brks), median(brks), max(brks)), 2)
+pal <- ebirdst_palettes(length(brks) - 1)
+plot(r_pred[["abundance"]],
+     col = c("#e6e6e6", pal), breaks = c(0, brks),
+     maxpixels = ncell(r_pred),
+     legend = FALSE, axes = FALSE, bty = "n",
+     add = TRUE)
+box()
+
+# 圖例 / legend
+par(new = TRUE, mar = c(0, 0, 0, 0))
+title <- glue("relative abundance (May 2024)")
+image.plot(zlim = c(0, 1), legend.only = TRUE,
+            col = pal, breaks = seq(0, 1, length.out = length(brks)),
+            smallplot = c(0.15, 0.85, 0.05, 0.08),
+            horizontal = TRUE,
+            axis.args = list(at = c(0, 0.5, 1), labels = lbls,
+                             fg = "black", col.axis = "black",
+                             cex.axis = 0.75, lwd.ticks = 0.5,
+                             padj = -1.5),
+            legend.args = list(text = title,
+                               side = 3, col = "black",
+                               cex = 1, line = 0.1))
+```
+
+
+
+```{r}
+# Habitat associations ----
+
+# ├ Predictor importance ----
+
+# extract partial dependence from the encounter rate random forest
+pi_er <- rf_er$variable.importance
+pi_er <- data.frame(predictor = names(pi_er), importance = pi_er) |>
+  # scale so importances sum to 1
+  mutate(importance = importance / sum(importance)) |>
+  arrange(desc(importance))
+# plot predictor importance for top 15 encounter rate predictors
+ggplot(head(pi_er, 15)) +
+  aes(x = reorder(predictor, importance), y = importance) +
+  geom_col() +
+  geom_hline(yintercept = 0, linewidth = 2, colour = "#555555") +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_flip() +
+  labs(x = NULL,
+       y = "Predictor Importance",
+       title = "Predictor importance for encounter rate model") +
+  theme_minimal() +
+  theme(panel.grid = element_blank(),
+        panel.grid.major.x = element_line(colour = "#cccccc", linewidth = 0.5))
+```
+
+
+```{r}
+# ├ Partial dependence ----
+
+# function to calculate partial dependence for a given predictor
+calculate_pd <- function(predictor,
+                         er_model, calibration_model,
+                         data, x_res = 25, n = 1000) {
+  # create prediction grid using quantiles based on detections
+  detections <- data[data$species_observed, ]
+  x_grid <- quantile(detections[[predictor]],
+                     probs = seq(from = 0, to = 1, length = x_res),
+                     na.rm = TRUE)
+  # remove duplicates
+  x_grid <- x_grid[!duplicated(signif(x_grid, 8))]
+  x_grid <- unname(unique(x_grid))
+  grid <- data.frame(predictor = predictor, x = x_grid)
+  names(grid) <- c("predictor", predictor)
+
+  # subsample training data
+  n <- min(n, nrow(data))
+  data <- data[sample(seq.int(nrow(data)), size = n, replace = FALSE), ]
+
+  # drop focal predictor from data
+  data <- data[names(data) != predictor]
+  grid <- merge(grid, data, all = TRUE)
+
+  # estimate encounter rate
+  pred_er <- predict(er_model, data = grid, type = "response")
+  pred_er <- pred_er$predictions[, "TRUE"]
+  # apply calibration
+  pred_er_cal <- predict(calibration_model,
+                         data.frame(pred = pred_er),
+                         type = "response") |>
+    as.numeric()
+  # constrain to 0-1
+  pred_er_cal[pred_er_cal < 0] <- 0
+  pred_er_cal[pred_er_cal > 1] <- 1
+
+  # summarize
+  pd <- grid[, c("predictor", predictor)]
+  names(pd) <- c("predictor", "x")
+  pd$encounter_rate <- pred_er_cal
+  pd <- dplyr::group_by(pd, predictor, x)
+  pd <- dplyr::summarise(pd,
+                         encounter_rate = mean(encounter_rate, na.rm = TRUE),
+                         .groups = "drop")
+
+  return(pd)
+}
+
+# calculate partial dependence for elevation
+pd_elevation <- calculate_pd("elevation_30m_median",
+                             er_model = rf_er,
+                             calibration_model = calibration_model,
+                             data = checklists_train)
+# plot partial dependence
+ggplot(pd_elevation) +
+  aes(x = x, y = encounter_rate) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Elevation [m]", y = "Encounter Rate")
+
+# calculate abundance partial dependence for each of the top 6 predictors
+pd <- NULL
+for (predictor in head(pi_er$predictor)) {
+  pd <- calculate_pd(predictor,
+                     er_model = rf_er,
+                     calibration_model = calibration_model,
+                     data = checklists_train) |>
+    bind_rows(pd)
+}
+# plot partial dependence
+ggplot(pd) +
+  aes(x = x, y = encounter_rate) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~ factor(predictor, levels = rev(unique(predictor))),
+             ncol = 2, scales = "free") +
+  labs(x = NULL, y = "Encouter Rate") +
+  theme_minimal() +
+  theme_minimal() +
+  theme(panel.grid = element_blank(),
+        axis.line = element_line(color = "grey60"),
+        axis.ticks  = element_line(color = "grey60"))
+
+# EXERCISE: Produce the partial dependence plot for the checklist start time.
+# How can this be used to help choose an optimal time of day for the
+# standardized checklist that we predicted to prior to mapping?
+pd_time <- calculate_pd("Aspect",
+                        er_model = rf_er,
+                        calibration_model = calibration_model,
+                        data = checklists_train)
+ggplot(pd_time) +
+  aes(x = x, y = encounter_rate) +
+  geom_line() +
+  geom_point() #+
+ # scale_x_continuous(breaks = seq(-12, 12, by = 1)) +
+  # labs(x = "Checklist midpoint time [FO]",
+  #      y = "Encounter Rate")
+
+```
+
