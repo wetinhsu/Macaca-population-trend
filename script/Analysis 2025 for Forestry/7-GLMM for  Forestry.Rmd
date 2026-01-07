@@ -55,6 +55,8 @@ M.data <-
   
   filter(analysis %in% "Y") %>% 
   filter(Year > 2020)
+
+per_Area <- (0.1*0.1*pi)   #100m半徑的單位原面積 
 ```
 
 
@@ -327,7 +329,7 @@ glht(m1.1, linfct = c("Year.re = 0",
 Year.d.n <-
   M.data %>% 
   group_by(Survey, Year) %>% 
-  summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()/per_Area) %>% 
   
   group_by(Year) %>% 
   summarise(mean_N = mean(N) %>% round(1), 
@@ -344,7 +346,7 @@ M.data %>%
   summarise(
     N = n(),
     m = Macaca_sur %>% as.numeric() %>% sum,
-    E = m/N
+    E = m/N/per_Area
   ) %>% 
   ggplot(., aes(x = factor(Year), y = E)) +
   geom_boxplot(width = 0.4)+
@@ -358,12 +360,12 @@ M.data %>%
             position = position_dodge(0.9), show.legend = F)+
 
   
-  scale_y_continuous(limits =  c(0, 0.1),
-                     breaks = seq(0,0.1,0.02))+
+  scale_y_continuous(limits =  c(0, 2),
+                     breaks = seq(0,2,0.5))+
   # labs(x = "Year",
   #      y = "Encounter rate (troop/point)")+
   
-    labs(x = "年份", y = "相對密度 (群/樣點)")+
+    labs(x = "年份",  y =  expression(paste("相對密度 " ,"(群 / km"^2,")")))+
   
   theme_classic()+
   theme(
@@ -378,7 +380,7 @@ M.data %>%
 Office.d.n <-
   M.data %>% 
   group_by(Office,Survey, Year) %>% 
-  summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()/per_Area) %>% 
   
   group_by(Office) %>% 
   summarise(mean_N = mean(N) %>% round(1), 
@@ -395,7 +397,7 @@ M.data %>%
   summarise(
     N = n(),
     m = Macaca_sur %>% as.numeric() %>% sum,
-    E = m/N
+    E = m/N/per_Area
   )  %>% 
   # mutate(Office = 
   #          ordered(Office,
@@ -416,14 +418,14 @@ M.data %>%
             vjust = -1,
             position = position_dodge(0.9), show.legend = F)+
   
-  scale_y_continuous(limits =  c(0, 0.12),
-                     breaks = seq(0,0.12,0.02))+
+  scale_y_continuous(limits =  c(0, 3.5),
+                     breaks = seq(0,3.5,0.5))+
   scale_x_discrete(limits = c( "新竹","臺中", "宜蘭",
                                "南投","花蓮",
                             "嘉義", "屏東",  "臺東"))+
   # labs(x = "  ",
   #      y = "Encounter rate (troop/point)")+
-  labs(x = "分署", y = "相對密度 (群/樣點)")+
+  labs(x = "分署", y =  expression(paste("相對密度 " ,"(群 / km"^2,")")))+
   theme_classic()+
   theme(
     aspect.ratio = 1,

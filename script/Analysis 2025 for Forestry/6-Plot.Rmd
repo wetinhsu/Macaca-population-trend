@@ -42,7 +42,7 @@ M.data <-
   #                               "混淆林", "非森林"))) %>% 
   mutate_at(c("Year", "Survey","Month",
               "Day", "Macaca_sur", "Distance", "Altitude", "julian.D"), as.numeric) 
-  
+per_Area <- (0.1*0.1*pi)   #100m半徑的單位原面積  
 ```
 
 ### Part 1 最初的資料
@@ -111,6 +111,63 @@ List_surveyor %>%
   align(.,j = 1:5, align = "center", part = "all") 
 
 ```
+   
+  
+
+```{r 調查者的統計資料2, echo=FALSE, message=FALSE, warning=FALSE}
+
+#調查者的統計資料
+List_surveyor <- 
+  M.data %>%
+  filter(!is.na(Macaca_sur)) %>% 
+  separate(.,Surveyor,
+           into = paste0("Surveyor","_",0:10),
+           sep ="、|,",
+           extra = "drop",
+           fill = "right") %>% 
+  reshape2::melt(., 
+                 id.vars = c("Office","Year", "Site_N",
+                             "Point",  "Survey"),
+                 measure.vars = paste0("Surveyor","_",0:10),
+                 variable.name = "Surveyor",
+                 value.name = "Name")%>% 
+  filter(!is.na(Name)) 
+
+List_surveyor %>% 
+  mutate(SP = paste0(Site_N, "-", Point)) %>% 
+  group_by(Year, Office) %>% 
+  summarise(Site_n = Site_N %>% unique %>% length,     #樣區數
+            Point_n = SP %>% unique %>% length,     #樣點數
+            Person_n = Name %>% unique %>% length,  #人數
+            .groups = "drop") %>%  
+  arrange(Office)%>% 
+  
+  bind_rows(
+    
+   List_surveyor %>% 
+     mutate(SP = paste0(Site_N, "-", Point)) %>%  
+     group_by(Year) %>%    
+     summarise(Site_n = Site_N %>% unique %>% length,     #樣區數
+            Point_n = SP %>% unique %>% length,     #樣點數
+            Person_n = Name %>% unique %>% length,  #人數
+            .groups = "drop")%>%
+     mutate(Office = "Total")
+    
+  )%>% 
+  mutate(Year = as.character(Year)) %>% 
+  
+  filter(Year %in% c(2025)) %>% 
+  reshape2::melt(id = 1:2 )%>% 
+  reshape2::dcast(Office ~ Year + variable, var.value = "value") %>% 
+  mutate(Office = ordered(Office, order_Office)) %>% 
+  arrange(Office) %>% 
+  flextable(.) %>% 
+  separate_header() %>% 
+  merge_h( part = "header") %>% 
+  align(.,align = "center", part = "all") 
+
+```
+
 
 
 ```{r message=FALSE, warning=FALSE}
@@ -397,23 +454,10 @@ M.data %>%
   reshape2::dcast(Office ~ Year + variable, value.var = "value") %>% 
   
   flextable(.) %>% 
+  separate_header(.) %>% 
+  merge_h( part = "header") %>% 
+  
 
-  set_header_labels(
-    "Office"="分署",
-
-    "2024_超過7日" = "超過7日",
-    "2024_晚於11時" = "晚於11時",
-    "2024_不足6分鐘"="不足6分鐘",
-    "2024_誤差超過50m" = "誤差超過50m",
-    "2024_不在3~6月內" = "不在3~6月內",
-    "2025_超過7日" = "超過7日",
-    "2025_晚於11時" = "晚於11時",
-    "2025_不足6分鐘"="不足6分鐘",
-    "2025_誤差超過50m" = "誤差超過50m",
-    "2025_不在3~6月內" = "不在3~6月內") %>%
-  add_header_row(.,
-                 values = c(" ", "2024", "2025"),
-                 colwidths = c(1,5,5)) %>%
   align(.,
         align = "center", part = "all")
 ```
@@ -522,7 +566,7 @@ E_rate_Office<-
     bind_rows(group_by(.,Year, Survey) %>%  #增加total的部分
                 summarise(N=sum(N), m = sum(m)) %>%
                 mutate(Office='Total')) %>% 
-    mutate(E = m/N) %>%
+    mutate(E = m/N/per_Area) %>%
     ungroup() %>%
   
     group_by(Office) %>%
@@ -539,10 +583,10 @@ E_rate_Office %>%
          Se_E = round(Se_E, 3)) %>% 
   mutate(Office = ordered(Office, order_Office)) %>% 
   arrange(Office) %>% 
-  flextable(.) %>%
-  
+  flextable(.) %>% 
   align(.,
-        align = "center", part = "all")  
+        align = "center", part = "all")  %>%
+  add_footer_lines(., values = "註：相對密度(群/km^2)。") 
 ```
 
 <br/>\
@@ -610,7 +654,7 @@ M.data %>%
       mutate(TypeName.1 = "Total") 
   )%>%
   
-  mutate(E = m/N) %>%
+  mutate(E = m/N/per_Area) %>%
   ungroup() %>%
   
   group_by(TypeName.1) %>%
@@ -636,7 +680,8 @@ E_rate_Forest %>%
   flextable(.) %>%
   
   align(.,
-        align = "center", part = "all") 
+        align = "center", part = "all") %>%
+  add_footer_lines(., values = "註：相對密度(群/km^2)。") 
 
 
 
@@ -749,7 +794,7 @@ Year.d.n <-
 #  filter(Year == 2023) %>% 
   filter(analysis %in% "Y") %>% 
   group_by(Survey, Year) %>% 
-  summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()/per_Area) %>% 
   
   group_by(Year) %>% 
   summarise(mean_N = mean(N) %>% round(1), 
@@ -764,7 +809,7 @@ M.data %>%
 #  filter(Year == 2023) %>% 
   filter(analysis %in% "Y") %>% 
   group_by(Survey, Year) %>% 
-  summarise(E = sum(Macaca_sur)/n()) %>% 
+  summarise(E = sum(Macaca_sur)/n()/per_Area) %>% 
   mutate(Year = as.character(Year)) %>% 
   
   ggplot(., aes(x = Year, y = E)) +
@@ -777,8 +822,8 @@ M.data %>%
             hjust = -0.2, 
             vjust = -1,
             position = position_dodge(0.9), show.legend = F)+
-  scale_y_continuous(limits = c(0,0.1))+
-  labs(x = "年份", y = "相對密度 (群/樣點)")+
+  scale_y_continuous(limits = c(0,2))+
+  labs(x = "年份", y =  expression(paste("相對密度 (群 / km"^2,")")))+
   theme(
     text = element_text(family="Microsoft JhengHei"),
     panel.border = element_rect(size = 1.5,fill = NA),
@@ -807,7 +852,7 @@ Office.d.n <-
 #  filter(Year == 2023) %>% 
   filter(analysis %in% "Y") %>% 
   group_by(Office,Survey, Year) %>% 
-  summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()/per_Area) %>% 
   
   group_by(Office) %>% 
   summarise(mean_N = mean(N) %>% round(1), 
@@ -822,7 +867,7 @@ M.data %>%
 #  filter(Year == 2023) %>% 
   filter(analysis %in% "Y") %>% 
   group_by(Office, Survey, Year) %>% 
-  summarise(E = sum(Macaca_sur)/n()) %>% 
+  summarise(E = sum(Macaca_sur)/n()/per_Area) %>% 
   mutate(Year = as.character(Year)) %>% 
   
   ggplot(., aes(x = Office, y = E)) +
@@ -834,10 +879,10 @@ M.data %>%
             hjust = -0.1, 
             vjust = -1,
             position = position_dodge(0.9), show.legend = F)+
-  scale_y_continuous(breaks = seq(0,0.15,0.05), limits = c(0,0.15))+
+  scale_y_continuous(breaks = seq(0,4,1), limits = c(0,4.5))+
   scale_x_discrete(limits = c( "新竹", "臺中", "南投","宜蘭",
-                            "嘉義", "屏東", "花蓮", "臺東"))+
-  labs(x = "分署", y = "相對密度 (群/樣點)")+
+                            "嘉義", "花蓮", "屏東", "臺東"))+
+  labs(x = "分署", y = expression(paste("相對密度 (群 / km"^2,")")))+
   theme(
     text = element_text(family="Microsoft JhengHei"),
     panel.border = element_rect(size = 1.5,fill = NA),
@@ -865,7 +910,7 @@ TypeName.d.n <-
 #  filter(Year == 2023) %>% 
   filter(analysis %in% "Y") %>% 
   group_by(TypeName.1,Survey, Year) %>% 
-  summarise(N = n(), E = sum(Macaca_sur)/n()) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()/per_Area) %>% 
   
   group_by(TypeName.1) %>% 
   summarise(mean_N = mean(N) %>% round(1), 
@@ -879,7 +924,7 @@ M.data %>%
 #  filter(Year == 2023) %>% 
   filter(analysis %in% "Y") %>% 
   group_by(TypeName.1, Survey, Year) %>% 
-  summarise(E = sum(Macaca_sur)/n()) %>% 
+  summarise(E = sum(Macaca_sur)/n()/per_Area) %>% 
     mutate(Year = as.character(Year)) %>%
   
   ggplot(., aes(x = TypeName.1, y = E)) +
@@ -892,11 +937,11 @@ M.data %>%
             vjust = -1,
             position = position_dodge(0.9), show.legend = F)+
 
-  scale_y_continuous(breaks = seq(0,0.1,0.02), 
-                     limits = c(0,0.1))+
+  scale_y_continuous(breaks = seq(0,3,0.5),
+                     limits = c(0,3))+
   scale_x_discrete(limits = c("針葉林", "混淆林", "竹林","闊葉林"))+
 #  labs(x = "森林類型", y = "Encounter_rate")+
-  labs(x = "森林類型", y = "相對密度(群/樣點)")+
+  labs(x = "森林類型", y = expression(paste("相對密度 (群 / km"^2,")")))+
   theme(
     text = element_text(family="Microsoft JhengHei"),
     panel.border = element_rect(size = 1.5,fill = NA),
