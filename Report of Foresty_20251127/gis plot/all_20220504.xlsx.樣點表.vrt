@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="all_20220504-樣點表">
+        <SrcDataSource relativeToVRT="1">all_20220504.xlsx</SrcDataSource>
+        <!--Header=False-->
+        <SrcLayer>樣點表</SrcLayer>
+        <Field name="樣區編號" src="樣區編號" type="String"/>
+        <Field name="獼猴樣區編號" src="獼猴樣區編號" type="String"/>
+        <Field name="樣點代號" src="樣點代號" type="String"/>
+        <Field name="縣市" src="縣市" type="String"/>
+        <Field name="樣區名稱" src="樣區名稱" type="String"/>
+        <Field name="樣區樣點編號" src="樣區樣點編號" type="String"/>
+        <Field name="X.67" src="X.67" type="String"/>
+        <Field name="Y.67" src="Y.67" type="String"/>
+        <Field name="X_經度(度分秒)" src="X_經度(度分秒)" type="String"/>
+        <Field name="Y_緯度(度分秒)" src="Y_緯度(度分秒)" type="String"/>
+        <Field name="X_經度" src="X_經度" type="Real"/>
+        <Field name="Y_緯度" src="Y_緯度" type="Real"/>
+        <Field name="備註" src="備註" type="String"/>
+        <Field name="環境特徵描述" src="環境特徵描述" type="String"/>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>EPSG:3826</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="X.97" y="Y.97"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>
