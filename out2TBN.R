@@ -11,7 +11,7 @@ library(sf)
 
 #Monkey---------------------------------
 M.data <- 
-  read_excel("./data/clean/Forestry/for analysis/for analysis Forestrydata_2024_V2.xlsx",
+  read_excel("./data/clean/Forestry/for analysis/for analysis Forestrydata_2025_V1.xlsx",
 sheet="Data", col_types = "text")
 
   
@@ -19,7 +19,7 @@ sheet="Data", col_types = "text")
   
  DF <-  
   M.data%>% 
-    filter(Year == 2024) %>% 
+    filter(Year == 2025) %>% 
    filter(str_detect(analysis, '^Y')) %>% 
    filter(Macaca_sur == 1) %>% 
    select(analysis:Macaca_sur,TWD97_X, TWD97_Y) %>% 
@@ -68,17 +68,16 @@ sheet="Data", col_types = "text")
  
 
  
- write.xlsx(DF, "./上傳到TBN/Monkey2024_20250123.xlsx")
+ write.xlsx(DF, "./上傳到TBN/Monkey2025_20260126.xlsx")
 
  #Bird---------------------------------
  path <- "D:/R/test/Foresty_clean/Foresty_clean/"
  
  
- df_criterion <- read_excel(paste0(path,"data/row/2024_data0_bird - check.xlsx"),
-                            sheet = 1) %>% 
-   filter(!林業署編號 %in% 'A21-04') 
+ df_criterion <- read_excel(paste0(path,"data/row/2025_data0_bird - check.xlsx"),
+                            sheet = 1)
  
- DF <- read_excel(paste0(path,"data/row/2024_data0_bird - check.xlsx"),
+ DF <- read_excel(paste0(path,"data/row/2025_data0_bird - check.xlsx"),
                   sheet = 2) %>% 
    mutate(time = ISOdatetime(年,月,日,時,分,0)) %>% 
    mutate(調查者 = str_replace_all(調查者, "/|\\.", "、"))%>% 
@@ -87,7 +86,7 @@ sheet="Data", col_types = "text")
  
  
  station_codes <- 
-   read_excel("D:/R/test/Macaca-population-trend/data/raw/FORESTRYdata/2024/林業署獼猴調查樣區列表.xlsx",
+   read_excel("D:/R/test/Macaca-population-trend/data/raw/FORESTRYdata/2025/林業署獼猴調查樣區列表.xlsx",
               sheet = 1) %>% 
    select(Office:Site_N) 
  
@@ -144,7 +143,9 @@ sheet="Data", col_types = "text")
  df_OK <- 
  df_criterion_count %>% 
    filter(資料分級 == "優") %>% 
-   filter(!(Site_N %in% 'MA-H32-06'& Survey %in%1) )%>% 
+   filter(!(Site_N %in% 'MB-B07-08'& Survey %in%1) )%>%
+   filter(!(Site_N %in% 'MB-H31-12'& Survey %in%1) )%>% 
+   
    
    #先刪除有疑問且未更正鳥種
    filter(str_detect(鳥種, "沒有|猴|XX|其他|屬|科|xx", negate = T)) %>% 
@@ -203,5 +204,5 @@ sheet="Data", col_types = "text")
    ) %>% 
    mutate(nid = NA, .before = "原始紀錄物種") 
  
- write.xlsx(df.1, "./上傳到TBN/Bird2024_20250124.xlsx")
+ write.xlsx(df.1, "./上傳到TBN/Bird2025_20260126.xlsx")
  

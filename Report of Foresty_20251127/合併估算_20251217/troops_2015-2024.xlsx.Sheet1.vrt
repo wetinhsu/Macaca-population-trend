@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OGRVRTDataSource>
+    <OGRVRTLayer name="troops_2015-2024-Sheet1">
+        <SrcDataSource relativeToVRT="1">troops_2015-2024.xlsx</SrcDataSource>
+        <!--Header=False-->
+        <SrcLayer>Sheet1</SrcLayer>
+        <Field name="SiteID" src="SiteID" type="Integer"/>
+        <Field name="Year" src="Year" type="Integer"/>
+        <Field name="樣區編號" src="樣區編號" type="String"/>
+        <Field name="獼猴樣區編號" src="獼猴樣區編號" type="String"/>
+        <Field name="Point" src="Point" type="String"/>
+        <Field name="Survey" src="Survey" type="Integer"/>
+        <Field name="Macaca_sur" src="Macaca_sur" type="Integer"/>
+        <Field name="Macaca_dist" src="Macaca_dist" type="String"/>
+        <Field name="data_source" src="data_source" type="String"/>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>EPSG:3826</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="X_97" y="Y_97"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>

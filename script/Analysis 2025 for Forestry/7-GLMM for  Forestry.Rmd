@@ -365,7 +365,7 @@ M.data %>%
   # labs(x = "Year",
   #      y = "Encounter rate (troop/point)")+
   
-    labs(x = "年份",  y =  expression(paste("相對密度 " ,"(群 / km"^2,")")))+
+    labs(x = "年份",  y =  expression(paste("密度 " ,"(群 / km"^2,")")))+
   
   theme_classic()+
   theme(
@@ -425,7 +425,7 @@ M.data %>%
                             "嘉義", "屏東",  "臺東"))+
   # labs(x = "  ",
   #      y = "Encounter rate (troop/point)")+
-  labs(x = "分署", y =  expression(paste("相對密度 " ,"(群 / km"^2,")")))+
+  labs(x = "分署", y =  expression(paste("密度 " ,"(群 / km"^2,")")))+
   theme_classic()+
   theme(
     aspect.ratio = 1,
