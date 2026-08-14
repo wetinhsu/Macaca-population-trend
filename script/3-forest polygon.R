@@ -30,9 +30,9 @@ list_Point<-
 
 dbDisconnect(con)
 
-
-dfo  <- data.table::fread("D:/R/test/bbs_handover_temp_v20190123 - WT/dfs2.csv",
-                          head=T, encoding = "UTF-8", na.strings = "")   #UTF-8
+# 
+# dfo  <- data.table::fread("D:/R/test/bbs_handover_temp_v20190123 - WT/dfs2.csv",
+#                           head=T, encoding = "UTF-8", na.strings = "")   #UTF-8
 #--------------------------------------------------------------------
 #read forest spatial data
 
@@ -67,14 +67,14 @@ Sys.time()
 
 #--------------------------------------------------------------------
 library(readxl)
-M.all <- read_excel("./data/clean/Macaca/Macaca_1524_v1.xlsx", col_types = "text") 
+M.all <- read_excel("./data/clean/Macaca/Macaca_1525_v1.xlsx", col_types = "text") 
 
 S.all <- 
 #  read_excel("data/clean/Site/Site_2022_v1.xlsx", col_types = "text") %>% 
   
   bind_rows(
     
-    S1524%>% mutate_if(is.numeric, as.character)
+    S1525%>% mutate_if(is.numeric, as.character)
     
   )
 
@@ -86,5 +86,5 @@ M.data <-
   left_join(.,st_point_1 , by = "PointID") 
 
 
-write_xlsx(M.data, "./data/clean/forest_combind_data_1524.xlsx")
+write_xlsx(M.data, "./data/clean/forest_combind_data_1525.xlsx")
 

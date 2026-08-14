@@ -1,0 +1,303 @@
+
+```{r include=FALSE}
+library(tidyverse)
+library(lme4)
+library(car)
+library(multcomp)
+library(readxl)
+library(MuMIn)
+library(here)
+
+library(writexl)
+library(sf)
+
+library(DBI)
+library(data.table)
+library(flextable)
+
+
+```
+
+
+```{r}
+
+con <-  dbConnect(RSQLite::SQLite(), dbname="D:/R/test/DB/P_BBS.db")
+list_Point<-
+  dbReadTable(con, "list_Point") %>% 
+  arrange(樣區編號, 獼猴樣區編號,as.numeric(樣點代號)) 
+list_Site<-
+  dbReadTable(con, "list_Site") 
+table_point<-
+  dbReadTable(con, "table_point") 
+
+dbDisconnect(con)
+```
+
+
+```{r}
+
+ecoregion3 <- 
+  st_read("D:\\R\\test\\BBS site name_gis_data\\ecoregion3HJShiu2003_97.shp") %>% 
+  st_transform(crs=3826) %>% 
+  dplyr::select(ecoregion3 = ZONE41)
+  
+
+```
+
+
+```{r}
+ForestyRange <- 
+  st_read("D:\\R\\SHP圖層\\國有林事業區林班圖1081_SHP\\國有林事業區林班圖1081.shp") %>% 
+  st_transform(crs=3826) %>% 
+  mutate(ForestyRange = "Foresty_Rng") %>% 
+  dplyr::select(ForestyRange)
+```
+
+
+
+# **BBS**
+
+```{r include=FALSE}
+
+M.data_B <- read_excel(here("./data/clean/for analysis_1525.xlsx"),
+                     sheet=1) %>% 
+  filter(analysis %in% "Y") %>%
+  mutate_at(c("Year", "Survey", "Point", "Macaca_sur",
+              "Month", "Day", "Distance"), as.numeric)
+```
+
+
+
+```{r}
+df <- 
+  M.data_B %>% setDT %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[, Year := as.numeric(Year)] %>% 
+  
+  .[!(TypeName.1 %in% "非森林"), ]%>% 
+  right_join(list_Site[,c('SiteID', '樣區編號','獼猴樣區編號')], .,
+             by = c("樣區編號" = "Site_N")) 
+
+```
+
+
+# **林業署**
+
+```{r include=FALSE}
+
+M.data_F <- 
+  here("./data/clean/Forestry/for analysis/") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2020:2025)) %>% #如果只要2020~2022年，就寫2020:2022
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows() %>% 
+
+  mutate_at(c("Year", "Survey","Month",
+              "Day", "Macaca_sur", "Distance", "Altitude", "julian.D"), as.numeric) %>% 
+  filter(analysis %in% "Y") %>% 
+  filter(Year > 2020) %>% 
+  mutate_at(c("Year"), as.integer)%>% 
+  mutate(Site_N = str_replace_all(Site_N,"MB-C11-10","MA-C11-10"))
+```
+
+
+```{r include=FALSE}
+df_F <- 
+  M.data_F %>% setDT %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[, Year := as.numeric(Year)] %>% 
+  .[, Office := ifelse(Office == "東勢", "臺中", Office)] %>% 
+  .[, Office := ifelse(Office == "羅東", "宜蘭", Office)] %>% 
+  
+  .[!(TypeName.1 %in% "非森林"), ]%>% 
+  right_join(list_Site[,c('SiteID', '樣區編號','獼猴樣區編號')], .,
+             by = c("獼猴樣區編號" = "Site_N")) 
+
+
+```
+
+
+# **林業署 & BBS**
+
+#合併檢測--------------
+
+合併及擷取2021~2025的資料  
+```{r}
+combine_df <- 
+df_F %>%
+  setDT %>% 
+  .[,.(SiteID,Year, 樣區編號,獼猴樣區編號, Point, Survey, Macaca_sur, Macaca_dist, Altitude,julian.D, TypeName.1)]%>% 
+  .[,data_source := "Foresty"] %>% 
+  bind_rows(
+    df %>% setDT %>% 
+      .[,.(SiteID,Year, 樣區編號,獼猴樣區編號, Point, Survey,
+         Macaca_sur, Macaca_dist,Altitude, julian.D, TypeName.1)]%>%
+      .[,data_source := "BBS"] %>% 
+      .[,Point := Point %>% as.character()]  %>% 
+      anti_join(df_F[, c('SiteID','Year')],
+                by = c('SiteID','Year'))
+    ) %>% 
+  filter(Year %in% c(2021:2025)) %>% 
+  
+  left_join(., list_Point, 
+            by = c("樣區編號","獼猴樣區編號", "Point" = "樣點代號")) %>% 
+  dplyr::select(-recorded,-PointID,-樣區名稱,
+     -X_wgs84,-Y_wgs84,-備註,-環境特徵描述) %>% 
+  
+  st_as_sf(., coords = c("X_97", "Y_97"), crs = 3826) %>% 
+  st_join(ecoregion3) %>% 
+  filter(!is.na(ecoregion3)) %>% 
+  mutate(ecoregion3 = case_when(
+    str_detect(樣區編號, "B|C") ~ 4,
+    str_detect(獼猴樣區編號, "MB|MC") ~ 4,
+    TRUE ~ as.integer(ecoregion3)
+  )) %>% 
+  mutate(Site_N = ifelse(is.na(樣區編號),獼猴樣區編號, 樣區編號 )) %>% 
+  
+  st_join(ForestyRange) %>% 
+  mutate(ForestyRange = ifelse(!is.na(ForestyRange), ForestyRange,"NotForesty_Rng")) %>% 
+  
+  st_drop_geometry()
+  
+```
+
+
+#---------------------------------------------------------------------
+
+
+```{r include=FALSE}
+M.data <- combine_df %>% 
+  mutate(Macaca_sur = ifelse(is.na(Macaca_sur), 0, Macaca_sur)) %>% 
+  mutate(Year.re = Year - min(Year) + 1) %>% 
+  mutate(ecoregion3 = ecoregion3 %>% as.character(.))
+
+```
+
+
+#==============================================
+
+
+#-------------------------------------------
+```{r eval=FALSE, include=FALSE}
+allFit(glmer(Macaca_sur ~ TypeName.1  + Year.re + Altitude + julian.D +  ecoregion3 + (1|Site_N), 
+             family = binomial, data = M.data))   #嘗試使用一系列優化程序重新擬合glmer模型
+
+
+```
+
+```{r include=FALSE}
+M.data$Altitude.1 <-  scale(M.data$Altitude,scale =T)
+M.data$julian.D.1 <-  scale(M.data$julian.D,scale =T)
+```
+
+
+```{r}
+m1 <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 +  ecoregion3 + (1|Site_N), 
+            family = binomial, data = M.data,
+            control = glmerControl(optimizer = "bobyqa"))
+```
+
+
+```{r}
+Anova(m1)
+
+```
+
+```{r include=FALSE}
+#AICc==============================================
+options(na.action = "na.fail")
+d1<- dredge(m1, trace = F)  
+#trace = T的話，是把過程都show出來，看有幾種組合。
+```
+
+
+```{r include=FALSE}
+d1[d1$delta<2,] 
+
+```
+
+
+```{r include=FALSE}
+summary(model.avg(d1))
+summary(model.avg(d1, subset = delta < 2))
+```
+
+
+
+```{r}
+sw(d1)
+```
+
+
+```{r include=FALSE}
+sw(model.avg(d1, subset = delta < 2))
+
+```
+
+
+
+```{r}
+summary(glht(m1, linfct = mcp(ecoregion3 = "Tukey")))
+```
+
+
+```{r}
+summary(glht(m1, linfct = c("Year.re = 0",
+                            "Altitude.1 = 0",
+                            "julian.D.1 = 0")))
+```
+
+
+```{r eval=FALSE, include=FALSE}
+par(mai=c(1,1.5,1,1))
+glht(m1, linfct = mcp(ecoregion3 = "Tukey")) %>% plot
+
+
+par(mai=c(1,1.5,1,1))
+glht(m1, linfct = mcp(ecoregion3 = "Tukey")) %>% 
+  cld(.,level=0.05) %>% 
+plot(.,col="lightgrey")
+```
+
+------------------------
+
+國有林班地內
+
+```{r}
+M.data_forest <- 
+  M.data %>% 
+  filter(ForestyRange == "Foresty_Rng")
+
+
+M.data_Notforest <- 
+  M.data %>% 
+  filter(ForestyRange == "NotForesty_Rng")
+
+
+```
+
+
+```{r}
+m1_FF <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 +  ecoregion3 + (1|Site_N), 
+            family = binomial, data = M.data_forest,
+            control = glmerControl(optimizer = "bobyqa"))
+```
+
+
+```{r}
+Anova(m1_FF)
+
+```
+
+
+```{r}
+m1_NF <- glmer(Macaca_sur ~  TypeName.1 + Year.re + Altitude.1 + julian.D.1 +  ecoregion3 + (1|Site_N), 
+            family = binomial, data = M.data_Notforest,
+            control = glmerControl(optimizer = "bobyqa"))
+```
+
+
+```{r}
+Anova(m1_NF)
+
+```

@@ -92,3 +92,56 @@ S1524<-
           ) #陽管處計畫2022、2023年時沒有執行獼猴調查，只做鳥類調查。
 
 
+#------------------------
+S25 <- 
+  read_xlsx("./data/raw/BBS Taiwan調查資料回傳表_20260728.xlsx",
+            sheet = "Sheet1", col_types = "text") %>% 
+  filter(! 時段  %in% c("Supplementary")) %>%
+  setNames(.,str_replace_all(colnames(.),  "\r?\n|\r|\\s|\\t", "") ) %>% 
+  setNames(.,str_replace_all(colnames(.),  "\r?\n|\r|\\s|\\t", "") ) %>% 
+  setNames(.,str_replace_all(colnames(.),  "（", "\\(") ) %>% 
+  setNames(.,str_replace_all(colnames(.),  "）", "\\)") )%>% 
+  select(年, 樣區編號, 樣點編號, 調查旅次編號, 月, 日, `開始時間(時)`, `開始時間(分)`) %>% 
+  setNames(., c("Year", "Site_N", "Point",  "Survey", "Month", "Day", "Hour", "Minute")) %>% 
+  mutate(Point = as.numeric(Point)) %>% 
+  unique() %>% 
+  setNames(., c("Year", "Site_N", "Point",  "Survey", "Month", "Day", "Hour", "Minute")) %>% 
+  mutate(Point = as.numeric(Point)) %>% 
+  unique() %>% 
+  mutate(Point = case_when(
+    Year %in% 2018 &Site_N %in% "B10-03" & Point  %in% c(1:8) ~ as.numeric(Point) + 10,
+    Year %in% 2018 &Site_N %in% "B10-13" & Point  %in% c(1:8) ~ as.numeric(Point) + 10,
+    TRUE ~ Point
+  ))  %>%
+  mutate(YSSP = paste(Year, Survey, Site_N, Point, sep = "_")) %>% 
+  split(., .$YSSP) %>% 
+  map(., function(x){
+    x %>% 
+      arrange(Hour, Minute) %>% 
+      slice(1)
+  }) %>% 
+  bind_rows() %>% 
+  select(-YSSP)%>% 
+  
+  
+  left_join(xy.now, by = c("Site_N",
+                           "Point"), suffix = c("", ".y")) %>% 
+  select(-ends_with(".y"))  %>% 
+  filter( !(Year %in% c(2022,2023) & 
+              Site_N %in% c("A01-11","A01-14","A01-15","A01-16","A01-17",
+                            "A04-62","A04-63","A04-64","A04-65","A04-66",
+                            "A04-67","A04-68")
+  )
+  ) %>% #陽管處計畫2022、2023年時沒有執行獼猴調查，只做鳥類調查。  
+  filter( !(Year %in% c(2025) & 
+              Site_N %in% c("A05-15")
+  )
+  ) %>%  #福山植物園2025年時沒有執行獼猴調查，只做鳥類調查。  
+
+mutate_at(c('Point', 'Year', 'Survey', 'Month', 'Day', 'Hour', 'Minute'), function(x) x %>% as.numeric() %>% as.integer())
+
+
+
+
+S1525<-
+  S1524 %>% bind_rows(S25)
