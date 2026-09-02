@@ -1,0 +1,577 @@
+---
+title: "全島猴群數"
+output:
+  word_document: default
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+	fig.asp = 1,
+	dpi = 300)
+
+
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(sf)
+library(here)
+library(DBI)
+library(data.table)
+ library(flextable)
+library(RColorBrewer)
+library(showtext)
+showtext_auto()
+```
+
+
+```{r}
+
+con <-  dbConnect(RSQLite::SQLite(), dbname="D:/R/test/DB/P_BBS.db")
+list_Point<-
+  dbReadTable(con, "list_Point") %>% 
+  arrange(樣區編號, 獼猴樣區編號,as.numeric(樣點代號)) 
+list_Site<-
+  dbReadTable(con, "list_Site") 
+table_point<-
+  dbReadTable(con, "table_point") 
+
+dbDisconnect(con)
+```
+
+
+
+
+
+```{r}
+se <- function(x){sd(x)/sqrt(length(x))}
+
+
+per_Area <- (0.1*0.1*pi)   #100m(=0.1km)半徑的單位原面積
+```
+
+
+# **BBS**
+
+```{r include=FALSE}
+
+M.data <- read_excel(here("./合併_計算_20260901/for analysis_1525_20260901.xlsx"),
+                     sheet=1) %>% 
+  
+  filter(analysis %in% str_subset(analysis, "^Y")) %>%
+  filter(!analysis %in% str_subset(analysis, "month")) %>%
+  mutate_at(c("Year", "Survey", "Point", "Macaca_sur",
+              "Month", "Day", "Distance"), as.numeric)
+```
+
+
+
+
+```{r include=FALSE}
+df <- 
+  M.data %>% setDT %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[, Year := as.numeric(Year)] %>% 
+  setDT %>% 
+ # .[!(TypeName.1 %in% "非森林"), ]%>% 
+  right_join(list_Site[,c('SiteID', '樣區編號','獼猴樣區編號')], .,
+             by = c("樣區編號" = "Site_N")) 
+
+#bootstrap-------------------------
+bb<- df %>% setDT 
+
+
+
+```
+
+
+\newpage
+
+
+# **林業署**
+
+```{r include=FALSE}
+
+M.data_F <- 
+  here("./data/clean/Forestry/for analysis/") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2020:2025)) %>% #如果只要2020~2022年，就寫2020:2022
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows() %>% 
+
+  mutate_at(c("Year", "Survey","Month",
+              "Day", "Macaca_sur", "Distance", "Altitude", "julian.D"), as.numeric) %>% 
+  filter(analysis %in% str_subset(analysis, "^Y")) %>%
+   filter(!analysis %in% str_subset(analysis, "month")) %>%
+  filter(Year > 2020) %>% 
+  mutate_at(c("Year"), as.integer)%>% 
+  mutate(Site_N = str_replace_all(Site_N,"MB-C11-10","MA-C11-10"))
+```
+
+
+```{r include=FALSE}
+df_F <- 
+  M.data_F %>% setDT %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[, Year := as.numeric(Year)] %>% 
+  .[, Office := ifelse(Office == "東勢", "臺中", Office)] %>% 
+  .[, Office := ifelse(Office == "羅東", "宜蘭", Office)] %>% 
+  setDT %>% 
+  .[!(TypeName.1 %in% "非森林"), ]%>% 
+  right_join(list_Site[,c('SiteID', '樣區編號','獼猴樣區編號')], .,
+             by = c("獼猴樣區編號" = "Site_N")) 
+
+#bootstrap-------------------------
+bb_F<- df_F %>% setDT 
+
+
+
+```
+
+
+
+
+\newpage
+
+
+# **林業署 & BBS**
+
+#合併檢測--------------
+
+合併及擷取2021~2025的資料  
+```{r include=FALSE}
+combine_bb <- 
+bb_F %>% 
+  select(analysis,SiteID,Year, 樣區編號,獼猴樣區編號, Point, Survey, Macaca_sur, Macaca_dist,TypeName.1, Altitude) %>% 
+  mutate(data_source = "Foresty") %>% 
+  bind_rows(
+    bb %>% 
+      select(analysis,SiteID,Year, 樣區編號,獼猴樣區編號, Point, Survey,
+         Macaca_sur, Macaca_dist,TypeName.1, Altitude)%>%
+      mutate(data_source = "BBS") %>% 
+      mutate(Point = Point %>% as.character())  %>% 
+      anti_join(bb_F[, c('SiteID','Year')],
+                by = c('SiteID','Year'))
+    ) %>% 
+  filter(Year %in% c(2021:2025))
+```
+
+
+ 
+```{r eval=FALSE, include=FALSE}
+#相對密度(群/樣點) 
+combine_bb%>% 
+  setDT %>% 
+  .[, .(N = length(Macaca_sur)
+        ),
+   by =  c('Year', 'Survey', 'data_source')] %>% 
+  
+.[, .(
+    Mean_N = mean(N)%>% round(3)),
+  by =  c('Year', 'data_source')] %>% 
+  pivot_wider(id_cols = "Year",
+              names_from = "data_source",
+              values_from = "Mean_N")
+```
+
+
+2021-2025年本島各森林類型內的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
+```{r echo=FALSE}
+
+combine_bb %>% 
+  mutate(EL50 = ifelse(Altitude < 50, "less", "larger")) %>% 
+  mutate(NF = ifelse(TypeName.1 == "非森林", "Not_Forest", "Forest")) %>% 
+  group_by(NF, EL50,Year, Survey) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur),
+            E= m/N, .groups = "drop")%>% 
+  group_by(NF, EL50) %>% 
+  summarise(Mean_N = mean(N),
+            Se_N = sd(N)/sqrt(n()),Mean_m = mean(m),
+            Se_m = sd(m)/sqrt(n()),
+            Mean_E = mean(E)/per_Area,
+            Se_E = sd(E)/per_Area, .groups = "drop") %>% 
+  
+  arrange(-Mean_E) %>% 
+  mutate_at(c('Mean_N', 'Se_N', 'Mean_m', 'Se_m'), function(x)round(x,1)) %>% 
+  mutate(Mean_E = round(Mean_E,4)) %>% 
+  mutate(Se_E = round(Se_E,4)) %>% 
+  flextable(.) %>%
+  
+  align(.,
+        align = "center", part = "all") %>%
+  add_footer_lines(., values = "註：相對密度(群/km^2)。") 
+
+
+```
+
+
+```{r echo=FALSE, fig.height=3, fig.width=3, paged.print=FALSE}
+combine_bb %>% 
+  mutate(EL50 = ifelse(Altitude < 50, "less", "larger")) %>% 
+  mutate(NF = ifelse(TypeName.1 == "非森林", "Not_Forest", "Forest")) %>% 
+  group_by(NF, EL50,Year, Survey) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur),
+            E= m/N/per_Area, .groups = "drop") %>% 
+  mutate(Itm  = paste0(NF , "+", EL50)) %>% 
+  ggplot(., aes(x = Itm, y = E))+
+  geom_boxplot(width = 0.5)+
+  labs(x = "森林海拔組合",  y =  expression(paste("密度 " ,"(群 / km"^2,")")))+
+  theme_classic()+
+  theme(
+    aspect.ratio = 1,
+    text = element_text(size = 20),
+    axis.title.y = element_text(angle = 270),
+    panel.border = element_blank()
+  )
+```
+
+
+
+
+
+
+```{r include=FALSE}
+
+combine_bb %>% 
+  left_join(table_point[,c('SiteID', "樣點代號",'X_97','Y_97')],
+            by = c("SiteID", "Point" = "樣點代號"))%>%
+write_xlsx(
+.,
+  here("合併_計算_20260901/troops_2021-2025_20260901.xlsx")
+)
+
+```
+
+
+
+EL50 total
+```{r echo=FALSE}
+
+combine_bb %>% 
+  mutate(EL50 = ifelse(Altitude < 50, "less", "larger")) %>% 
+  mutate(NF = ifelse(TypeName.1 == "非森林", "Not_Forest", "Forest")) %>% 
+  group_by(EL50, Year, Survey) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur),
+            E= m/N, .groups = "drop")%>% 
+  group_by(EL50) %>% 
+  summarise(Mean_N = mean(N),
+            Se_N = sd(N)/sqrt(n()),Mean_m = mean(m),
+            Se_m = sd(m)/sqrt(n()),
+            Mean_E = mean(E)/per_Area,
+            Se_E = sd(E)/per_Area, .groups = "drop") %>% 
+  
+  arrange(-Mean_E) %>% 
+  mutate_at(c('Mean_N', 'Se_N', 'Mean_m', 'Se_m'), function(x)round(x,1)) %>% 
+  mutate(Mean_E = round(Mean_E,4)) %>% 
+  mutate(Se_E = round(Se_E,4)) %>% 
+  flextable(.) %>%
+  
+  align(.,
+        align = "center", part = "all") %>%
+  add_footer_lines(., values = "註：相對密度(群/km^2)。") 
+
+
+```
+
+
+
+
+
+總total
+```{r echo=FALSE}
+
+combine_bb %>% 
+  mutate(EL50 = ifelse(Altitude < 50, "less", "larger")) %>% 
+  mutate(NF = ifelse(TypeName.1 == "非森林", "Not_Forest", "Forest")) %>% 
+  group_by(Year, Survey) %>% 
+  summarise(N = n(),
+            m = sum(Macaca_sur),
+            E= m/N, .groups = "drop")%>% 
+
+  summarise(Mean_N = mean(N),
+            Se_N = sd(N)/sqrt(n()),Mean_m = mean(m),
+            Se_m = sd(m)/sqrt(n()),
+            Mean_E = mean(E)/per_Area,
+            Se_E = sd(E)/per_Area, .groups = "drop") %>% 
+  
+  arrange(-Mean_E) %>% 
+  mutate_at(c('Mean_N', 'Se_N', 'Mean_m', 'Se_m'), function(x)round(x,1)) %>% 
+  mutate(Mean_E = round(Mean_E,4)) %>% 
+  mutate(Se_E = round(Se_E,4)) %>% 
+  flextable(.) %>%
+  
+  align(.,
+        align = "center", part = "all") %>%
+  add_footer_lines(., values = "註：相對密度(群/km^2)。") 
+
+
+```
+
+#bootstrap-------------------------
+
+Forest & less50
+```{r}
+bb_less50F<-
+combine_bb %>% 
+  mutate(EL50 = ifelse(Altitude < 50, "less", "larger")) %>% 
+  mutate(NF = ifelse(TypeName.1 == "非森林", "Not_Forest", "Forest")) %>% 
+  filter(EL50 %in% "less" & NF %in% "Forest") %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]
+  
+```
+
+
+```{r}
+bb_less50F %>% 
+  mutate(SP = paste0(SiteID, "_", Point)) %>% 
+  .$SP %>% unique() %>% length
+```
+
+
+
+海拔50m以上的非森林總面積=508.27 (km^2^)\
+方法：bootstrap\
+重複抽樣：10,000次\
+單位面積的半徑: 100m 
+```{r include=FALSE}
+set.seed(3)
+#重複抽樣10000次----
+bootstrap_AB_bb_less50F <- 
+bb_less50F %>% 
+  split(., .$EL50) %>% 
+  lapply(., function(x){
+    replicate(10000, mean(sample(x$AB, replace = TRUE), na.rm = T)) 
+  })%>% 
+  lapply(., function(x){
+    data.frame(
+    'q_1' = quantile(x/per_Area, probs = 0.025),
+     'mm' = mean(x/per_Area),
+    'q_3' = quantile(x/per_Area, probs = 0.975)
+    )
+  }) %>% 
+  bind_rows(.id = 'EL50_Forest') 
+
+
+  row.names(bootstrap_AB_bb_less50F) <- NULL
+
+
+```
+ 
+
+ 
+```{r}
+
+less50F_M_all <- 
+  bootstrap_AB_bb_less50F %>% 
+  setDT %>% 
+  .[ , 'M_troops' := (508.27)*mm] %>% 
+  .[ , 'q1_troops' := (508.27)*q_1] %>% 
+  .[ , 'q3_troops' := (508.27)*q_3] %>% 
+  .[, 'log_troops':= log(M_troops)]%>% 
+  .[ , 'COUNT' := M_troops*25]  
+
+
+```
+
+```{r}
+less50F_M_all  %>% 
+  mutate('類型' = "Forest_less50") %>% 
+  mutate(
+    '相對密度_km2' = round(mm,3),
+    "相對密度_km2(95%CI)" = paste0(round(q_1,3), "~", round(q_3,3))
+  ) %>% 
+  mutate(
+    '群數' = round(M_troops),
+    "群數(95%CI)" = paste0(round(q1_troops), "~", round(q3_troops))
+  ) %>% 
+  mutate(
+    '隻數' = round(M_troops*25),
+    "隻數(95%CI)" = paste0(round(q1_troops*25), "~", round(q3_troops*25))
+    ) %>% 
+  select(類型, `相對密度_km2`:`隻數(95%CI)`) %>% 
+  flextable::flextable() 
+```
+
+
+
+
+Forest & EL>50
+```{r}
+bb_larger50F<-
+combine_bb %>% 
+  mutate(EL50 = ifelse(Altitude < 50, "less", "larger")) %>% 
+  mutate(NF = ifelse(TypeName.1 == "非森林", "Not_Forest", "Forest")) %>% 
+  filter(EL50 %in% "larger" & NF %in% "Forest") %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]
+```
+
+
+
+```{r}
+bb_larger50F %>% 
+  mutate(SP = paste0(SiteID, "_", Point)) %>% 
+  .$SP %>% unique() %>% length
+```
+海拔50m以上的非森林總面積=21028.14 (km^2^)\
+方法：bootstrap\
+重複抽樣：10,000次\
+單位面積的半徑: 100m 
+
+```{r}
+set.seed(4)
+#重複抽樣10000次----
+bootstrap_AB_bb_larger50F <- 
+bb_larger50F %>% 
+  split(., .$EL50) %>% 
+  lapply(., function(x){
+    replicate(10000, mean(sample(x$AB, replace = TRUE), na.rm = T)) 
+  })%>% 
+  lapply(., function(x){
+    data.frame(
+    'q_1' = quantile(x/per_Area, probs = 0.025),
+     'mm' = mean(x/per_Area),
+    'q_3' = quantile(x/per_Area, probs = 0.975)
+    )
+  }) %>% 
+  bind_rows(.id = 'larger50_Forest') 
+
+
+  row.names(bootstrap_AB_bb_larger50F) <- NULL
+```
+
+
+ 
+```{r}
+
+larger50F_M_all <- 
+  bootstrap_AB_bb_larger50F %>% 
+  setDT %>% 
+  .[ , 'M_troops' := (21028.14)*mm] %>% 
+  .[ , 'q1_troops' := (21028.14)*q_1] %>% 
+  .[ , 'q3_troops' := (21028.14)*q_3] %>% 
+  .[, 'log_troops':= log(M_troops)]%>% 
+  .[ , 'COUNT' := M_troops*25]  
+
+
+```
+
+
+
+```{r}
+larger50F_M_all  %>% 
+  mutate('類型' = "Forest_larger50") %>% 
+  mutate(
+    '相對密度_km2' = round(mm,3),
+    "相對密度_km2(95%CI)" = paste0(round(q_1,3), "~", round(q_3,3))
+  ) %>% 
+  mutate(
+    '群數' = round(M_troops),
+    "群數(95%CI)" = paste0(round(q1_troops), "~", round(q3_troops))
+  ) %>% 
+  mutate(
+    '隻數' = round(M_troops*25),
+    "隻數(95%CI)" = paste0(round(q1_troops*25), "~", round(q3_troops*25))
+    ) %>% 
+  select(類型, `相對密度_km2`:`隻數(95%CI)`) %>% 
+  flextable::flextable() 
+```
+
+
+
+
+Forest & EL>0
+
+```{r}
+bb_larger0F<-
+combine_bb %>% 
+  mutate(EL50 = ifelse(Altitude < 50, "less", "larger")) %>% 
+  mutate(NF = ifelse(TypeName.1 == "非森林", "Not_Forest", "Forest")) %>% 
+  filter( NF %in% "Forest") %>% setDT %>% 
+  .[, A := ifelse(Macaca_dist %in% "A", Macaca_sur,0)] %>% 
+  .[, AB := ifelse(Macaca_dist %in% c("A","B"), Macaca_sur,0)]
+  
+
+
+```
+
+```{r}
+bb_larger0F %>% 
+  mutate(SP = paste0(SiteID, "_", Point)) %>% 
+  .$SP %>% unique() %>% length
+
+
+```
+
+
+海拔0m以上的森林總面積=21,536.41 (km^2^)\
+方法：bootstrap\
+重複抽樣：10,000次\
+單位面積的半徑: 100m 
+```{r include=FALSE}
+set.seed(3)
+#重複抽樣10000次----
+bootstrap_AB_bb_larger0F <- 
+bb_larger0F %>% 
+  split(., .$NF) %>% 
+  lapply(., function(x){
+    replicate(10000, mean(sample(x$AB, replace = TRUE), na.rm = T)) 
+  })%>% 
+  lapply(., function(x){
+    data.frame(
+    'q_1' = quantile(x/per_Area, probs = 0.025),
+     'mm' = mean(x/per_Area),
+    'q_3' = quantile(x/per_Area, probs = 0.975)
+    )
+  }) %>% 
+  bind_rows(.id = 'EL0_Forest') 
+
+
+  row.names(bootstrap_AB_bb_larger0F) <- NULL
+
+
+```
+ 
+ 
+```{r}
+
+larger0F_M_all <- 
+  bootstrap_AB_bb_larger0F %>% 
+  setDT %>% 
+  .[ , 'M_troops' := (21536.41)*mm] %>% 
+  .[ , 'q1_troops' := (21536.41)*q_1] %>% 
+  .[ , 'q3_troops' := (21536.41)*q_3] %>% 
+  .[, 'log_troops':= log(M_troops)]%>% 
+  .[ , 'COUNT' := M_troops*25]  
+
+
+```
+
+```{r}
+larger0F_M_all  %>% 
+  mutate('類型' = "Forest_larger0") %>% 
+  mutate(
+    '相對密度_km2' = round(mm,3),
+    "相對密度_km2(95%CI)" = paste0(round(q_1,3), "~", round(q_3,3))
+  ) %>% 
+  mutate(
+    '群數' = round(M_troops),
+    "群數(95%CI)" = paste0(round(q1_troops), "~", round(q3_troops))
+  ) %>% 
+  mutate(
+    '隻數' = round(M_troops*25),
+    "隻數(95%CI)" = paste0(round(q1_troops*25), "~", round(q3_troops*25))
+    ) %>% 
+  select(類型, `相對密度_km2`:`隻數(95%CI)`) %>% 
+  flextable::flextable() 
+```
+
+
+
+
+
+# END
