@@ -1,0 +1,202 @@
+---
+title: "欄位說明---提供2021-2025全島獼猴調查點位及猴群資料"
+output:
+  word_document: default
+date: "`r Sys.Date()`"
+---
+
+
+
+資料說明：
+
+時間範圍：2021-2025
+地理範圍：海拔0公尺以上的臺灣本島
+
+
+
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	fig.asp = 1,
+	dpi = 300,
+	include = FALSE
+)
+library(tidyverse)
+library(readxl)
+library(writexl)
+library(sf)
+library(here)
+library(DBI)
+library(data.table)
+ library(flextable)
+library(RColorBrewer)
+library(showtext)
+showtext_auto()
+```
+
+
+```{r include=FALSE}
+
+con <-  dbConnect(RSQLite::SQLite(), dbname="D:/R/test/DB/P_BBS.db")
+list_Point<-
+  dbReadTable(con, "list_Point") %>% 
+  arrange(樣區編號, 獼猴樣區編號,as.numeric(樣點代號)) 
+list_Site<-
+  dbReadTable(con, "list_Site") 
+table_point<-
+  dbReadTable(con, "table_point") 
+
+dbDisconnect(con)
+```
+
+
+
+
+
+```{r include=FALSE}
+se <- function(x){sd(x)/sqrt(length(x))}
+
+
+per_Area <- (0.1*0.1*pi)   #100m(=0.1km)半徑的單位原面積
+```
+
+
+# **BBS**
+
+```{r include=FALSE}
+
+M.data <- read_excel(here("./合併_計算_20260901/for analysis_1525_20260901.xlsx"),
+                     sheet=1) %>% 
+  
+  filter(analysis %in% str_subset(analysis, "^Y")) %>%
+  filter(!analysis %in% str_subset(analysis, "month")) %>%
+  mutate_at(c("Year", "Survey", "Point", "Macaca_sur",
+              "Month", "Day", "Distance"), as.numeric)
+```
+
+
+
+
+```{r include=FALSE}
+df <- 
+  M.data %>% setDT %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[, Year := as.numeric(Year)] %>% 
+  setDT %>% 
+ # .[!(TypeName.1 %in% "非森林"), ]%>% 
+  right_join(list_Site[,c('SiteID', '樣區編號','獼猴樣區編號')], .,
+             by = c("樣區編號" = "Site_N")) 
+
+#bootstrap-------------------------
+bb<- df %>% setDT 
+
+
+
+```
+
+
+\newpage
+
+
+# **林業署**
+
+```{r include=FALSE}
+
+M.data_F <- 
+  here("./data/clean/Forestry/for analysis/") %>% 
+  list.files(., full.names = T) %>% 
+  str_subset(paste0(2020:2025)) %>% #如果只要2020~2022年，就寫2020:2022
+  lapply(., read_excel, sheet="Data", col_types = "text") %>% 
+  bind_rows() %>% 
+
+  mutate_at(c("Year", "Survey","Month",
+              "Day", "Macaca_sur", "Distance", "Altitude", "julian.D"), as.numeric) %>% 
+  filter(analysis %in% str_subset(analysis, "^Y")) %>%
+   filter(!analysis %in% str_subset(analysis, "month")) %>%
+  filter(Year > 2020) %>% 
+  mutate_at(c("Year"), as.integer)%>% 
+  mutate(Site_N = str_replace_all(Site_N,"MB-C11-10","MA-C11-10"))
+```
+
+
+```{r include=FALSE}
+df_F <- 
+  M.data_F %>% setDT %>% 
+  .[is.na(Macaca_sur), Macaca_sur := 0] %>% 
+  .[, Year := as.numeric(Year)] %>% 
+  .[, Office := ifelse(Office == "東勢", "臺中", Office)] %>% 
+  .[, Office := ifelse(Office == "羅東", "宜蘭", Office)] %>% 
+  setDT %>% 
+  .[!(TypeName.1 %in% "非森林"), ]%>% 
+  right_join(list_Site[,c('SiteID', '樣區編號','獼猴樣區編號')], .,
+             by = c("獼猴樣區編號" = "Site_N")) 
+
+#bootstrap-------------------------
+bb_F<- df_F %>% setDT 
+
+
+
+```
+
+
+
+
+\newpage
+
+
+# **林業署 & BBS**
+
+#合併檢測--------------
+
+合併及擷取2021~2025的資料  
+```{r include=FALSE}
+combine_bb <- 
+bb_F %>% 
+  select(analysis,SiteID,Year, 樣區編號,獼猴樣區編號, Point, Survey, Macaca_sur, TypeName.1, Altitude, Month, Day, Hour, Minute) %>% 
+  mutate(data_source = "Foresty") %>% 
+  bind_rows(
+    bb %>% 
+      select(analysis,SiteID,Year, 樣區編號,獼猴樣區編號, Point, Survey,
+         Macaca_sur, TypeName.1, Altitude, Month, Day, Hour, Minute)%>%
+      mutate(data_source = "BBS") %>% 
+      mutate(Point = Point %>% as.character())  %>% 
+      anti_join(bb_F[, c('SiteID','Year')],
+                by = c('SiteID','Year'))
+    ) %>% 
+  
+  filter(!Hour%in% 0) %>% #抓到蟲
+  
+  filter(!TypeName.1 %in% c("非森林")) %>%
+  filter(!樣區編號 %in% c("A08-10")) %>%
+  select(-TypeName.1,- Altitude, -analysis) %>% 
+
+  filter(Year %in% c(2021:2025))
+```
+
+
+
+
+
+```{r include=FALSE}
+output_df <- 
+combine_bb %>% 
+  left_join(table_point[,c('SiteID', "樣點代號",'X_97','Y_97')],
+            by = c("SiteID", "Point" = "樣點代號"))%>% 
+  left_join(list_Site[,c('SiteID', '樣區名稱')],
+            by = c("SiteID"))
+  
+  
+write_xlsx(output_df,
+  here("合併_計算_20260916/troops_2021-2025_20260901.xlsx")
+)
+
+```
+
+
+
+
+
+# END
