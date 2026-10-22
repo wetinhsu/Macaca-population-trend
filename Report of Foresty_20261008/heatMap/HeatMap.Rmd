@@ -56,14 +56,14 @@ list_Point_sf <-
 
 # **BBS**
 
-- Year：2015~2024
+- Year：2015~2025
 - 海拔50公尺以上、森林內的點
 - 每樣區為一筆，effort為該次調查的樣點數。
 
 
 ```{r include=FALSE}
 
-M.data <- read_excel(here("./data/clean/for analysis_1524.xlsx"),
+M.data <- read_excel(here("./data/clean/for analysis_1525.xlsx"),
                      sheet=1, col_types = "text") %>% 
   filter(analysis %in% "Y") %>%
   # mutate_at(c("Year", "Survey", "Point", "Macaca_sur",
@@ -82,7 +82,7 @@ M.data <- read_excel(here("./data/clean/for analysis_1524.xlsx"),
 # **林業署**
 
 
-- Year：2015~2024
+- Year：2015~2025
 - 海拔50公尺以上、森林內的點
 - 每樣區為一筆，effort為該次調查的樣點數。
 
@@ -110,13 +110,72 @@ M.data_F <-
   
 ```
 
-# **合併及擷取2021-2024**  
-```{r}
-source("D:/R/test/Macaca-population-trend/script/Analysis 2025 for Forestry/熱點圖/environment.R")
+
+
+# **環境資料**
+
+- 臺灣陸域環境因子多時序資料集 (A multi-temporal and terrestrial environmental dataset of Taiwan) 
+
+-上述資料集內的全部環境因子
+
+
+-  詳細說明：[陳宛均、羅祈鈞、蔡富安、張安瑜。2020。運用開放資料建置臺灣陸域環境因子多時序資料集。台灣生物多樣性研究 22: 13-44。](https://www.tbri.gov.tw/view.php?theme=publications&subtheme=biodiversity&id=64)
+
+
+
+
+```{r include=FALSE}
+source("D:/R/test/Macaca-population-trend/Report of Foresty_20261008/heatMap/environment.R")
 ```
 
 
-- Year：2021~2024
+ load the raster template for the grid
+```{r}
+r <- rast("D:/待處理工作夾(做完要歸檔)/ebird-workshop_taiwan-2025/data/prediction-grid_1km_tw.tif") |>
+  rast()
+```
+
+
+
+```{r}
+
+environment_r <- 
+   project( environment_sp,r) %>% 
+  
+resample(
+  .,     # 你想改變的光柵
+  r,               # 你的基準光柵（提供目標解析度與範圍）
+  method = "bilinear"  # 插補方式（見下方說明）
+) 
+
+ names(environment_r) <- str_remove_all(names(environment_r), ".*_")
+
+environment_r_cell <- 
+as.data.frame(environment_r, cells = TRUE,na.rm = TRUE)
+
+  
+summary(environment_r)  
+```
+
+
+
+```{r eval=FALSE, include=FALSE}
+region <- c(lat_min = 21.7, lat_max = 25.4,
+            lon_min = 119.1, lon_max = 122.4)
+
+pred_grid_0 <- read_parquet("data/prediction-grid_1km_tw.paquet") |>
+  filter(between(latitude, region["lat_min"], region["lat_max"]),
+         between(longitude, region["lon_min"], region["lon_max"]))
+
+```
+
+
+
+
+
+# **合併及擷取2021-2024**  
+
+- Year：2021~2025
 - 海拔50公尺以上、森林內的點
 - 每樣區為一筆，effort為該次調查的樣點數。
 - 不重複的資料。(林業署重複上傳到BBS的部分，BBS那邊會移除)
@@ -147,24 +206,17 @@ M.data_F %>%
     list_Site[,c('SiteID', '獼猴樣區編號', "樣區編號","X_wgs84",      "Y_wgs84")],
     by = c('獼猴樣區編號', "樣區編號"))  %>% 
     
-  filter(Year %in% c(2021:2024)) %>% 
-  st_as_sf(coords = c("X_wgs84", "Y_wgs84"), crs = 4326) %>% 
+  filter(Year %in% c(2021:2025)) %>% 
+  filter(!樣區編號 %in% c("A08-10")) %>% 
+  st_as_sf(coords = c("X_wgs84", "Y_wgs84"), crs = 4326, remove = F) %>% 
   st_transform(crs = 3826) %>% 
-  st_join(environment_sf) %>% 
+  st_transform(crs = crs(r)) %>% 
+  mutate(cell_id = cellFromXY(r, st_coordinates(geometry)))%>% 
+  st_drop_geometry() %>% 
+  left_join(environment_r_cell,by = c("cell_id" = "cell") ) %>% 
   st_drop_geometry() 
   
 ```
-
-
-# **環境資料**
-
-- 臺灣陸域環境因子多時序資料集 (A multi-temporal and terrestrial environmental dataset of Taiwan) 
-
--上述資料集內的全部環境因子
-
-
--  詳細說明：[陳宛均、羅祈鈞、蔡富安、張安瑜。2020。運用開放資料建置臺灣陸域環境因子多時序資料集。台灣生物多樣性研究 22: 13-44。](https://www.tbri.gov.tw/view.php?theme=publications&subtheme=biodiversity&id=64)
-
 
 ========
 
@@ -197,6 +249,8 @@ table(zf_filtered $type) / nrow(zf_filtered )
 
 ```
 
+觀測分佈圖
+
 ```{r}
 # ├ 觀測分佈圖 / Observations map ----
 
@@ -207,9 +261,8 @@ countries <- ne_countries(scale = 10, continent = "Asia") |>
 
 checklists_sf <- zf_filtered |>
   # 轉換為空間點 / convert to spatial points
-  st_as_sf(coords = c("x", "y"), crs = 3826) |>
-  select(species_observed) %>% 
-  st_transform(crs = 4326)
+  st_as_sf(coords = c("X_wgs84", "Y_wgs84"), crs = 4326) |>
+  select(species_observed) 
 
 
 # 繪圖 / map
@@ -237,19 +290,19 @@ legend("topleft", bty = "n",
 box()
 ```
 
+
+ ├ 時空子抽樣 / Spatiotemporal subsampling ----
+
+ 每年每個 1km x 1km x 1周的網格抽樣一份清單 / sample one checklist per 1 km x 1 km x 1 week grid for each year
+ 獨立抽樣偵測與未偵測數據 / sample detection/non-detection independently
+ 按類型（測試/訓練）分層 / stratify by type (test/train)
+
 ```{r}
-# ├ 時空子抽樣 / Spatiotemporal subsampling ----
-
-# 每年每個 1km x 1km x 1周的網格抽樣一份清單 / sample one checklist per 1 km x 1 km x 1 week grid for each year
-# 獨立抽樣偵測與未偵測數據 / sample detection/non-detection independently
-# 按類型（測試/訓練）分層 / stratify by type (test/train)
-
 zf_filtered <- 
 zf_filtered %>%
   bind_cols(
     zf_filtered %>%  
-      st_as_sf(coords = c("x", "y"), crs = 3826) %>% 
-      st_transform(crs = 4326) %>% 
+      st_as_sf(coords = c("X_wgs84", "Y_wgs84"), crs = 4326) %>% 
       st_coordinates(zf_filtered) %>% 
       as.data.frame() %>% 
       setNames(., c("longitude", "latitude")) %>% 
@@ -283,39 +336,49 @@ count(checklists_ss, species_observed) |>
 ```
 
 ```{r}
-# pred_grid <- read_parquet("D:/待處理工作夾(做完要歸檔)/ebird-workshop_taiwan-2025/data/prediction-grid_1km_tw.parquet") 
+ # pred_grid <- read_parquet("D:/待處理工作夾(做完要歸檔)/ebird-workshop_taiwan-2025/data/prediction-grid_1km_tw.parquet") 
 
-pred_grid <- environment_sf %>%
-  st_drop_geometry() %>%
-  as_tibble() %>%
-  # 2. 補足模型預測所需的標準化變數
-  # 這裡設定的值是為了讓全島的預測結果是在相同的「努力量」基準下比較
-  mutate(
-    year = 2024,
-    day_of_year = 136,           # 代表 5 月 15 日
-    effort_n = 8,
-    solar_noon_diff = 0,         # 設定在正午
-    effort_distance_km = 1,      # 標準化：步行 1 公里
-    effort_hours = 1,            # 標準化：費時 1 小時
-    effort_speed_kmph = 1,       # 標準化：時速 1 公里
-    number_observers = 1         # 標準化：1 位觀察者
-  )
+pred_grid <- environment_r_cell
+```
 
-# load the raster template for the grid
-r <- rast("D:/待處理工作夾(做完要歸檔)/ebird-workshop_taiwan-2025/data/prediction-grid_1km_tw.tif") |>
-  rast()
 
-elevation <- pred_grid |>
-  # convert to spatial features
-  st_as_sf(coords = c("x", "y"), crs = 3826) %>% 
-  st_transform(crs = crs(r)) |>
-  # rasterize points
-  rasterize(r, field = "ELE")
+```{r}
+elevation <- environment_r[["ELE"]]
+```
 
-# make a map of elevation
-plot(elevation,
+
+
+make a map of elevation
+```{r}
+
+elevation %>% project(., "EPSG:4326") %>% 
+
+plot(.,
      axes = FALSE, box = FALSE, col = viridis(10),
      main = "Elevation [m]")
+
+
+```
+
+
+
+```{r}
+
+# Relative abundance model ----
+
+# filter to training data, select only the columns to be used in the model
+checklists_train <- checklists_ss |>
+  filter(type == "train") |>
+  select(species_observed, observation_count,
+         year, day_of_year, 
+         effort_n,
+         -cell_id,
+         `Bio01`:`PROAD`)
+
+
+# calculate detection frequency
+detection_freq <- mean(checklists_train$species_observed)
+n_detections <- sum(checklists_train$species_observed)
 
 
 ```
@@ -329,7 +392,7 @@ plot(elevation,
 
 # train a balanced binary classification forest for range boundary
 # remove observation_count prior to training model
-train_er <- select(checklists_train, -observation_count)
+train_er <- checklists_train %>% ungroup() %>% select(`species_observed`:`PROAD`, -observation_count)
 train_er$species_observed <- factor(train_er$species_observed)
 rf_range <- ranger(
   formula = species_observed ~ .,
@@ -341,8 +404,8 @@ rf_range <- ranger(
 ```
 
 
-# 估計遭遇率 (Encounter Rate) 與模型校準
 
+# 估計遭遇率 (Encounter Rate) 
 
 ```{r}
 
@@ -360,6 +423,10 @@ rf_er <- ranger(
 
 ```
 
+
+
+
+# 模型校準
 ```{r}
 
 # ├ Calibration ----
@@ -410,30 +477,9 @@ ggplot(calibration_curve) +
   coord_equal(xlim = c(0, 1), ylim = c(0, 1))
 ```
 
-
+---
 
 #估計族群數量 (Count & Abundance)
-
-
-```{r}
-
-# Relative abundance model ----
-
-# filter to training data, select only the columns to be used in the model
-checklists_train <- checklists_ss |>
-  filter(type == "train") |>
-  select(species_observed, observation_count,
-         year, day_of_year, 
-         effort_n,
-         `Temp01`:`DSW`)
-
-
-# calculate detection frequency
-detection_freq <- mean(checklists_train$species_observed)
-n_detections <- sum(checklists_train$species_observed)
-
-
-```
 
 
 ```{r}
@@ -441,8 +487,9 @@ n_detections <- sum(checklists_train$species_observed)
 
 # 障礙模型：僅篩選出偵測到的數據用於數量模型 / hurdle: subset to detections only for the count model
 train_count <- checklists_train |>
-  filter(!is.na(observation_count), species_observed) |>
-  select(-species_observed)
+  filter(!is.na(observation_count), species_observed) |> ungroup() %>% 
+  select(-species_observed) %>% 
+  select(-c(`樣區編號`:`Day`))
 
 # 插件法：將預測的遭遇率作為額外的協變量添加 / plugin: add predicted encounter rate as additional covariate
 predicted_er <- predict(rf_er, data = train_count, type = "response")
@@ -461,16 +508,13 @@ rf_count <- ranger(
 # 預測 / Prediction ----
 
 # 將標準化的努力量協變量添加到預測網格 / add standardized effort covariates to prediction grid
-# 2024-05-15 正午前 5 小時，2公里1小時的單人觀測清單
-# 2024-05-15 at 5 hours before solar noon, 2 km, 1 hour traveling checklist with 1 observer
+# 2024-03-15 的單人6樣點觀測清單
+
 pred_grid_eff <- pred_grid |>
-  mutate(observation_date = ymd("2024-03-01"),
+  mutate(observation_date = ymd("2024-03-15"),
          year = year(observation_date),
          day_of_year = yday(observation_date),
-         #solar_noon_diff = -5,
-         # effort_distance_km = 2,
-         # effort_hours = 1,
-         # effort_speed_kmph = 2,
+         effort_n = 6,   
          number_n = 1)
 ```
 
@@ -501,16 +545,38 @@ pred_count <- pred_count$predictions
 
 
 # 將預測結果與單元 ID 及坐標合併 / combine predictions with cell id and coordinates
-predictions <- data.frame(cell_id = pred_grid_eff$GRIDID,
-                          x = pred_grid_eff$x,
-                          y = pred_grid_eff$y,
+predictions <- data.frame(cell_id = pred_grid_eff$cell,
+
                           range = pred_range,
                           encounter_rate = pred_er_cal,
                           count = pred_count,
                           abundance = pred_range * pred_er_cal * pred_count
                           )
+```
 
 
+```{r}
+r_plot <- rast(r, nlyrs = 4)
+names(r_plot) <- c("range", "encounter_rate", "count", "abundance")
+
+
+r_plot[predictions$cell_id] <- as.matrix(predictions[, c("range", "encounter_rate", "count", "abundance")])
+
+r_plot <- project(r_plot, "EPSG:4326")
+
+plot(r_plot[["abundance"]], main = "abundance")
+
+
+ggplot() +
+  geom_spatraster(data = r_plot[["abundance"]]) +
+  coord_sf() +                                # 確保坐標系正確
+  theme_classic()
+
+```
+
+
+
+```{r}
 # ├ 預測結果柵格化 / Rasterize predictions ----
 
 # 將預測結果插入柵格模板 / insert predictions into the raster template
@@ -526,98 +592,11 @@ r_pred <- predictions |>
 
 ```
 
+
+
+
+
 #視覺化
-
-```{r}
-# ├ 預測地圖 / Prediction maps ----
-
-countries_proj <- st_transform(countries, st_crs(r))
-tw_boundary <- filter(countries_proj, name == "Taiwan") |>
-  st_geometry()
-
-# 繪製遭遇率地圖 / map encounter rate
-par(mar = c(4, 0.25, 0.25, 0.25))
-plot(tw_boundary, col = NA, border = NA)
-plot(countries_proj, col = "#cfcfcf", border = "#888888", lwd = 0.5,
-     add = TRUE)
-
-
-# 定義分位數斷點，排除零值 / define quantile breaks, excluding zeros
-brks <- ifel(r_pred[["encounter_rate"]] > 0, r_pred[["encounter_rate"]], NA) |>
-  global(fun = quantile,
-         probs = seq(0, 0.1, 0.001), na.rm = TRUE) |>
-  as.numeric() |>
-  unique()
-
-
-
-# 標註最小值、中位數與最大值 / label the bottom, middle, and top value
-lbls <- round(c(min(brks), median(brks), max(brks)), 3)
-# eBird 狀態與趨勢調色板 / ebird status and trends color palette
-pal <- ebirdst_palettes(length(brks) - 1)
-plot(r_pred[["encounter_rate"]],
-     col = c("#e6e6e6", pal), breaks = c(0, brks),
-     maxpixels = ncell(r_pred),
-     legend = FALSE, axes = FALSE, bty = "n",
-     add = TRUE)
-box()
-
-# 圖例 / legend
-par(new = TRUE, mar = c(0, 0, 0, 0))
-title <- glue("encounter rate ")
-image.plot(zlim = c(0, 1), legend.only = TRUE,
-            col = pal, breaks = seq(0, 1, length.out = length(brks)),
-            smallplot = c(0.15, 0.85, 0.05, 0.08),
-            horizontal = TRUE,
-            axis.args = list(at = c(0, 0.5, 1), labels = lbls,
-                             fg = "black", col.axis = "black",
-                             cex.axis = 0.75, lwd.ticks = 0.5,
-                             padj = -1.5),
-            legend.args = list(text = title,
-                               side = 3, col = "black",
-                               cex = 1, line = 0.1))
-```
-
-
-```{r}
-# 繪製範圍內的相對豐度圖 / map relative abundance in range
-par(mar = c(4, 0.25, 0.25, 0.25))
-plot(tw_boundary, col = NA, border = NA)
-plot(countries_proj, col = "#cfcfcf", border = "#888888", lwd = 0.5, add = TRUE)
-
-
-
-
-# 定義分位數斷點，排除零值 / define quantile breaks, excluding zeros
-brks <- ifel(r_pred[["abundance"]] > 0, r_pred[["abundance"]], NA) |>
-  global(fun = quantile,
-         probs = seq(0, 1, 0.1), na.rm = TRUE) |>
-  as.numeric() |>
-  unique()
-lbls <- round(c(min(brks), median(brks), max(brks)), 2)
-pal <- ebirdst_palettes(length(brks) - 1)
-plot(r_pred[["abundance"]],
-     col = c("#e6e6e6", pal), breaks = c(0, brks),
-     maxpixels = ncell(r_pred),
-     legend = FALSE, axes = FALSE, bty = "n",
-     add = TRUE)
-box()
-
-# 圖例 / legend
-par(new = TRUE, mar = c(0, 0, 0, 0))
-title <- glue("relative abundance (May 2024)")
-image.plot(zlim = c(0, 1), legend.only = TRUE,
-            col = pal, breaks = seq(0, 1, length.out = length(brks)),
-            smallplot = c(0.15, 0.85, 0.05, 0.08),
-            horizontal = TRUE,
-            axis.args = list(at = c(0, 0.5, 1), labels = lbls,
-                             fg = "black", col.axis = "black",
-                             cex.axis = 0.75, lwd.ticks = 0.5,
-                             padj = -1.5),
-            legend.args = list(text = title,
-                               side = 3, col = "black",
-                               cex = 1, line = 0.1))
-```
 
 
 
