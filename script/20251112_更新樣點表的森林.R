@@ -39,8 +39,8 @@ need_update %>%
 
 
 # 
-# dbxUpsert(con3, "forest3",
-#           update_forest, where_cols=c("PointID"))
+dbxUpsert(con3, "forest3",
+          update_forest, where_cols=c("PointID"))
 
 
 
@@ -58,8 +58,8 @@ list_Point %>%
   filter(!is.na(Altitude)) %>% 
   dplyr::select(PointID, Altitude) 
 
-# dbxUpdate(con3, "forest3",
-#           update_Alt, where_cols=c("PointID"))
+dbxUpdate(con3, "forest3",
+          update_Alt, where_cols=c("PointID"))
 
 
 update_Alt <- 

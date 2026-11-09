@@ -22,6 +22,7 @@ library(scam)
 library(sf)
 library(terra)
 library(tidyr)
+library(tidyterra)
 
 library(readxl)
 library(here)
@@ -131,8 +132,7 @@ source("D:/R/test/Macaca-population-trend/Report of Foresty_20261008/heatMap/env
 
  load the raster template for the grid
 ```{r}
-r <- rast("D:/待處理工作夾(做完要歸檔)/ebird-workshop_taiwan-2025/data/prediction-grid_1km_tw.tif") |>
-  rast()
+r <- rast("Report of Foresty_20261008/heatMap/empty_grid_3826.tif") 
 ```
 
 
@@ -576,27 +576,10 @@ ggplot() +
 
 
 
-```{r}
-# ├ 預測結果柵格化 / Rasterize predictions ----
-
-# 將預測結果插入柵格模板 / insert predictions into the raster template
-r_pred <- predictions |>
-  # 轉換為空間特徵 / convert to spatial features
-  st_as_sf(coords = c("x", "y"), crs = 3826) %>% 
-  st_transform(crs = st_crs(r)) |>
-  # 柵格化 / rasterize
-  rasterize(r, field = c("range",
-                         "encounter_rate",
-                         "count",
-                         "abundance" ))
-
-```
 
 
 
-
-
-#視覺化
+#Habitat associations
 
 
 
@@ -678,7 +661,7 @@ calculate_pd <- function(predictor,
 }
 
 # calculate partial dependence for elevation
-pd_elevation <- calculate_pd("elevation_30m_median",
+pd_elevation <- calculate_pd("ELE",
                              er_model = rf_er,
                              calibration_model = calibration_model,
                              data = checklists_train)
@@ -719,10 +702,10 @@ pd_time <- calculate_pd("Aspect",
                         er_model = rf_er,
                         calibration_model = calibration_model,
                         data = checklists_train)
-ggplot(pd_time) +
-  aes(x = x, y = encounter_rate) +
-  geom_line() +
-  geom_point() #+
+ggplot(pd_time,
+  aes(x = x, y = encounter_rate)) +
+    geom_line() +
+  geom_point()  #+
  # scale_x_continuous(breaks = seq(-12, 12, by = 1)) +
   # labs(x = "Checklist midpoint time [FO]",
   #      y = "Encounter Rate")
