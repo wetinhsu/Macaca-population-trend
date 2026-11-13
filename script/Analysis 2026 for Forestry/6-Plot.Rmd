@@ -26,9 +26,10 @@ order_Office <- c("宜蘭","新竹","臺中","南投", "嘉義","屏東", "花�
 M.data <- 
   here("./data/clean/Forestry/for analysis/") %>% 
   list.files(., full.names = T) %>% 
-  str_subset(paste0(2020:2025)) %>% #如果只要2020~2022年，就寫2020:2022
+  str_subset(paste0(2020:2026)) %>% #如果只要2021~2022年，就寫2021:2022
   lapply(., read_excel, sheet="Data", col_types = "text") %>% 
   bind_rows() %>% 
+  filter(Year >=2021) %>% 
   
   mutate(Office = str_replace_all(Office, c("羅東" = "宜蘭",
                                             "東勢" = "臺中"))) %>%
@@ -89,7 +90,7 @@ List_surveyor %>%
               mutate(Office = "Total") ) %>% 
   mutate(Year = as.character(Year)) %>% 
   
-  filter(Year %in% c(2024,2025)) %>% 
+  filter(Year %in% c(2025,2026)) %>% 
   reshape2::melt(id = 1:2 )%>% 
   reshape2::dcast(Office ~ Year + variable, var.value = "value") %>% 
   mutate(Office = ordered(Office, order_Office)) %>% 
@@ -100,19 +101,19 @@ List_surveyor %>%
 
   set_header_labels(
     'Office' = "分署",
-    '2024_Site_n' = "樣區數",
-    '2024_Person_n' = "調查者人數",
     '2025_Site_n' = "樣區數",
-    '2025_Person_n' = "調查者人數" ) %>% 
+    '2025_Person_n' = "調查者人數",
+    '2026_Site_n' = "樣區數",
+    '2026_Person_n' = "調查者人數" ) %>% 
   add_header_row(., 
-                 values = c(" ", "2024", "2025"),
+                 values = c(" ", "2025", "2026"),
                  colwidths = c(1,2,2)) %>% 
   
   align(.,j = 1:5, align = "center", part = "all") 
 
 ```
    
-  
+\newpage  
 
 ```{r 調查者的統計資料2, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -156,7 +157,7 @@ List_surveyor %>%
   )%>% 
   mutate(Year = as.character(Year)) %>% 
   
-  filter(Year %in% c(2025)) %>% 
+  filter(Year %in% c(2026)) %>% 
   reshape2::melt(id = 1:2 )%>% 
   reshape2::dcast(Office ~ Year + variable, var.value = "value") %>% 
   mutate(Office = ordered(Office, order_Office)) %>% 
@@ -170,7 +171,7 @@ List_surveyor %>%
 
 
 
-```{r message=FALSE, warning=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 M.data %>% 
   filter(! is.na(Macaca_sur)) %>% 
   group_by(Office,Site_N, Year) %>% 
@@ -191,7 +192,7 @@ bind_rows(
     summarise_at(c("Point_n", "Point"), sum) %>% 
     mutate(Office = "Total")
 ) %>% 
-  filter(Year %in% 2025)
+  filter(Year %in% 2026)
 ```
 
 
@@ -204,7 +205,7 @@ bind_rows(
 
 M.data %>% 
   mutate(Year = ifelse(is.na(Year), "2020", Year)) %>% 
-  filter(Year %in% c("2025")) %>% 
+  filter(Year %in% c("2026")) %>% 
   filter(is.na(Macaca_sur)) %>% 
   reshape2::dcast(Site_N + Name ~Year ,
                   length, value.var = "Macaca_sur") %>% 
@@ -249,7 +250,7 @@ M.data %>%
 
     '4 篩選後(3~6月、=>50m、only森林)' = str_subset(analysis, "^Y$") %>% length
   ) %>% 
-  filter(Year %in% c(2024,2025)) %>% 
+  filter(Year %in% c(2025,2026)) %>% 
   
   reshape2::melt(id = 1 )%>% 
   reshape2::dcast(variable ~ Year , var.value = "value")%>% 
@@ -272,7 +273,7 @@ M.data %>%
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
   filter(! is.na(Macaca_sur)) %>% 
-  filter(Year == 2024) %>% 
+  filter(Year == 2026) %>% 
   group_by(Office, Survey) %>% 
   summarise(
     Point_n = n(),
@@ -285,7 +286,7 @@ M.data %>%
   
   bind_rows(
     M.data %>% 
-   filter(Year == 2025) %>% 
+   filter(Year == 2026) %>% 
       filter(! is.na(Macaca_sur))%>% 
       group_by(Survey) %>% 
       summarise(
@@ -356,23 +357,23 @@ M.data %>%
   reshape2::dcast(Office ~ Year + variable, value.var = "value") %>%
   mutate(level2 = ifelse(Office %in% "Total", 2, 1)) %>% 
 
-  arrange(level2, desc(`2025_prob`) )%>% 
+  arrange(level2, desc(`2026_prob`) )%>% 
   
-  mutate(prob_diff = paste0(`2025_prob`, "(",
-                            round( `2025_prob`-`2024_prob`, 1), ")")
+  mutate(prob_diff = paste0(`2026_prob`, "(",
+                            round( `2026_prob`-`2025_prob`, 1), ")")
          ) %>% 
   
-  dplyr::select(-`level2`, -starts_with(c("2020","2021","2022","2023","2024")),
-         -`2025_prob`) %>% 
+  dplyr::select(-`level2`, -starts_with(c("2020","2021","2022","2023","2024","2025")),
+         -`2026_prob`) %>% 
   flextable(.)  %>% 
   
   set_header_labels(
     "Office"="分署",
-    "2025_Point_n"="樣點",
-    "2025_Good_n" = "無疏失的樣點",
+    "2026_Point_n"="樣點",
+    "2026_Good_n" = "無疏失的樣點",
     "prob_diff" = "正確率%") %>% 
   add_header_row(., 
-                 values = c(" ", "2025"),
+                 values = c(" ", "2026"),
                  colwidths = c(1,3)) %>% 
   
 
@@ -389,16 +390,16 @@ M.data %>%
 
 \newpage
 
-2025年各分署各疏失資料類型的筆數
+2026年各分署各疏失資料類型的筆數
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 M.data %>% 
   filter(! is.na(Macaca_sur)) %>% 
-  filter(Year == 2025) %>% 
+  filter(Year == 2026) %>% 
   bind_rows(
     M.data %>% 
-  filter(Year == 2025) %>%       
+  filter(Year == 2026) %>%       
       filter(! is.na(Macaca_sur)) %>% 
       mutate(Office = "Total")
   ) %>% 
@@ -450,7 +451,7 @@ M.data %>%
 
   mutate_all(~str_replace_all(., '^0$', "-")) %>% 
   reshape2::melt(id = 1:2) %>% 
-  filter(Year %in% c(2024,2025)) %>% 
+  filter(Year %in% c(2025,2026)) %>% 
   reshape2::dcast(Office ~ Year + variable, value.var = "value") %>% 
   
   flextable(.) %>% 
@@ -470,13 +471,13 @@ M.data %>%
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
-  filter(Year == 2025) %>% 
+  filter(Year == 2026) %>% 
   filter(analysis %in% "Y") %>% 
   bind_rows(
     M.data %>% 
       filter(! is.na(Macaca_sur)) %>% 
       filter(analysis %in% "Y") %>%
-      filter(Year == 2025) %>% 
+      filter(Year == 2026) %>% 
       mutate(Office = "Total")
   ) %>% 
   mutate(Office = ordered(Office, c("宜蘭","新竹",
@@ -514,7 +515,7 @@ M.data %>%
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 M.data %>% 
-  filter(Year == 2025) %>% 
+  filter(Year == 2026) %>% 
   filter(analysis %in% "Y") %>% 
   filter(Macaca_sur.ori %in% 2 & !Macaca_dist %in% "C")%>% 
   group_by(Year, Survey, Site_N) %>% 
@@ -524,7 +525,7 @@ M.data %>%
   
   left_join(
   M.data %>% 
-    filter(Year == 2025) %>% 
+    filter(Year == 2026) %>% 
   filter(analysis %in% "Y") %>% 
   filter(Macaca_sur %in% 1) %>% 
   group_by(Year, Survey, Site_N) %>% 
@@ -545,20 +546,20 @@ M.data %>%
   
 ```
 
-刪除重複記錄前猴群有`r  nrow(M.data[M.data$Year %in% 2024 & M.data$analysis %in% "Y" & M.data$Macaca_dist != "C" &M.data$Macaca_sur.ori %in% 2,])`群；刪除重複記錄後猴群有`r  sum(M.data[M.data$Year %in% 2024 & M.data$analysis %in% "Y",]$Macaca_sur)`群。\
+刪除重複記錄前猴群有`r  nrow(M.data[M.data$Year %in% 2025 & M.data$analysis %in% "Y" & M.data$Macaca_dist != "C" &M.data$Macaca_sur.ori %in% 2,])`群；刪除重複記錄後猴群有`r  sum(M.data[M.data$Year %in% 2025 & M.data$analysis %in% "Y",]$Macaca_sur)`群。\
 <br/>\
 <br/>\
 <br/>
 
 \newpage
 
-2025年位在海拔50 m以上森林的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
+2026年位在海拔50 m以上森林的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 E_rate_Office<-
     M.data %>%
-  filter(Year == 2025) %>% 
+  filter(Year == 2026) %>% 
     filter(analysis %in% "Y") %>% 
     group_by(Year, Survey, Office) %>%
     summarise(N = n(),
@@ -594,14 +595,14 @@ E_rate_Office %>%
 
 \newpage
 
-2025年各森林類型內的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
+2026年各森林類型內的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 E_rate_Forest<-
 
 #森林內的分別計
 M.data %>%  
-  filter(Year == 2025) %>% 
+  filter(Year == 2026) %>% 
   filter(analysis %in% "Y") %>%
   group_by(Year, Survey, TypeName.1) %>% 
   summarise(N = n(),
@@ -609,7 +610,7 @@ M.data %>%
   
   bind_rows(  #森林的總計
     M.data %>% 
-      filter(Year == 2025) %>% 
+      filter(Year == 2026) %>% 
       filter(analysis %in% "Y") %>%
       group_by(Year, Survey) %>% 
       summarise(N = n(),
@@ -619,7 +620,7 @@ M.data %>%
   
   bind_rows(  #非森林(包括<50m & >=50m )的總計
     M.data %>% 
-      filter(Year == 2025) %>% 
+      filter(Year == 2026) %>% 
       filter(analysis %in% str_subset(analysis, "^Y")) %>%
       filter(analysis %in%
                str_subset(analysis, "month", negate = T)) %>%
@@ -631,7 +632,7 @@ M.data %>%
   
   bind_rows(  #<50m 分別的小計
     M.data %>% 
-      filter(Year == 2025) %>% 
+      filter(Year == 2026) %>% 
       filter(analysis %in% str_subset(analysis, "^Y")) %>%
       filter(analysis %in%
                str_subset(analysis, "50m", negate = F)) %>%
@@ -644,7 +645,7 @@ M.data %>%
   
     bind_rows(  #total小計
     M.data %>% 
-      filter(Year == 2025) %>% 
+      filter(Year == 2026) %>% 
       filter(analysis %in% str_subset(analysis, "^Y")) %>%
       filter(analysis %in%
                str_subset(analysis, "month", negate = T)) %>%
@@ -693,7 +694,7 @@ E_rate_Forest %>%
 
 
 ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
-# 2020~2024年各森林類型內的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
+# 2021~2026年各森林類型內的調查樣點數、臺灣獼猴( *Macaca cyclopis* )的猴群數及相對密度
 
 E_rate_Forest<-
 
@@ -849,7 +850,7 @@ M.data %>%
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 Office.d.n <-
   M.data %>% 
-#  filter(Year == 2023) %>% 
+#  filter(Year == 2026) %>% 
   filter(analysis %in% "Y") %>% 
   group_by(Office,Survey, Year) %>% 
   summarise(N = n(), E = sum(Macaca_sur)/n()/per_Area) %>% 
@@ -864,7 +865,7 @@ Office.d.n <-
 
 
 M.data %>% 
-#  filter(Year == 2023) %>% 
+#  filter(Year == 2026) %>% 
   filter(analysis %in% "Y") %>% 
   group_by(Office, Survey, Year) %>% 
   summarise(E = sum(Macaca_sur)/n()/per_Area) %>% 
@@ -880,8 +881,9 @@ M.data %>%
             vjust = -1,
             position = position_dodge(0.9), show.legend = F)+
   scale_y_continuous(breaks = seq(0,4,1), limits = c(0,4.5))+
-  scale_x_discrete(limits = c( "新竹", "臺中", "南投","宜蘭",
+  scale_x_discrete(limits = c( "新竹", "臺中","宜蘭", "南投",
                             "嘉義", "花蓮", "屏東", "臺東"))+
+  
   labs(x = "分署", y = expression(paste("相對密度 (群 / km"^2,")")))+
   theme(
     text = element_text(family="Microsoft JhengHei"),
@@ -1095,7 +1097,7 @@ M.data %>%
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 
   M.data %>% 
-  filter(Year == 2024) %>% 
+  filter(Year == 2025) %>% 
     filter(analysis %in% "Y") %>% 
     mutate(Altitude_f =cut(Altitude,
                            breaks = c(seq(0,4000,500)),
@@ -1118,7 +1120,7 @@ M.data %>%
 
 M.data_notForest <- 
 M.data %>%  
-  filter(Year == 2024) %>% 
+  filter(Year == 2025) %>% 
   filter(analysis %in% str_subset(analysis, "^Y")) %>%
   filter(analysis %in% str_subset(analysis, "month", negate = T)) %>%
   filter(TypeName.1 %in% "非森林") %>% 
@@ -1152,7 +1154,7 @@ ggplot(M.data_notForest, aes(x = Distance))+
 # 
 Composition_Forest<- 
   M.data %>% 
-  filter(Year == 2024) %>% 
+  filter(Year == 2026) %>% 
    filter(analysis %in% "Y") %>% 
    group_by(TypeName.1,TypeName) %>% 
    summarise(N = n(), m = sum(Macaca_sur))
@@ -1178,7 +1180,7 @@ Composition_Forest %>%
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 tmp <- 
 M.data %>% 
-  filter(Year == 2025) %>% 
+  filter(Year == 2026) %>% 
     filter(analysis %in% "Y") %>%
   mutate(Macaca_sur = factor(Macaca_sur,
                          levels = c("1", "0")))%>% 
@@ -1210,7 +1212,7 @@ ggplot(data = tmp,
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ####
 Group_than2<- M.data %>%
-  filter(Year == 2025) %>% 
+  filter(Year == 2026) %>% 
    filter(analysis %in% "Y") %>% 
   filter(!Macaca_dist %in% "C") %>% 
    filter(Macaca_sur.ori %in% 2) %>% 
@@ -1262,7 +1264,7 @@ Group_than2 %>%
 ```{r message=FALSE, warning=FALSE, include=FALSE}
  #可分析的樣點的海拔分布  
   M.data %>% 
-  filter(Year == 2025) %>% 
+  filter(Year == 2026) %>% 
     filter(analysis %in% "Y") %>% 
     mutate(Altitude_f =cut(Altitude,
                            breaks = c(seq(0,4000,100)),
@@ -1280,7 +1282,7 @@ Group_than2 %>%
 ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
  
 M.data %>% 
-  filter(Year == 2025) %>% 
+  filter(Year == 2026) %>% 
   filter(!is.na(Macaca_sur)) %>% 
     filter(!analysis %in%  str_subset(analysis, "^Y") ) %>% 
   select(Office,analysis, Site_N, Name, Surveyor, Station, Survey) %>% 
@@ -1311,8 +1313,8 @@ M.data %>%
 
 \newpage
 
-2024年位在海拔50 m以上森林的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。
+2026年位在海拔50 m以上森林的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。
 
 \newpage
 
-2024年位在海拔50 m以上分署轄內的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。
+2026年位在海拔50 m以上分署轄內的調查樣點和臺灣獼猴(Macaca cyclopis)的猴群分布圖。紅色點( )為有猴群的樣點，藍色點( )為沒有猴群紀錄的樣點。

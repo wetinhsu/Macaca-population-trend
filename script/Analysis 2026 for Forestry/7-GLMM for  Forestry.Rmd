@@ -71,8 +71,23 @@ M.data <- M.data %>%
 
 ```{r include=FALSE}
 #==============================================
-df <- 
+df <-
   M.data
+```
+
+```{r eval=FALSE, include=FALSE}
+# df <- 
+# M.data %>% 
+# split(., .$Year) %>% 
+#   map(., function(x){
+#     
+#     
+#     sample(1:nrow(x), size = nrow(x[x$Macaca_sur  %in% 1,]), replace = F) %>% 
+#       slice(x, .) %>% 
+#       mutate(Mcaca_sur = 0) 
+#     
+#   }) %>% 
+#   bind_rows()
 ```
 
 
@@ -258,6 +273,27 @@ glht(m1.1, linfct = mcp(Office = "Tukey")) %>%
     set_table_properties(layout = "autofit") 
 ```
 
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+glht(m1.1, linfct = mcp(TypeName.1 = "Tukey")) %>%  
+  summary %>% 
+  broom::tidy(.) %>%
+  dplyr::select(-`null.value`, -`term`) %>% 
+  
+  mutate(signif = gtools::stars.pval(adj.p.value)) %>% 
+  
+  mutate_at(c('estimate', 'std.error','statistic','adj.p.value'),
+            function(x)sprintf("%.3f",x)) %>% 
+
+  flextable() %>% 
+  autofit()%>% 
+  align(.,align = "center", part = "body") %>% 
+    set_table_properties(layout = "autofit") 
+```
+
+
 <br/>
 
 ```{r echo=FALSE}
@@ -426,6 +462,63 @@ M.data %>%
   # labs(x = "  ",
   #      y = "Encounter rate (troop/point)")+
   labs(x = "分署", y =  expression(paste("密度 " ,"(群 / km"^2,")")))+
+  theme_classic()+
+  theme(
+    aspect.ratio = 1,
+    text = element_text(size = 18),
+    panel.border = element_blank()
+  )
+```
+
+```{r}
+TypeName.1.d.n <-
+  M.data %>% 
+  group_by(TypeName.1,Survey, Year) %>% 
+  summarise(N = n(), E = sum(Macaca_sur)/n()/per_Area) %>% 
+  
+  group_by(TypeName.1) %>% 
+  summarise(mean_N = mean(N) %>% round(1), 
+            E25 = quantile(E,0.25),
+            E50 = quantile(E,0.50),
+            E75 = quantile(E,0.75)) %>% 
+  ungroup()
+
+
+
+
+M.data %>% 
+  group_by(TypeName.1,Year, Survey) %>% 
+  summarise(
+    N = n(),
+    m = Macaca_sur %>% as.numeric() %>% sum,
+    E = m/N/per_Area
+  )  %>% 
+  # mutate(Office = 
+  #          ordered(Office,
+  #                  labels = c( "新竹", "臺中", "南投","宜蘭",
+  #                             "嘉義", "屏東", "花蓮", "臺東"),
+  #                  levels = c("Hsinchu", "Dougshih", "Nantou","Luodong", 
+  #                             "Chiayi", "Pingtung", "Hualien", "Taitung")
+  #          )
+  # ) %>% 
+  ggplot(., aes(x = factor(TypeName.1), y = E)) +
+  geom_boxplot(width = 0.4)+
+  
+    geom_text(data = TypeName.1.d.n, 
+            aes(y = E75,
+                label = mean_N),
+            size = 3,
+            hjust = -0.1, 
+            vjust = -1,
+            position = position_dodge(0.9), show.legend = F)+
+  
+  scale_y_continuous(limits =  c(0, 3.5),
+                     breaks = seq(0,3.5,0.5))+
+  scale_x_discrete(limits = c( "coniferous","mixed", "Bamboo", "broad_leaved"),
+                    labels = c( "針葉林","混淆林", "竹林", "闊葉林"))+
+  labs(x = "  ",
+       y = "Encounter rate (troop/point)")+
+  labs(x = "森林類型", y =  expression(paste("密度 " ,"(群 / km"^2,")")))+
   theme_classic()+
   theme(
     aspect.ratio = 1,
