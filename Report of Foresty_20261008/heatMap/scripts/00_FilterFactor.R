@@ -1,5 +1,6 @@
-library(sf)
+library(ggcorrplot)
 library(tidyverse)
+library(sf)
 library(fs)
 
 
@@ -16,11 +17,40 @@ envo_ls <-
   .[str_detect(., "zip", negate = T) ] 
 
 
-environment_sp <- rast(envo_ls)
+environment_sp <- rast(envo_ls) 
 #--
+environment_sp <- 
+  data.frame(environment_sp) %>%
+  setNames(str_remove_all(colnames(.), "G1km_TWD97.121_|_2010s"))
 
-data.frame(environment_sp) %>% names
 
+cor_matrix <-
+  data.frame(environment_sp) %>% 
+  dplyr::select(matches("Other")) %>% 
+  dplyr::select(-matches("DSW")) %>% 
+  cor(., method = c("pearson"), use = "pairwise.complete.obs") 
+
+ # ggcorrplot(cor_matrix, 
+ #            method = "square", 
+ #            type = "lower",        # 顯示下三角矩陣
+ #            lab = TRUE,            # 顯示相關係數數值
+ #            lab_size = 3,          # 數字大小
+ #            colors = c("red", "white", "blue"), # 負相關為紅，正相關為藍
+ #            title = "變數相關係數熱力圖",
+ #            ggtheme = ggplot2::theme_minimal())
+cor_matrix
+
+cor_df <- as.data.frame(as.table(cor_matrix)) %>%
+  rename(Var1 = Var1, Var2 = Var2, Cor = Freq)
+
+filtered_cor_abs <- cor_df %>%
+  filter(as.character(Var1) < as.character(Var2)) %>% 
+  filter(abs(Cor) > 0.01)
+
+head(filtered_cor_abs)
+
+
+#===以下不用============================
 
 # 安裝與載入套件（若未安裝執行 install.packages("ClustOfVar")）
 library(ClustOfVar)
@@ -39,7 +69,7 @@ partition <- cutreevar(tree, k = 1)
 print(partition$var$name)
 
 
-#---
+#----------
 # 相關矩陣平均相關度最高法（找出該類別的「中心點 / Medoid」）
 # 計算該類別內每個變數與其他所有變數的平均相關係數。平均相關係數最高的那個變數，代表它與群體內其他成員的資訊重疊度最高，最能代表整個群體的共同趨勢。
 
